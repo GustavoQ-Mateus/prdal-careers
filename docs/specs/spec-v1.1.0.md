@@ -30,7 +30,7 @@ Entregar, no `web`, um dashboard de score sobre as vagas do usuário, uma visual
 4. **Edição e recálculo** (`api` + `web`): editar o Markdown de um currículo existente e recalcular o score (via `ai-service` `POST /score`), regenerando `.docx`/`.pdf` no `doc-service` quando disponível.
 
 ### Não entra (fica para fases seguintes conforme v1.0.0)
-- Banco de vagas cru, promoção a vaga e Kanban de candidaturas (Fase 3, `spec-v1.2.0`).
+- Banco de vagas cru, ativação de vaga e Kanban de candidaturas (Fase 3, `spec-v1.2.0`).
 - Ingestão do Obsidian e RAG (Fase 4, `spec-v1.3.0`).
 - Qualquer mudança no provedor de IA ou no algoritmo do score.
 
