@@ -112,7 +112,7 @@ Monorepo com quatro aplicações e pacotes compartilhados:
 - **RF3** O usuário dispara `gerar-cv` para uma vaga; o sistema gera o Markdown tailored, calcula o score e produz `.docx` e `.pdf`.
 - **RF4** O usuário vê o **score ATS** e o breakdown do currículo gerado, e baixa os arquivos.
 - **RF5** O usuário acompanha suas **candidaturas** num Kanban e muda o status de cada uma.
-- **RF6** O usuário importa um lote de vagas cruas para o **banco de vagas** e promove as relevantes a `vaga`.
+- **RF6** O usuário importa um lote de vagas cruas para o seu **banco de vagas** pessoal e ativa as relevantes como `vaga`.
 - **RF7** O usuário ingere seu **vault do Obsidian**; o conteúdo passa a alimentar o contexto da geração via RAG.
 
 ## 9. Requisitos não funcionais
@@ -162,7 +162,7 @@ prdal-careers/
 1. **Fase 0 — Scaffold**: monorepo, `docker-compose` subindo os 4 serviços + Postgres + Mongo, `/health` em cada um, `shared-types`, hello-world atravessando `web → api → ai-service → doc-service`, `.gitignore`/`.editorconfig`/`.env.example`, `git init`.
 2. **Fase 1 — Núcleo (a demo)**: perfil-mestre, CRUD de vagas com extração de keywords, fluxo estrela `gerar-cv` completo (geração via Groq, score, docx/pdf), tela de geração no `web`. Tag `v1.0.0`.
 3. **Fase 2 — Análise ATS**: dashboard de score, breakdown visual, comparativo entre versões de currículo. (`spec-v1.1.0`)
-4. **Fase 3 — Banco de vagas e candidaturas**: importação em massa para o Mongo, promoção a `vaga`, Kanban de candidaturas. (`spec-v1.2.0`)
+4. **Fase 3 — Banco de vagas e candidaturas**: importação em massa para o Mongo, ativação de `vaga`, Kanban de candidaturas. (`spec-v1.2.0`)
 5. **Fase 4 — Obsidian e RAG**: ingestão do vault, embeddings locais, uso do contexto na geração. (`spec-v1.3.0`)
 6. **Fase 5 — Polimento e entrega**: PWA completo, testes (Vitest/Playwright/pytest/xUnit), CI no GitHub Actions, Terraform stub, README com diagrama.
 

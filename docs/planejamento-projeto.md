@@ -6,7 +6,9 @@ Documento de planejamento que consolida a idealização do projeto feita na sess
 
 O projeto nasceu do desafio da entrevista da **Mobiliza**: gravar um vídeo explicando um projeto, com foco nos desafios, problemas e dificuldades enfrentados. A decisão estratégica foi **construir algo novo** em vez de mostrar um projeto antigo, para ter controle total da narrativa e demonstrar iniciativa.
 
-O tema saiu de uma dor real e vivida: gerar currículo ATS, analisar, controlar vagas e candidaturas. Isso aparece no vídeo como domínio de negócio de verdade, não teatro. O produto também reaproveita a lógica da pipeline atual do `geracurriculo`, então o esforço vai para a engenharia, que é o que a vaga quer ver.
+O tema saiu de uma dor real e vivida: gerar currículo ATS, analisar, controlar vagas e candidaturas. Isso aparece no vídeo como domínio de negócio de verdade, não teatro.
+
+Público-alvo, escopo travado: o produto é do **candidato**, um profissional de tecnologia que organiza as vagas que ele mesmo encontrou, gera currículos para elas e acompanha suas candidaturas. O PRDAL Careers **nunca** é ferramenta para empresas anunciarem, publicarem ou promoverem vagas. Não há lado empregador. Qualquer escopo que caminhe para empresa está fora e deve ser corrigido. O produto também reaproveita a lógica da pipeline atual do `geracurriculo`, então o esforço vai para a engenharia, que é o que a vaga quer ver.
 
 Prazo: o desafio formal chega depois da entrevista e as inscrições vão até 28/09, então há folga para construir o produto inteiro com calma, não só uma fatia.
 
@@ -97,7 +99,7 @@ Roteiro no framework de sempre: Contexto, o problema vivido, para Ação, a arqu
 - **Fase 0, Scaffold**: monorepo, docker-compose subindo os 4 serviços mais Postgres e Mongo, health checks, contrato de tipos compartilhado, hello-world ponta a ponta. Concluída e commitada.
 - **Fase 1, Núcleo, a demo**: fluxo estrela completo, CRUD de vaga, geração real via Groq, docx e pdf, front mostrando markdown, score e downloads. Fecha em v1.0.0.
 - **Fase 2, Análise ATS**: dashboard de score, breakdown visual, comparativo entre versões de currículo.
-- **Fase 3, Banco de vagas e candidaturas**: importar vagas em massa no Mongo, promoção a vaga, Kanban de candidaturas. Primeira carga natural de batch.
+- **Fase 3, Banco de vagas e candidaturas**: importar vagas em massa no Mongo, ativação de vaga, Kanban de candidaturas. Primeira carga natural de batch.
 - **Fase 4, Obsidian e RAG**: ingestão do vault, embeddings locais, uso do contexto na geração. Segunda carga natural de batch.
 - **Fase 5, Polimento e entrega**: PWA completo, testes, CI no GitHub Actions, Terraform stub, README com diagrama.
 
@@ -107,5 +109,7 @@ Decidido em conversa, ainda **não** implementado, entra algumas fases à frente
 
 - **Topologia polyrepo para AWS**: separar `front`, `back` e `batch` em repositórios independentes, por ciclo de deploy e escala distintos. Custo a registrar na ADR: o `packages/shared-types` hoje é compartilhado via monorepo, então polyrepo obriga a publicar os contratos como pacote versionado ou aceitar duplicação, mais CI multi-pipeline. Alvo: Fase 5.
 - **Processamento em lote (batch)**: worker assíncrono que reusa as rotas do `ai-service` para cargas lentas e em volume, sem duplicar lógica de IA. Cargas que valem batch: ingestão do vault em massa, importação de vagas em massa com extração de keywords, geração de CVs em lote, rescore em massa quando o perfil-mestre muda. Mapeamento AWS: SQS para a fila, AWS Batch ou ECS ou Lambda para o worker, concorrência limitada para respeitar o rate limit do Groq, idempotência e dead-letter queue. Alvo: introduzir na Fase 3 com a importação em massa, consolidar na Fase 5 junto ao polyrepo. Detalhamento em `docs/planejamento-ia-e-batch.md`.
+- **Landing page antes do login**: página de apresentação do produto antes da tela de acesso, para dar contexto e primeira impressão a quem chega. Front, no design system. Candidata à Fase 5 de polimento ou a spec própria.
+- **Mapa de vagas em grafo**: visualização das vagas por categoria e nível, estilo roadmap ou grafo, aproveitando a classificação determinística da Fase 3 (ADR 0011). Vira spec própria, provavelmente após a Fase 4.
 
 Regra transversal: nada de batch nem polyrepo entra na Fase 1. O núcleo fecha síncrono e no monorepo, uma vaga por vez, e taguea v1.0.0. Escopo novo só vira código depois de virar ADR mais spec aprovada.
