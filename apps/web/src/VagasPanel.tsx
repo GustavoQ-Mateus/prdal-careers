@@ -53,7 +53,7 @@ export function VagasPanel({ onCurriculo }: { onCurriculo: (id: string) => void 
         <form onSubmit={criar} className="panel-body form-grid">
           <div className="two-col">
             <div className="field">
-              <span className="label">Titulo</span>
+              <span className="label">Título</span>
               <input value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
             </div>
             <div className="field">
@@ -62,9 +62,9 @@ export function VagasPanel({ onCurriculo }: { onCurriculo: (id: string) => void 
             </div>
           </div>
           <div className="field">
-            <span className="label">Descricao da vaga</span>
+            <span className="label">Descrição da vaga</span>
             <textarea
-              placeholder="cole a descricao completa da vaga"
+              placeholder="cole a descrição completa da vaga"
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
               rows={7}

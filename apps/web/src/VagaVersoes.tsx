@@ -20,7 +20,7 @@ function Comparativo({ versoes }: { versoes: CurriculoResumo[] }) {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>Comparativo entre versoes</h2>
+        <h2>Comparativo entre versões</h2>
       </div>
       <div className="panel-body stack">
         <div className="two-col">
@@ -121,18 +121,18 @@ export function VagaVersoes({
 
       <section className="panel">
         <div className="panel-head">
-          <h2>Versoes de curriculo</h2>
-          <span className="label">{versoes ? `${versoes.length} versoes` : ''}</span>
+          <h2>Versões de currículo</h2>
+          <span className="label">{versoes ? `${versoes.length} versões` : ''}</span>
         </div>
         {!versoes && !erro && <div className="panel-body notice">Carregando...</div>}
         {versoes && versoes.length === 0 && (
-          <div className="panel-body notice">Nenhum curriculo gerado para esta vaga ainda.</div>
+          <div className="panel-body notice">Nenhum currículo gerado para esta vaga ainda.</div>
         )}
         {versoes && versoes.length > 0 && (
           <table className="grid-table">
             <thead>
               <tr>
-                <th>Versao</th>
+                <th>Versão</th>
                 <th style={{ width: 200 }}>Score</th>
                 <th className="num-col" style={{ width: 90 }}>Faltantes</th>
                 <th className="num-col" style={{ width: 130 }}>Gerado</th>
