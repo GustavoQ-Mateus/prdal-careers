@@ -10,7 +10,67 @@ export interface Vaga {
   descricao: string;
   fonte: string | null;
   keywords: Keyword[];
+  categoria: string | null;
+  nivel: string | null;
   criadoEm: string;
+}
+
+export interface BancoVaga {
+  id: string;
+  titulo: string;
+  empresa: string;
+  fonte: string | null;
+  categoria: string | null;
+  nivel: string | null;
+  keywords: Keyword[] | null;
+  status: 'CRUA' | 'ATIVADA';
+  criadoEm: string;
+}
+
+export interface LoteItemStatus {
+  id: string;
+  bancoVagaId: string;
+  status: string;
+  erro: string | null;
+}
+
+export interface LoteStatus {
+  id: string;
+  tipo: string;
+  status: string;
+  total: number;
+  processados: number;
+  itens: LoteItemStatus[];
+}
+
+export const STATUS_CANDIDATURA = [
+  'RASCUNHO',
+  'INSCRITA',
+  'EM_PROCESSO',
+  'ENTREVISTA',
+  'OFERTA',
+  'REJEITADA',
+  'DESISTIU',
+] as const;
+
+export type StatusCandidatura = (typeof STATUS_CANDIDATURA)[number];
+
+export interface Candidatura {
+  id: string;
+  vagaId: string;
+  tituloVaga: string;
+  empresa: string;
+  curriculoId: string | null;
+  status: StatusCandidatura;
+  notas: string;
+  atualizadoEm: string;
+}
+
+export interface ItemImportacao {
+  titulo: string;
+  empresa: string;
+  fonte?: string;
+  descricao: string;
 }
 
 export interface PerfilMestre {
@@ -155,6 +215,46 @@ export function listarCurriculos(vagaId: string) {
 
 export function getDashboard() {
   return request<DashboardItem[]>('/dashboard');
+}
+
+export function importarBancoVagas(itens: ItemImportacao[]) {
+  return request<{ loteId: string; total: number }>('/banco-vagas/import', {
+    method: 'POST',
+    body: JSON.stringify({ itens }),
+  });
+}
+
+export function listarBancoVagas() {
+  return request<BancoVaga[]>('/banco-vagas');
+}
+
+export function ativarBancoVaga(id: string) {
+  return request<Vaga>(`/banco-vagas/${id}/ativar`, { method: 'POST' });
+}
+
+export function getLote(id: string) {
+  return request<LoteStatus>(`/lotes/${id}`);
+}
+
+export function criarCandidatura(vagaId: string, curriculoId?: string) {
+  return request<Candidatura>('/candidaturas', {
+    method: 'POST',
+    body: JSON.stringify({ vagaId, curriculoId }),
+  });
+}
+
+export function listarCandidaturas() {
+  return request<Candidatura[]>('/candidaturas');
+}
+
+export function atualizarCandidatura(
+  id: string,
+  dto: { status?: StatusCandidatura; notas?: string },
+) {
+  return request<Candidatura>(`/candidaturas/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(dto),
+  });
 }
 
 export async function baixarArquivo(url: string, nomeArquivo: string) {
