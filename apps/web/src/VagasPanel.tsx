@@ -45,34 +45,78 @@ export function VagasPanel({ onCurriculo }: { onCurriculo: (id: string) => void 
   }
 
   return (
-    <section style={{ maxWidth: 640 }}>
-      <h2>Vagas</h2>
-      <form onSubmit={criar} style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-        <input placeholder="titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
-        <input placeholder="empresa" value={empresa} onChange={(e) => setEmpresa(e.target.value)} required />
-        <textarea
-          placeholder="cole a descricao da vaga"
-          value={descricao}
-          onChange={(e) => setDescricao(e.target.value)}
-          rows={6}
-          required
-        />
-        <button type="submit">Cadastrar vaga</button>
-      </form>
-      {erro && <p style={{ color: 'crimson' }}>{erro}</p>}
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {vagas.map((vaga) => (
-          <li key={vaga.id} style={{ border: '1px solid #ccc', borderRadius: 8, padding: 12, marginBottom: 8 }}>
-            <strong>{vaga.titulo}</strong> @ {vaga.empresa}
-            <div style={{ fontSize: 12, color: '#666', margin: '4px 0' }}>
-              {vaga.keywords.slice(0, 8).map((k) => k.termo).join(', ')}
+    <div className="stack">
+      <section className="panel">
+        <div className="panel-head">
+          <h2>Cadastrar vaga</h2>
+        </div>
+        <form onSubmit={criar} className="panel-body form-grid">
+          <div className="two-col">
+            <div className="field">
+              <span className="label">Titulo</span>
+              <input value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
             </div>
-            <button onClick={() => gerar(vaga.id)} disabled={gerandoId === vaga.id}>
-              {gerandoId === vaga.id ? 'Gerando...' : 'Gerar CV'}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </section>
+            <div className="field">
+              <span className="label">Empresa</span>
+              <input value={empresa} onChange={(e) => setEmpresa(e.target.value)} required />
+            </div>
+          </div>
+          <div className="field">
+            <span className="label">Descricao da vaga</span>
+            <textarea
+              placeholder="cole a descricao completa da vaga"
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              rows={7}
+              required
+            />
+          </div>
+          {erro && <span className="error">{erro}</span>}
+          <button type="submit" className="primary">Cadastrar e extrair keywords</button>
+        </form>
+      </section>
+
+      <section className="panel">
+        <div className="panel-head">
+          <h2>Vagas cadastradas</h2>
+          <span className="label">{vagas.length} vagas</span>
+        </div>
+        {vagas.length === 0 ? (
+          <div className="panel-body notice">Nenhuma vaga ainda.</div>
+        ) : (
+          <table className="grid-table">
+            <thead>
+              <tr>
+                <th>Vaga</th>
+                <th>Keywords</th>
+                <th style={{ width: 110 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {vagas.map((vaga) => (
+                <tr key={vaga.id}>
+                  <td>
+                    <div>{vaga.titulo}</div>
+                    <div className="faint" style={{ fontSize: 12 }}>{vaga.empresa}</div>
+                  </td>
+                  <td>
+                    <div className="chip-set">
+                      {vaga.keywords.slice(0, 8).map((k) => (
+                        <span key={k.termo} className="chip">{k.termo}</span>
+                      ))}
+                    </div>
+                  </td>
+                  <td>
+                    <button className="primary" onClick={() => gerar(vaga.id)} disabled={gerandoId === vaga.id}>
+                      {gerandoId === vaga.id ? 'Gerando...' : 'Gerar CV'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+    </div>
   );
 }

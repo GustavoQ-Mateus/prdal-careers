@@ -20,31 +20,33 @@ export function AuthForm({ onAuth }: { onAuth: () => void }) {
   }
 
   return (
-    <form
-      onSubmit={enviar}
-      style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 320 }}
-    >
-      <h2>{modo === 'login' ? 'Entrar' : 'Criar conta'}</h2>
-      <input
-        type="email"
-        placeholder="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-      />
-      <input
-        type="password"
-        placeholder="senha"
-        value={senha}
-        onChange={(e) => setSenha(e.target.value)}
-        required
-        minLength={6}
-      />
-      {erro && <p style={{ color: 'crimson' }}>{erro}</p>}
-      <button type="submit">{modo === 'login' ? 'Entrar' : 'Criar conta'}</button>
-      <button type="button" onClick={() => setModo(modo === 'login' ? 'registro' : 'login')}>
-        {modo === 'login' ? 'Criar uma conta' : 'Ja tenho conta'}
-      </button>
-    </form>
+    <section className="panel">
+      <div className="panel-head">
+        <h2>{modo === 'login' ? 'Entrar' : 'Criar conta'}</h2>
+      </div>
+      <form onSubmit={enviar} className="panel-body form-grid">
+        <div className="field">
+          <span className="label">Email</span>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+        <div className="field">
+          <span className="label">Senha</span>
+          <input
+            type="password"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            required
+            minLength={6}
+          />
+        </div>
+        {erro && <span className="error">{erro}</span>}
+        <button type="submit" className="primary">
+          {modo === 'login' ? 'Entrar' : 'Criar conta'}
+        </button>
+        <button type="button" className="ghost" onClick={() => setModo(modo === 'login' ? 'registro' : 'login')}>
+          {modo === 'login' ? 'Criar uma conta' : 'Ja tenho conta'}
+        </button>
+      </form>
+    </section>
   );
 }

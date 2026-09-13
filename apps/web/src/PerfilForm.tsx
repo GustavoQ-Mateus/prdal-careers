@@ -35,22 +35,13 @@ export function PerfilForm() {
     try {
       const dto: PerfilMestre = {
         ...perfil,
-        experiencias: experienciasTexto
-          .split('\n')
-          .map((l) => l.trim())
-          .filter(Boolean),
-        formacao: formacaoTexto
-          .split('\n')
-          .map((l) => l.trim())
-          .filter(Boolean),
-        skills: skillsTexto
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean),
+        experiencias: experienciasTexto.split('\n').map((l) => l.trim()).filter(Boolean),
+        formacao: formacaoTexto.split('\n').map((l) => l.trim()).filter(Boolean),
+        skills: skillsTexto.split(',').map((s) => s.trim()).filter(Boolean),
       };
       const salvo = await salvarPerfil(dto);
       setPerfil(salvo);
-      setMensagem('Perfil salvo');
+      setMensagem('Perfil salvo.');
     } catch (err) {
       setMensagem((err as Error).message);
     } finally {
@@ -59,56 +50,62 @@ export function PerfilForm() {
   }
 
   return (
-    <form onSubmit={salvar} style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 480 }}>
-      <h2>Perfil-mestre</h2>
-      <input
-        placeholder="nome"
-        value={perfil.nome}
-        onChange={(e) => setPerfil({ ...perfil, nome: e.target.value })}
-        required
-      />
-      <input
-        placeholder="email de contato"
-        value={perfil.contato.email ?? ''}
-        onChange={(e) => setPerfil({ ...perfil, contato: { ...perfil.contato, email: e.target.value } })}
-      />
-      <input
-        placeholder="telefone"
-        value={perfil.contato.telefone ?? ''}
-        onChange={(e) => setPerfil({ ...perfil, contato: { ...perfil.contato, telefone: e.target.value } })}
-      />
-      <input
-        placeholder="linkedin"
-        value={perfil.contato.linkedin ?? ''}
-        onChange={(e) => setPerfil({ ...perfil, contato: { ...perfil.contato, linkedin: e.target.value } })}
-      />
-      <textarea
-        placeholder="resumo"
-        value={perfil.resumo}
-        onChange={(e) => setPerfil({ ...perfil, resumo: e.target.value })}
-        rows={3}
-      />
-      <textarea
-        placeholder="experiencias, uma por linha"
-        value={experienciasTexto}
-        onChange={(e) => setExperienciasTexto(e.target.value)}
-        rows={4}
-      />
-      <textarea
-        placeholder="formacao, uma por linha"
-        value={formacaoTexto}
-        onChange={(e) => setFormacaoTexto(e.target.value)}
-        rows={2}
-      />
-      <input
-        placeholder="skills, separadas por virgula"
-        value={skillsTexto}
-        onChange={(e) => setSkillsTexto(e.target.value)}
-      />
-      <button type="submit" disabled={salvando}>
-        {salvando ? 'Salvando...' : 'Salvar perfil'}
-      </button>
-      {mensagem && <p>{mensagem}</p>}
-    </form>
+    <section className="panel">
+      <div className="panel-head">
+        <h2>Perfil-mestre</h2>
+        <span className="label">fonte da verdade do curriculo</span>
+      </div>
+      <form onSubmit={salvar} className="panel-body form-grid">
+        <div className="field">
+          <span className="label">Nome</span>
+          <input value={perfil.nome} onChange={(e) => setPerfil({ ...perfil, nome: e.target.value })} required />
+        </div>
+        <div className="two-col">
+          <div className="field">
+            <span className="label">Email de contato</span>
+            <input
+              value={perfil.contato.email ?? ''}
+              onChange={(e) => setPerfil({ ...perfil, contato: { ...perfil.contato, email: e.target.value } })}
+            />
+          </div>
+          <div className="field">
+            <span className="label">Telefone</span>
+            <input
+              value={perfil.contato.telefone ?? ''}
+              onChange={(e) => setPerfil({ ...perfil, contato: { ...perfil.contato, telefone: e.target.value } })}
+            />
+          </div>
+        </div>
+        <div className="field">
+          <span className="label">LinkedIn</span>
+          <input
+            value={perfil.contato.linkedin ?? ''}
+            onChange={(e) => setPerfil({ ...perfil, contato: { ...perfil.contato, linkedin: e.target.value } })}
+          />
+        </div>
+        <div className="field">
+          <span className="label">Resumo</span>
+          <textarea value={perfil.resumo} onChange={(e) => setPerfil({ ...perfil, resumo: e.target.value })} rows={3} />
+        </div>
+        <div className="field">
+          <span className="label">Experiencias (uma por linha)</span>
+          <textarea value={experienciasTexto} onChange={(e) => setExperienciasTexto(e.target.value)} rows={5} />
+        </div>
+        <div className="field">
+          <span className="label">Formacao (uma por linha)</span>
+          <textarea value={formacaoTexto} onChange={(e) => setFormacaoTexto(e.target.value)} rows={3} />
+        </div>
+        <div className="field">
+          <span className="label">Skills (separadas por virgula)</span>
+          <input value={skillsTexto} onChange={(e) => setSkillsTexto(e.target.value)} />
+        </div>
+        <div className="row">
+          <button type="submit" className="primary" disabled={salvando}>
+            {salvando ? 'Salvando...' : 'Salvar perfil'}
+          </button>
+          {mensagem && <span className="notice">{mensagem}</span>}
+        </div>
+      </form>
+    </section>
   );
 }
