@@ -19,14 +19,20 @@ export function AuthForm({ onAuth }: { onAuth: () => void }) {
     }
   }
 
+  const login_ = modo === 'login';
+
   return (
-    <section className="panel">
-      <div className="panel-head">
-        <h2>{modo === 'login' ? 'Entrar' : 'Criar conta'}</h2>
-      </div>
-      <form onSubmit={enviar} className="panel-body form-grid">
+    <div className="auth-center">
+      <span className="auth-eyebrow">{login_ ? 'Acesso' : 'Nova conta'}</span>
+      <h1 className="auth-title">{login_ ? 'Bem-vindo de volta.' : 'Crie sua conta.'}</h1>
+      <p className="auth-sub">
+        {login_
+          ? 'Entre para gerar e analisar seus currículos por vaga.'
+          : 'Comece a gerar currículos tailored e medir o score ATS.'}
+      </p>
+      <form onSubmit={enviar} className="auth-form">
         <div className="field">
-          <span className="label">Email</span>
+          <span className="label">E-mail de acesso</span>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </div>
         <div className="field">
@@ -40,13 +46,13 @@ export function AuthForm({ onAuth }: { onAuth: () => void }) {
           />
         </div>
         {erro && <span className="error">{erro}</span>}
-        <button type="submit" className="primary">
-          {modo === 'login' ? 'Entrar' : 'Criar conta'}
+        <button type="submit" className="primary btn-block">
+          {login_ ? 'Acessar' : 'Criar conta'}
         </button>
-        <button type="button" className="ghost" onClick={() => setModo(modo === 'login' ? 'registro' : 'login')}>
-          {modo === 'login' ? 'Criar uma conta' : 'Ja tenho conta'}
+        <button type="button" className="link-btn" onClick={() => setModo(login_ ? 'registro' : 'login')}>
+          {login_ ? 'Criar uma conta' : 'Já tenho conta'}
         </button>
       </form>
-    </section>
+    </div>
   );
 }
