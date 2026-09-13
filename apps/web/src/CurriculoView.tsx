@@ -37,13 +37,13 @@ export function CurriculoView({ id, onVoltar }: { id: string; onVoltar: () => vo
   }
 
   if (erro && !curriculo) return <div className="error">{erro}</div>;
-  if (!curriculo) return <div className="notice">Carregando curriculo...</div>;
+  if (!curriculo) return <div className="notice">Carregando currículo...</div>;
 
   return (
     <div className="stack">
       <div className="spread">
         <div>
-          <button className="ghost" onClick={onVoltar}>&larr; Versoes</button>
+          <button className="ghost" onClick={onVoltar}>&larr; Versões</button>
           <h1 style={{ marginTop: 8 }}>{curriculo.rotulo}</h1>
           <span className="faint" style={{ fontSize: 12 }}>Gerado {fmtData(curriculo.geradoEm)}</span>
         </div>
@@ -78,14 +78,14 @@ export function CurriculoView({ id, onVoltar }: { id: string; onVoltar: () => vo
                 Baixar .docx
               </button>
             ) : (
-              <span className="notice">Download .docx indisponivel</span>
+              <span className="notice">Download .docx indisponível</span>
             )}
             {curriculo.downloadPdfUrl ? (
               <button onClick={() => baixarArquivo(curriculo.downloadPdfUrl!, `${curriculo.rotulo}.pdf`)}>
                 Baixar .pdf
               </button>
             ) : (
-              <span className="notice">Download .pdf indisponivel</span>
+              <span className="notice">Download .pdf indisponível</span>
             )}
           </div>
         </section>
@@ -118,7 +118,7 @@ export function CurriculoView({ id, onVoltar }: { id: string; onVoltar: () => vo
           {editando ? (
             <>
               <div className="field">
-                <span className="label">Rotulo da versao</span>
+                <span className="label">Rótulo da versão</span>
                 <input value={rotulo} onChange={(e) => setRotulo(e.target.value)} />
               </div>
               <div className="field">

@@ -22,7 +22,7 @@ export function Dashboard({ onAbrirVaga }: { onAbrirVaga: (vagaId: string, titul
       {!erro && !itens && <div className="panel-body notice">Carregando...</div>}
       {itens && itens.length === 0 && (
         <div className="panel-body notice">
-          Nenhuma vaga ainda. Cadastre uma vaga em Vagas e gere um curriculo.
+          Nenhuma vaga ainda. Cadastre uma vaga em Vagas e gere um currículo.
         </div>
       )}
       {itens && itens.length > 0 && (
@@ -31,8 +31,8 @@ export function Dashboard({ onAbrirVaga }: { onAbrirVaga: (vagaId: string, titul
             <tr>
               <th>Vaga</th>
               <th style={{ width: 200 }}>Melhor score</th>
-              <th className="num-col" style={{ width: 90 }}>Versoes</th>
-              <th className="num-col" style={{ width: 130 }}>Ultima geracao</th>
+              <th className="num-col" style={{ width: 90 }}>Versões</th>
+              <th className="num-col" style={{ width: 130 }}>Última geração</th>
             </tr>
           </thead>
           <tbody>
@@ -48,7 +48,7 @@ export function Dashboard({ onAbrirVaga }: { onAbrirVaga: (vagaId: string, titul
                 </td>
                 <td>
                   {item.melhorScore === null ? (
-                    <span className="notice">sem curriculo</span>
+                    <span className="notice">sem currículo</span>
                   ) : (
                     <div className="row" style={{ gap: 12 }}>
                       <Score valor={item.melhorScore} />

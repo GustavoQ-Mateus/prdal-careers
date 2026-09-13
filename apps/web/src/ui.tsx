@@ -51,7 +51,7 @@ export function Breakdown({ breakdown }: { breakdown: ScoreBreakdown }) {
     <div className="stack">
       <Barra rotulo="Keyword match" valor={breakdown.keywordMatch} />
       <Barra rotulo="Densidade" valor={breakdown.densidade} />
-      <Barra rotulo="Secoes" valor={breakdown.secoes} />
+      <Barra rotulo="Seções" valor={breakdown.secoes} />
       <div className="field">
         <span className="label">Keywords faltantes ({breakdown.faltando.length})</span>
         {breakdown.faltando.length > 0 ? (

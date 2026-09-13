@@ -53,7 +53,7 @@ export function PerfilForm() {
     <section className="panel">
       <div className="panel-head">
         <h2>Perfil-mestre</h2>
-        <span className="label">fonte da verdade do curriculo</span>
+        <span className="label">fonte da verdade do currículo</span>
       </div>
       <form onSubmit={salvar} className="panel-body form-grid">
         <div className="field">
@@ -62,7 +62,7 @@ export function PerfilForm() {
         </div>
         <div className="two-col">
           <div className="field">
-            <span className="label">Email de contato</span>
+            <span className="label">E-mail de contato</span>
             <input
               value={perfil.contato.email ?? ''}
               onChange={(e) => setPerfil({ ...perfil, contato: { ...perfil.contato, email: e.target.value } })}
@@ -88,15 +88,15 @@ export function PerfilForm() {
           <textarea value={perfil.resumo} onChange={(e) => setPerfil({ ...perfil, resumo: e.target.value })} rows={3} />
         </div>
         <div className="field">
-          <span className="label">Experiencias (uma por linha)</span>
+          <span className="label">Experiências (uma por linha)</span>
           <textarea value={experienciasTexto} onChange={(e) => setExperienciasTexto(e.target.value)} rows={5} />
         </div>
         <div className="field">
-          <span className="label">Formacao (uma por linha)</span>
+          <span className="label">Formação (uma por linha)</span>
           <textarea value={formacaoTexto} onChange={(e) => setFormacaoTexto(e.target.value)} rows={3} />
         </div>
         <div className="field">
-          <span className="label">Skills (separadas por virgula)</span>
+          <span className="label">Skills (separadas por vírgula)</span>
           <input value={skillsTexto} onChange={(e) => setSkillsTexto(e.target.value)} />
         </div>
         <div className="row">
