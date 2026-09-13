@@ -1,22 +1,26 @@
 import { useState } from 'react';
 import { AuthForm } from './AuthForm';
+import { BancoVagas } from './BancoVagas';
 import { CurriculoView } from './CurriculoView';
 import { Dashboard } from './Dashboard';
+import { Kanban } from './Kanban';
 import { PerfilForm } from './PerfilForm';
 import { VagaVersoes } from './VagaVersoes';
 import { VagasPanel } from './VagasPanel';
 import { estaAutenticado, logout } from './api';
 
+type Aba = 'dashboard' | 'vagas' | 'banco' | 'candidaturas' | 'perfil';
+
 type Rota =
-  | { tela: 'dashboard' }
-  | { tela: 'vagas' }
-  | { tela: 'perfil' }
+  | { tela: Aba }
   | { tela: 'vaga'; vagaId: string; titulo: string }
   | { tela: 'curriculo'; id: string; voltar: Rota };
 
-const ABAS: { tela: Rota['tela']; nome: string }[] = [
+const ABAS: { tela: Aba; nome: string }[] = [
   { tela: 'dashboard', nome: 'Dashboard' },
   { tela: 'vagas', nome: 'Vagas' },
+  { tela: 'banco', nome: 'Banco de vagas' },
+  { tela: 'candidaturas', nome: 'Candidaturas' },
   { tela: 'perfil', nome: 'Perfil' },
 ];
 
@@ -42,9 +46,7 @@ export function App() {
     );
   }
 
-  const abaAtiva = rota.tela === 'dashboard' || rota.tela === 'vagas' || rota.tela === 'perfil'
-    ? rota.tela
-    : null;
+  const abaAtiva = ABAS.some((a) => a.tela === rota.tela) ? rota.tela : null;
 
   return (
     <div className="app-shell">
@@ -84,6 +86,8 @@ export function App() {
             onCurriculo={(id) => setRota({ tela: 'curriculo', id, voltar: { tela: 'vagas' } })}
           />
         )}
+        {rota.tela === 'banco' && <BancoVagas />}
+        {rota.tela === 'candidaturas' && <Kanban />}
         {rota.tela === 'perfil' && <PerfilForm />}
         {rota.tela === 'vaga' && (
           <VagaVersoes

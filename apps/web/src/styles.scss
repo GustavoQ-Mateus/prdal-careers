@@ -378,6 +378,50 @@ button {
   gap: 24px;
 }
 
+.import-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 2fr auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.kanban {
+  display: flex;
+  gap: 12px;
+  padding: var(--pad);
+  overflow-x: auto;
+}
+
+.kanban-col {
+  flex: 0 0 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kanban-col-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.kanban-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: var(--surf);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.kanban-card-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
 .auth-split {
   min-height: 100vh;
   display: grid;
@@ -516,6 +560,7 @@ button {
 @media (max-width: $bp-sm) {
   .two-col { grid-template-columns: 1fr; }
   .bar-row { grid-template-columns: 110px 1fr 40px; }
+  .import-row { grid-template-columns: 1fr; }
 }
 
 @media (max-width: $bp-md) {

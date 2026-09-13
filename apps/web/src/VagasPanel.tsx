@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { criarVaga, gerarCv, listarVagas, type Vaga } from './api';
+import { criarCandidatura, criarVaga, gerarCv, listarVagas, type Vaga } from './api';
 
 export function VagasPanel({ onCurriculo }: { onCurriculo: (id: string) => void }) {
   const [vagas, setVagas] = useState<Vaga[]>([]);
@@ -7,6 +7,8 @@ export function VagasPanel({ onCurriculo }: { onCurriculo: (id: string) => void 
   const [empresa, setEmpresa] = useState('');
   const [descricao, setDescricao] = useState('');
   const [gerandoId, setGerandoId] = useState<string | null>(null);
+  const [acompanhandoId, setAcompanhandoId] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   function carregar() {
@@ -41,6 +43,20 @@ export function VagasPanel({ onCurriculo }: { onCurriculo: (id: string) => void 
       setErro((err as Error).message);
     } finally {
       setGerandoId(null);
+    }
+  }
+
+  async function acompanhar(vaga: Vaga) {
+    setAcompanhandoId(vaga.id);
+    setErro(null);
+    setAviso(null);
+    try {
+      await criarCandidatura(vaga.id);
+      setAviso(`${vaga.titulo} adicionada às candidaturas`);
+    } catch (err) {
+      setErro((err as Error).message);
+    } finally {
+      setAcompanhandoId(null);
     }
   }
 
@@ -81,6 +97,7 @@ export function VagasPanel({ onCurriculo }: { onCurriculo: (id: string) => void 
           <h2>Vagas cadastradas</h2>
           <span className="label">{vagas.length} vagas</span>
         </div>
+        {aviso && <div className="panel-body notice" style={{ paddingBottom: 0 }}>{aviso}</div>}
         {vagas.length === 0 ? (
           <div className="panel-body notice">Nenhuma vaga ainda.</div>
         ) : (
@@ -89,7 +106,7 @@ export function VagasPanel({ onCurriculo }: { onCurriculo: (id: string) => void 
               <tr>
                 <th>Vaga</th>
                 <th>Keywords</th>
-                <th style={{ width: 110 }}></th>
+                <th style={{ width: 220 }}></th>
               </tr>
             </thead>
             <tbody>
@@ -98,6 +115,14 @@ export function VagasPanel({ onCurriculo }: { onCurriculo: (id: string) => void 
                   <td>
                     <div>{vaga.titulo}</div>
                     <div className="faint" style={{ fontSize: 12 }}>{vaga.empresa}</div>
+                    {vaga.categoria && (
+                      <div className="chip-set" style={{ marginTop: 6 }}>
+                        <span className="chip">{vaga.categoria}</span>
+                        {vaga.nivel && vaga.nivel !== 'indefinido' && (
+                          <span className="chip">{vaga.nivel}</span>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td>
                     <div className="chip-set">
@@ -107,9 +132,14 @@ export function VagasPanel({ onCurriculo }: { onCurriculo: (id: string) => void 
                     </div>
                   </td>
                   <td>
-                    <button className="primary" onClick={() => gerar(vaga.id)} disabled={gerandoId === vaga.id}>
-                      {gerandoId === vaga.id ? 'Gerando...' : 'Gerar CV'}
-                    </button>
+                    <div className="row">
+                      <button className="primary" onClick={() => gerar(vaga.id)} disabled={gerandoId === vaga.id}>
+                        {gerandoId === vaga.id ? 'Gerando...' : 'Gerar CV'}
+                      </button>
+                      <button onClick={() => acompanhar(vaga)} disabled={acompanhandoId === vaga.id}>
+                        {acompanhandoId === vaga.id ? '...' : 'Acompanhar'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
