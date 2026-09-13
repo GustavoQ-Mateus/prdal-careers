@@ -26,13 +26,18 @@ export function App() {
 
   if (!autenticado) {
     return (
-      <div className="app-shell">
-        <header className="topbar">
+      <div className="auth-split">
+        <div className="auth-form-pane">
           <span className="brand">prdal<span className="brand-dot">.</span>careers</span>
-        </header>
-        <div className="content" style={{ maxWidth: 360 }}>
           <AuthForm onAuth={() => setAutenticado(true)} />
+          <span className="auth-foot">© 2026 PRDAL Careers</span>
         </div>
+        <aside className="auth-hero">
+          <div className="auth-hero-mark">
+            <div className="auth-hero-accent" />
+            <h2 className="auth-hero-title">PRDAL Careers</h2>
+          </div>
+        </aside>
       </div>
     );
   }
