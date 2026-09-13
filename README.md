@@ -63,6 +63,6 @@ Construção em fases (detalhe na seção 12 da spec):
 - **Fase 0** Scaffold: monorepo, docker-compose, health checks, hello-world ponta a ponta.
 - **Fase 1** Núcleo: perfil-mestre, vagas com keywords, geração de CV com score e docx/pdf. `v1.0.0`
 - **Fase 2** Análise ATS: dashboard de score, breakdown visual, comparativo entre versões e edição do Markdown com recálculo. `v1.1.0`
-- **Fase 3** Banco de vagas e Kanban de candidaturas. `v1.2.0`
+- **Fase 3** Banco de vagas: importação em massa, classificação determinística por categoria e nível, processamento em lote e Kanban de candidaturas. `v1.2.0`
 - **Fase 4** Obsidian e RAG. `v1.3.0`
 - **Fase 5** Polimento: PWA, testes, CI, Terraform.
