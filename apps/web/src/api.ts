@@ -32,12 +32,30 @@ export interface ScoreBreakdown {
 export interface Curriculo {
   id: string;
   vagaId: string;
+  rotulo: string;
   markdown: string;
   score: number;
   breakdown: ScoreBreakdown;
   geradoEm: string;
   downloadDocxUrl: string | null;
   downloadPdfUrl: string | null;
+}
+
+export interface CurriculoResumo {
+  id: string;
+  rotulo: string;
+  score: number;
+  breakdown: ScoreBreakdown;
+  geradoEm: string;
+}
+
+export interface DashboardItem {
+  vagaId: string;
+  titulo: string;
+  empresa: string;
+  melhorScore: number | null;
+  versoes: number;
+  ultimaGeracao: string | null;
 }
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -122,6 +140,21 @@ export function gerarCv(vagaId: string) {
 
 export function getCurriculo(id: string) {
   return request<Curriculo>(`/curriculos/${id}`);
+}
+
+export function editarCurriculo(id: string, dto: { markdown: string; rotulo?: string }) {
+  return request<Curriculo>(`/curriculos/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(dto),
+  });
+}
+
+export function listarCurriculos(vagaId: string) {
+  return request<CurriculoResumo[]>(`/vagas/${vagaId}/curriculos`);
+}
+
+export function getDashboard() {
+  return request<DashboardItem[]>('/dashboard');
 }
 
 export async function baixarArquivo(url: string, nomeArquivo: string) {
