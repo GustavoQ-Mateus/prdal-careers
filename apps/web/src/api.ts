@@ -257,6 +257,37 @@ export function atualizarCandidatura(
   });
 }
 
+export interface ContextoStatus {
+  documentos: number;
+  ultimaIndexacao: string | null;
+}
+
+export function getContextoStatus() {
+  return request<ContextoStatus>('/contexto/status');
+}
+
+export function reindexarContexto() {
+  return request<{ loteId: string; total: number }>('/contexto/reindexar', {
+    method: 'POST',
+  });
+}
+
+export async function uploadContexto(arquivos: File[]) {
+  const form = new FormData();
+  for (const a of arquivos) form.append('arquivos', a);
+  const t = token();
+  const res = await fetch(`${API_URL}/contexto/upload`, {
+    method: 'POST',
+    headers: t ? { Authorization: `Bearer ${t}` } : {},
+    body: form,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? `erro ${res.status}`);
+  }
+  return res.json() as Promise<{ loteId: string; total: number }>;
+}
+
 export async function baixarArquivo(url: string, nomeArquivo: string) {
   const t = token();
   const res = await fetch(`${API_URL}${url}`, {
