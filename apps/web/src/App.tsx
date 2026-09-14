@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AuthForm } from './AuthForm';
 import { BancoVagas } from './BancoVagas';
+import { BaseConhecimento } from './BaseConhecimento';
 import { CurriculoView } from './CurriculoView';
 import { Dashboard } from './Dashboard';
 import { Kanban } from './Kanban';
@@ -9,7 +10,7 @@ import { VagaVersoes } from './VagaVersoes';
 import { VagasPanel } from './VagasPanel';
 import { estaAutenticado, logout } from './api';
 
-type Aba = 'dashboard' | 'vagas' | 'banco' | 'candidaturas' | 'perfil';
+type Aba = 'dashboard' | 'vagas' | 'banco' | 'candidaturas' | 'conhecimento' | 'perfil';
 
 type Rota =
   | { tela: Aba }
@@ -21,6 +22,7 @@ const ABAS: { tela: Aba; nome: string }[] = [
   { tela: 'vagas', nome: 'Vagas' },
   { tela: 'banco', nome: 'Banco de vagas' },
   { tela: 'candidaturas', nome: 'Candidaturas' },
+  { tela: 'conhecimento', nome: 'Base de conhecimento' },
   { tela: 'perfil', nome: 'Perfil' },
 ];
 
@@ -88,6 +90,7 @@ export function App() {
         )}
         {rota.tela === 'banco' && <BancoVagas />}
         {rota.tela === 'candidaturas' && <Kanban />}
+        {rota.tela === 'conhecimento' && <BaseConhecimento />}
         {rota.tela === 'perfil' && <PerfilForm />}
         {rota.tela === 'vaga' && (
           <VagaVersoes

@@ -378,6 +378,24 @@ button {
   gap: 24px;
 }
 
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surf);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  padding: 7px 12px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surf-2);
+  }
+}
+
 .import-row {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 2fr auto;
