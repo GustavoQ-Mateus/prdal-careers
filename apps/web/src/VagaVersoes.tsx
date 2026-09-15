@@ -29,6 +29,9 @@ function Comparativo({ versoes }: { versoes: CurriculoResumo[] }) {
     base.breakdown?.faltando ?? [],
   );
 
+  const delta =
+    alvo.score !== null && base.score !== null ? alvo.score - base.score : null;
+
   return (
     <section className="border-t border-line pt-6">
       <h3 className="text-label uppercase text-muted">Comparar versoes</h3>
@@ -65,7 +68,7 @@ function Comparativo({ versoes }: { versoes: CurriculoResumo[] }) {
           <div className="flex flex-col gap-2">
             <span className="flex items-center gap-2 text-[13px] text-muted">
               {alvo.rotulo}
-              <ScoreDelta valor={alvo.score - base.score} />
+              <ScoreDelta valor={delta} />
             </span>
             <div className="flex items-center gap-3">
               <ScoreNum valor={alvo.score} className="text-[22px]" />
