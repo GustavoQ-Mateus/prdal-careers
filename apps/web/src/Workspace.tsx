@@ -4,38 +4,58 @@ import {
   cancelarAcao,
   candidaturaPrincipal,
   concluirAcao,
-  criarAcao,
-  gerarCvOportunidade,
-  getGeracao,
-  getWorkspace,
-  patchOportunidade,
   postNotaTimeline,
+  getWorkspace,
   transicionarOportunidade,
   type DestinoTransicao,
-  type PrioridadeOportunidade,
-  type StatusGeracaoCurriculo,
-  type TipoAcaoOportunidade,
   type WorkspaceOportunidade,
 } from './api';
-import {
-  ROTULO_ACAO,
-  ROTULO_ETAPA,
-  ROTULO_GERACAO,
-  ROTULO_PRIORIDADE,
-  ROTULO_STATUS,
-} from './rotulos';
+import { ROTULO_ACAO, ROTULO_ETAPA, ROTULO_PRIORIDADE, ROTULO_STATUS } from './rotulos';
 import { fmtData } from './ui';
+import { ScoreNum } from './components/Score';
+import { EditarDialog } from './OportunidadeDialogs';
+import { AcaoDialog } from './WorkspaceDialogs';
+import { GeracaoWizard } from './GeracaoWizard';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
+import { cn } from '@/lib/utils';
 
-const TIPOS: TipoAcaoOportunidade[] = [
-  'REVISAR_VAGA',
-  'GERAR_CURRICULO',
-  'ENVIAR_CANDIDATURA',
-  'FAZER_FOLLOW_UP',
-  'PREPARAR_ENTREVISTA',
-  'PARTICIPAR_ENTREVISTA',
-  'ENVIAR_MATERIAL',
-  'OUTRO',
+const TRANSICOES: { valor: DestinoTransicao; nome: string }[] = [
+  { valor: 'PREPARACAO', nome: 'Preparacao' },
+  { valor: 'INSCRITA', nome: 'Inscrita' },
+  { valor: 'EM_PROCESSO', nome: 'Em processo' },
+  { valor: 'ENTREVISTA', nome: 'Entrevista' },
+  { valor: 'OFERTA', nome: 'Oferta' },
+  { valor: 'REJEITADA', nome: 'Rejeitada' },
+  { valor: 'DESISTIU', nome: 'Desistiu' },
+  { valor: 'ARQUIVADA', nome: 'Arquivar' },
+  { valor: 'REABRIR', nome: 'Reabrir' },
 ];
+
+function Regiao({
+  id,
+  titulo,
+  acao,
+  children,
+}: {
+  id: string;
+  titulo: string;
+  acao?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section id={id} className="scroll-mt-24 rounded-card border border-line bg-ground p-5 nav:p-6">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h3 className="text-section text-ink">{titulo}</h3>
+        {acao}
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export function Workspace({
   id,
@@ -46,13 +66,12 @@ export function Workspace({
 }) {
   const [ws, setWs] = useState<WorkspaceOportunidade | null>(null);
   const [erro, setErro] = useState<string | null>(null);
-  const [jobId, setJobId] = useState<string | null>(null);
-  const [statusGeracao, setStatusGeracao] = useState<StatusGeracaoCurriculo | null>(null);
-  const [tituloAcao, setTituloAcao] = useState('');
-  const [tipoAcao, setTipoAcao] = useState<TipoAcaoOportunidade>('OUTRO');
-  const [venceEm, setVenceEm] = useState('');
+  const [status, setStatus] = useState('');
   const [nota, setNota] = useState('');
   const [motivo, setMotivo] = useState('');
+  const [editarAberto, setEditarAberto] = useState(false);
+  const [acaoAberta, setAcaoAberta] = useState(false);
+  const [wizardAberto, setWizardAberto] = useState(false);
 
   function carregar() {
     getWorkspace(id)
@@ -62,63 +81,20 @@ export function Workspace({
 
   useEffect(carregar, [id]);
 
-  useEffect(() => {
-    if (!jobId) return;
-    const timer = setInterval(async () => {
-      try {
-        const g = await getGeracao(jobId);
-        setStatusGeracao(g.status);
-        if (g.status === 'CONCLUIDA' && g.curriculoId) {
-          clearInterval(timer);
-          setJobId(null);
-          carregar();
-          onCurriculo(g.curriculoId);
-        }
-        if (g.status === 'ERRO') {
-          clearInterval(timer);
-          setErro(g.erro ?? 'Falha na geracao');
-        }
-      } catch (err) {
-        setErro((err as Error).message);
-      }
-    }, 1200);
-    return () => clearInterval(timer);
-  }, [jobId]);
-
-  if (erro && !ws) return <div className="error">{erro}</div>;
-  if (!ws) return <div className="notice">Carregando workspace...</div>;
+  if (erro && !ws) {
+    return (
+      <div className="rounded-card border border-score-bad/40 bg-ground px-4 py-3 text-[14px] text-score-bad" role="alert">
+        {erro}
+      </div>
+    );
+  }
+  if (!ws) return <p className="py-10 text-[14px] text-muted">Carregando workspace...</p>;
 
   const o = ws.oportunidade;
   const etapa = o.etapa ?? 'PREPARACAO';
+  const prioridade = o.prioridade ?? 'MEDIA';
   const temCurriculo = ws.curriculos.length > 0;
   const cand = ws.candidatura;
-
-  async function gerar() {
-    setErro(null);
-    try {
-      const { jobId: novo } = await gerarCvOportunidade(id);
-      setJobId(novo);
-      setStatusGeracao('PENDENTE');
-    } catch (err) {
-      setErro((err as Error).message);
-    }
-  }
-
-  async function prioridade(valor: PrioridadeOportunidade) {
-    await patchOportunidade(id, { prioridade: valor });
-    carregar();
-  }
-
-  async function transicionar(destino: DestinoTransicao) {
-    setErro(null);
-    try {
-      await transicionarOportunidade(id, destino, motivo || undefined);
-      setMotivo('');
-      carregar();
-    } catch (err) {
-      setErro((err as Error).message);
-    }
-  }
 
   async function prepararCandidatura() {
     setErro(null);
@@ -130,42 +106,34 @@ export function Workspace({
     }
   }
 
+  async function transicionar(destino: DestinoTransicao) {
+    setErro(null);
+    try {
+      await transicionarOportunidade(id, destino, motivo || undefined);
+      setMotivo('');
+      setStatus(`Etapa movida para ${destino}`);
+      carregar();
+    } catch (err) {
+      setErro((err as Error).message);
+    }
+  }
+
   async function registrarEnvio() {
-    if (!cand) return;
     setErro(null);
     try {
       await transicionarOportunidade(id, 'INSCRITA');
+      setStatus('Envio registrado');
       carregar();
     } catch (err) {
       setErro((err as Error).message);
     }
   }
 
-  async function vincular(curriculoId: string | '') {
+  async function vincular(curriculoId: string) {
     if (!cand) return;
     setErro(null);
     try {
-      await atualizarCandidatura(cand.id, {
-        curriculoId: curriculoId || undefined,
-      });
-      carregar();
-    } catch (err) {
-      setErro((err as Error).message);
-    }
-  }
-
-  async function criarProximo(e: React.FormEvent) {
-    e.preventDefault();
-    setErro(null);
-    try {
-      await criarAcao(id, {
-        titulo: tituloAcao,
-        tipo: tipoAcao,
-        principal: true,
-        venceEm: venceEm ? new Date(venceEm).toISOString() : undefined,
-      });
-      setTituloAcao('');
-      setVenceEm('');
+      await atualizarCandidatura(cand.id, { curriculoId: curriculoId || undefined });
       carregar();
     } catch (err) {
       setErro((err as Error).message);
@@ -174,6 +142,7 @@ export function Workspace({
 
   async function adicionarNota(e: React.FormEvent) {
     e.preventDefault();
+    if (!nota.trim()) return;
     setErro(null);
     try {
       await postNotaTimeline(id, nota);
@@ -185,232 +154,311 @@ export function Workspace({
   }
 
   const acaoDominante = !temCurriculo
-    ? { rotulo: 'Gerar curriculo', run: gerar }
+    ? { rotulo: 'Gerar curriculo', run: () => setWizardAberto(true) }
     : !cand
-      ? { rotulo: 'Preparar candidatura', run: prepararCandidatura }
+      ? { rotulo: 'Preparar candidatura', run: () => void prepararCandidatura() }
       : cand.status === 'RASCUNHO'
-        ? { rotulo: 'Registrar envio', run: registrarEnvio }
+        ? { rotulo: 'Registrar envio', run: () => void registrarEnvio() }
         : !ws.acaoPrincipal
-          ? { rotulo: 'Definir proximo passo', run: () => document.getElementById('proxima-acao')?.scrollIntoView() }
-          : { rotulo: 'Registrar atualizacao', run: () => document.getElementById('timeline')?.scrollIntoView() };
+          ? { rotulo: 'Definir proximo passo', run: () => setAcaoAberta(true) }
+          : {
+              rotulo: 'Registrar atualizacao',
+              run: () => document.getElementById('timeline')?.scrollIntoView({ behavior: 'smooth' }),
+            };
 
   return (
-    <div className="workspace-split">
-      <div className="stack">
-        {erro && <div className="error" role="alert">{erro}</div>}
-        <section className="page-strip">
-          <div>
-            <h2>{o.titulo}</h2>
-            <p className="faint">
+    <div className="flex flex-col gap-8">
+      <header className="sticky top-0 z-20 -mx-6 border-b border-line bg-canvas px-6 py-4 nav:-mx-8 nav:px-8">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="truncate text-page text-ink">{o.titulo}</h2>
+            <p className="mt-1 text-[14px] text-muted">
               {o.empresa}
               {o.categoria ? ` · ${o.categoria}` : ''}
               {o.nivel ? ` · ${o.nivel}` : ''}
               {' · '}
               {ROTULO_ETAPA[etapa]}
+              {' · Prioridade '}
+              {ROTULO_PRIORIDADE[prioridade]}
             </p>
           </div>
-          <div className="row wrap">
-            <label className="field field-inline">
-              <span className="label">Prioridade</span>
-              <select
-                value={o.prioridade ?? 'MEDIA'}
-                onChange={(e) => void prioridade(e.target.value as PrioridadeOportunidade)}
-              >
-                {Object.entries(ROTULO_PRIORIDADE).map(([k, v]) => (
-                  <option key={k} value={k}>{v}</option>
-                ))}
-              </select>
-            </label>
-            <button className="accent" onClick={() => void acaoDominante.run()}>
-              {acaoDominante.rotulo}
-            </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button variant="secondary" onClick={() => setEditarAberto(true)}>
+              Editar
+            </Button>
+            <Button onClick={() => acaoDominante.run()}>{acaoDominante.rotulo}</Button>
           </div>
-        </section>
+        </div>
+      </header>
 
-        <nav className="anchor-nav" aria-label="Regioes do workspace">
-          <a href="#descricao">Descricao</a>
-          <a href="#ats">Curriculo ATS</a>
-          <a href="#candidatura">Candidatura</a>
-          <a href="#proxima-acao">Proximos passos</a>
-          <a href="#timeline">Timeline</a>
-        </nav>
-
-        <section id="descricao" className="region">
-          <h3>Descricao e keywords</h3>
-          <p className="prose">{o.descricao}</p>
-          <div className="chip-set">
-            {o.keywords.map((k) => (
-              <span key={k.termo} className="chip">{k.termo}</span>
-            ))}
-          </div>
-        </section>
-
-        <section id="ats" className="region">
-          <h3>Geracao ATS</h3>
-          <ol className="steps">
-            <li className={statusGeracao === 'ANALISANDO' ? 'is-current' : ''}>
-              Analisar vaga e recuperar contexto
-            </li>
-            <li className={statusGeracao === 'GERANDO' ? 'is-current' : ''}>
-              Gerar curriculo
-            </li>
-            <li className={statusGeracao === 'VALIDANDO' || statusGeracao === 'CONCLUIDA' ? 'is-current' : ''}>
-              Validar, revisar e exportar
-            </li>
-          </ol>
-          {statusGeracao && statusGeracao !== 'CONCLUIDA' && (
-            <div className="notice" role="status">{ROTULO_GERACAO[statusGeracao]}</div>
-          )}
-          <div className="row">
-            <button className="accent" onClick={() => void gerar()} disabled={!!jobId}>
-              {jobId ? 'Gerando...' : 'Iniciar geracao'}
-            </button>
-          </div>
-          <ul className="plain-list">
-            {ws.curriculos.map((c) => (
-              <li key={c.id}>
-                <button className="linkish" onClick={() => onCurriculo(c.id)}>
-                  {c.rotulo}
-                </button>
-                <span className="faint"> · score {c.score ?? '--'} · {fmtData(c.geradoEm)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section id="candidatura" className="region">
-          <h3>Candidatura</h3>
-          {!cand ? (
-            <button onClick={() => void prepararCandidatura()}>Criar candidatura principal</button>
-          ) : (
-            <div className="stack">
-              <p>
-                Status: {ROTULO_STATUS[cand.status]}
-                {cand.vinculo.situacao === 'VINCULADO' && cand.vinculo.rotulo
-                  ? ` · vinculo ${cand.vinculo.rotulo} (${cand.vinculo.score ?? '--'})`
-                  : ' · curriculo nao registrado'}
-              </p>
-              <label className="field">
-                <span className="label">Curriculo vinculado</span>
-                <select
-                  value={cand.curriculoId ?? ''}
-                  onChange={(e) => void vincular(e.target.value)}
-                >
-                  <option value="">Nao registrado</option>
-                  {ws.curriculos.map((c) => (
-                    <option key={c.id} value={c.id}>{c.rotulo}</option>
-                  ))}
-                </select>
-              </label>
-              <div className="row wrap">
-                <select
-                  aria-label="Transicao de etapa"
-                  defaultValue=""
-                  onChange={(e) => {
-                    if (e.target.value) void transicionar(e.target.value as DestinoTransicao);
-                    e.target.value = '';
-                  }}
-                >
-                  <option value="">Mover etapa...</option>
-                  <option value="PREPARACAO">Preparacao</option>
-                  <option value="INSCRITA">Inscrita</option>
-                  <option value="EM_PROCESSO">Em processo</option>
-                  <option value="ENTREVISTA">Entrevista</option>
-                  <option value="OFERTA">Oferta</option>
-                  <option value="REJEITADA">Rejeitada</option>
-                  <option value="DESISTIU">Desistiu</option>
-                  <option value="ARQUIVADA">Arquivar</option>
-                  <option value="REABRIR">Reabrir</option>
-                </select>
-                <input
-                  placeholder="Motivo opcional"
-                  value={motivo}
-                  onChange={(e) => setMotivo(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-        </section>
-
-        <section id="proxima-acao" className="region">
-          <h3>Proximos passos</h3>
-          <form onSubmit={criarProximo} className="form-grid">
-            <label className="field">
-              <span className="label">Titulo</span>
-              <input value={tituloAcao} onChange={(e) => setTituloAcao(e.target.value)} required />
-            </label>
-            <div className="two-col">
-              <label className="field">
-                <span className="label">Tipo</span>
-                <select value={tipoAcao} onChange={(e) => setTipoAcao(e.target.value as TipoAcaoOportunidade)}>
-                  {TIPOS.map((t) => (
-                    <option key={t} value={t}>{ROTULO_ACAO[t]}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="field">
-                <span className="label">Prazo</span>
-                <input type="datetime-local" value={venceEm} onChange={(e) => setVenceEm(e.target.value)} />
-              </label>
-            </div>
-            <button className="accent" type="submit">Definir proximo passo</button>
-          </form>
-          <ul className="plain-list">
-            {ws.acoes.map((a) => (
-              <li key={a.id} className="spread">
-                <span>
-                  {a.principal ? 'Principal · ' : ''}
-                  {a.titulo}
-                  <span className="faint"> · {fmtData(a.venceEm)}</span>
-                </span>
-                {!a.concluidaEm && !a.canceladaEm && (
-                  <span className="row">
-                    <button onClick={() => concluirAcao(a.id).then(carregar)}>Concluir</button>
-                    <button onClick={() => cancelarAcao(a.id).then(carregar)}>Cancelar</button>
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section id="timeline" className="region">
-          <h3>Timeline</h3>
-          <form onSubmit={adicionarNota} className="row">
-            <input
-              value={nota}
-              onChange={(e) => setNota(e.target.value)}
-              placeholder="Nota imutavel"
-              required
-            />
-            <button type="submit">Registrar</button>
-          </form>
-          <ul className="timeline">
-            {ws.timeline.map((e) => (
-              <li key={e.id}>
-                <strong>{e.descricao}</strong>
-                <span className="faint"> · {fmtData(e.ocorridoEm)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
+      {erro && (
+        <div
+          className="rounded-control border border-score-bad/40 bg-ground px-3 py-2 text-[13px] text-score-bad"
+          role="alert"
+        >
+          {erro}
+        </div>
+      )}
+      <div className="sr-only" role="status" aria-live="polite">
+        {status}
       </div>
 
-      <aside className="inspector">
-        <h3>Inspetor</h3>
-        <p>
-          <span className="label">Etapa</span>
-          <div>{ROTULO_ETAPA[etapa]}</div>
-        </p>
-        <p>
-          <span className="label">Proximo passo</span>
-          <div>{ws.acaoPrincipal?.titulo ?? 'Nenhum'}</div>
-        </p>
-        <p>
-          <span className="label">Ultima atividade</span>
-          <div>{fmtData(ws.timeline[0]?.ocorridoEm ?? o.ultimaAtividade)}</div>
-        </p>
-      </aside>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="flex flex-col gap-8">
+          <Regiao id="descricao" titulo="Resumo e descricao">
+            <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-2">{o.descricao}</p>
+            {o.keywords.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {o.keywords.map((k) => (
+                  <Badge key={k.termo} variant="neutral">
+                    {k.termo}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </Regiao>
+
+          <Regiao
+            id="ats"
+            titulo="Geracao de curriculo"
+            acao={<Button size="sm" onClick={() => setWizardAberto(true)}>Gerar curriculo ATS</Button>}
+          >
+            {temCurriculo ? (
+              <ul className="flex flex-col divide-y divide-line">
+                {ws.curriculos.map((c) => (
+                  <li key={c.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0">
+                    <button
+                      onClick={() => onCurriculo(c.id)}
+                      className="text-left text-[14px] font-medium text-ink transition-colors hover:text-accent focus-visible:text-accent focus-visible:outline-none"
+                    >
+                      {c.rotulo}
+                    </button>
+                    <span className="flex items-center gap-3 text-[13px] text-faint">
+                      {typeof c.score === 'number' ? <ScoreNum valor={c.score} /> : '--'}
+                      <span className="font-mono tabular-nums">{fmtData(c.geradoEm)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-[14px] text-muted">
+                Nenhuma versao gerada. Inicie a geracao ATS para produzir o primeiro curriculo tailored.
+              </p>
+            )}
+          </Regiao>
+
+          <Regiao id="candidatura" titulo="Candidatura e curriculo vinculado">
+            {!cand ? (
+              <div className="flex flex-col gap-3">
+                <p className="text-[14px] text-muted">
+                  Nenhuma candidatura principal. Crie para registrar envio, vinculo e etapa.
+                </p>
+                <div>
+                  <Button variant="secondary" onClick={() => void prepararCandidatura()}>
+                    Preparar candidatura
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                <p className="text-[14px] text-ink-2">
+                  Status {ROTULO_STATUS[cand.status]}
+                  {cand.vinculo.situacao === 'VINCULADO' && cand.vinculo.rotulo
+                    ? ` · vinculo ${cand.vinculo.rotulo} (${cand.vinculo.score ?? '--'})`
+                    : ' · curriculo nao registrado'}
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="ws-curriculo">Curriculo vinculado</Label>
+                    <NativeSelect
+                      id="ws-curriculo"
+                      value={cand.curriculoId ?? ''}
+                      onChange={(e) => void vincular(e.target.value)}
+                    >
+                      <option value="">Nao registrado</option>
+                      {ws.curriculos.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.rotulo}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="ws-etapa">Mover etapa</Label>
+                    <NativeSelect
+                      id="ws-etapa"
+                      value=""
+                      onChange={(e) => {
+                        if (e.target.value) void transicionar(e.target.value as DestinoTransicao);
+                      }}
+                    >
+                      <option value="">Selecionar destino...</option>
+                      {TRANSICOES.map((t) => (
+                        <option key={t.valor} value={t.valor}>
+                          {t.nome}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="ws-motivo">Motivo da transicao</Label>
+                  <Input
+                    id="ws-motivo"
+                    value={motivo}
+                    onChange={(e) => setMotivo(e.target.value)}
+                    placeholder="Opcional"
+                  />
+                </div>
+              </div>
+            )}
+          </Regiao>
+
+          <Regiao
+            id="proxima"
+            titulo="Proximos passos"
+            acao={<Button size="sm" variant="secondary" onClick={() => setAcaoAberta(true)}>Novo passo</Button>}
+          >
+            {ws.acoes.length === 0 ? (
+              <p className="text-[14px] text-muted">Nenhum passo definido. Registre a proxima acao.</p>
+            ) : (
+              <ul className="flex flex-col divide-y divide-line">
+                {ws.acoes.map((a) => (
+                  <li key={a.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        {a.principal && <Badge variant="accent">Principal</Badge>}
+                        <span className="truncate text-[14px] text-ink">{a.titulo}</span>
+                      </div>
+                      <span className="text-[13px] text-faint">
+                        {a.tipo ? `${ROTULO_ACAO[a.tipo as keyof typeof ROTULO_ACAO] ?? a.tipo} · ` : ''}
+                        {fmtData(a.venceEm)}
+                      </span>
+                    </div>
+                    {!a.concluidaEm && !a.canceladaEm && (
+                      <div className="flex shrink-0 gap-2">
+                        <Button size="sm" variant="ghost" onClick={() => concluirAcao(a.id).then(carregar)}>
+                          Concluir
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => cancelarAcao(a.id).then(carregar)}>
+                          Cancelar
+                        </Button>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Regiao>
+
+          <Regiao id="timeline" titulo="Timeline de eventos">
+            <form onSubmit={adicionarNota} className="mb-4 flex gap-2">
+              <Input
+                value={nota}
+                onChange={(e) => setNota(e.target.value)}
+                placeholder="Nota imutavel"
+                aria-label="Nova nota"
+              />
+              <Button type="submit" variant="secondary">
+                Registrar
+              </Button>
+            </form>
+            {ws.timeline.length === 0 ? (
+              <p className="text-[14px] text-muted">Sem eventos registrados.</p>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {ws.timeline.map((e) => (
+                  <li key={e.id} className="flex gap-3">
+                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-line-strong" aria-hidden />
+                    <div className="min-w-0">
+                      <p className="text-[14px] text-ink-2">{e.descricao}</p>
+                      <span className="font-mono text-[12px] tabular-nums text-faint">
+                        {fmtData(e.ocorridoEm)}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Regiao>
+        </div>
+
+        <aside className="lg:sticky lg:top-24 lg:self-start">
+          <div className="flex flex-col gap-5 rounded-card border border-line bg-ground p-5">
+            <div>
+              <span className="text-label uppercase text-muted">Proxima acao</span>
+              <p className="mt-1 text-[14px] text-ink">{ws.acaoPrincipal?.titulo ?? 'Nenhuma definida'}</p>
+              {ws.acaoPrincipal?.venceEm && (
+                <span className="font-mono text-[12px] tabular-nums text-faint">
+                  {fmtData(ws.acaoPrincipal.venceEm)}
+                </span>
+              )}
+            </div>
+            <div className="border-t border-line pt-4">
+              <span className="text-label uppercase text-muted">Etapa</span>
+              <p className="mt-1 text-[14px] text-ink">{ROTULO_ETAPA[etapa]}</p>
+            </div>
+            <div className="border-t border-line pt-4">
+              <span className="text-label uppercase text-muted">Atividade recente</span>
+              {ws.timeline.length === 0 ? (
+                <p className="mt-1 text-[14px] text-muted">Sem atividade</p>
+              ) : (
+                <ul className="mt-2 flex flex-col gap-2.5">
+                  {ws.timeline.slice(0, 4).map((e) => (
+                    <li key={e.id} className="text-[13px]">
+                      <p className={cn('text-ink-2')}>{e.descricao}</p>
+                      <span className="font-mono text-[11px] tabular-nums text-faint">
+                        {fmtData(e.ocorridoEm)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <EditarDialog
+        open={editarAberto}
+        onOpenChange={setEditarAberto}
+        id={id}
+        titulo={o.titulo}
+        prioridadeAtual={o.prioridade ?? null}
+        entrada={false}
+        onAbrir={() => {}}
+        onSalvo={() => {
+          setStatus('Oportunidade atualizada');
+          carregar();
+        }}
+      />
+
+      <AcaoDialog
+        open={acaoAberta}
+        onOpenChange={setAcaoAberta}
+        oportunidadeId={id}
+        onCriada={() => {
+          setStatus('Proximo passo definido');
+          carregar();
+        }}
+      />
+
+      <GeracaoWizard
+        open={wizardAberto}
+        onOpenChange={setWizardAberto}
+        oportunidadeId={id}
+        titulo={o.titulo}
+        empresa={o.empresa}
+        keywords={o.keywords}
+        onConcluida={() => {
+          setStatus('Curriculo gerado');
+          carregar();
+        }}
+        onAbrirCurriculo={(curriculoId) => {
+          setWizardAberto(false);
+          onCurriculo(curriculoId);
+        }}
+      />
     </div>
   );
 }

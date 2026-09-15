@@ -65,7 +65,8 @@ export function App() {
 
   const abaAtiva = abaDaRota(rota);
   const profunda = rota.tela === 'workspace' || rota.tela === 'curriculo';
-  const migrada = rota.tela === 'oportunidades';
+  const workspaceScreen = rota.tela === 'workspace';
+  const migrada = rota.tela === 'oportunidades' || workspaceScreen;
   const contexto = !profunda
     ? CONTEXTO[abaAtiva ?? 'hoje']
     : rota.tela === 'workspace'
@@ -117,18 +118,27 @@ export function App() {
           <Marca variante="marca" fundo="escuro" className="hidden h-6 w-auto dark:block" />
         </header>
 
-        <header className="flex items-end justify-between gap-4 px-6 pb-5 pt-7 nav:px-8">
+        <header
+          className={cn(
+            'flex items-end justify-between gap-4 px-6 nav:px-8',
+            workspaceScreen ? 'py-4' : 'pb-5 pt-7',
+          )}
+        >
           <div className="min-w-0">
             {profunda && (
               <button
                 onClick={voltar}
-                className="mb-1 text-label uppercase text-accent transition-colors hover:text-accent-ink"
+                className="text-label uppercase text-accent transition-colors hover:text-accent-ink"
               >
                 {rota.tela === 'workspace' ? 'Oportunidades' : 'Workspace'}
               </button>
             )}
-            <h1 className="text-page text-ink">{contexto.titulo}</h1>
-            <p className="mt-1 text-[13px] text-muted">{contexto.descricao}</p>
+            {!workspaceScreen && (
+              <>
+                <h1 className="text-page text-ink">{contexto.titulo}</h1>
+                <p className="mt-1 text-[13px] text-muted">{contexto.descricao}</p>
+              </>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <ThemeToggle />
@@ -149,12 +159,6 @@ export function App() {
                   onAbrir={(id) => ir({ tela: 'workspace', id })}
                 />
               )}
-            </div>
-          ) : (
-            <div className="workspace">
-              {rota.tela === 'hoje' && (
-                <Hoje onAbrir={(id) => ir({ tela: 'workspace', id })} />
-              )}
               {rota.tela === 'workspace' && (
                 <Workspace
                   id={rota.id}
@@ -162,6 +166,12 @@ export function App() {
                     ir({ tela: 'curriculo', oportunidadeId: rota.id, curriculoId })
                   }
                 />
+              )}
+            </div>
+          ) : (
+            <div className="workspace">
+              {rota.tela === 'hoje' && (
+                <Hoje onAbrir={(id) => ir({ tela: 'workspace', id })} />
               )}
               {rota.tela === 'curriculos' && (
                 <Curriculos
