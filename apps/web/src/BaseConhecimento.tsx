@@ -64,32 +64,53 @@ export function BaseConhecimento() {
   const processando = lote && lote.status !== 'CONCLUIDO';
 
   return (
-    <div className="stack">
+    <div>
+      <section className="operational-strip" aria-label="Estado da base de conhecimento">
+        <div className="operational-metric">
+          <span>Documentos indexados</span>
+          <strong>{status?.documentos ?? '--'}</strong>
+        </div>
+        <div className="operational-metric">
+          <span>Última indexação</span>
+          <strong style={{ fontSize: 16 }}>{status ? fmtData(status.ultimaIndexacao) : '--'}</strong>
+        </div>
+        <div className="operational-metric">
+          <span>Estado do Chroma</span>
+          <strong style={{ fontSize: 16 }}>
+            {processando ? 'Indexando' : status?.disponivel === false ? 'Indisponivel' : 'Disponivel'}
+          </strong>
+        </div>
+      </section>
+
       <section className="panel">
         <div className="panel-head">
-          <h2>Base de conhecimento</h2>
-          <span className="label">contexto que aterra a geração</span>
+          <h2>Distribuicao por origem</h2>
         </div>
-        <div className="panel-body stack">
-          <p className="notice" style={{ margin: 0 }}>
-            A base indexa seu histórico (perfil-mestre e notas de candidatura) e alimenta a geração
-            de currículo com os trechos mais relevantes para cada vaga. Você também pode enviar notas
-            .md do seu Obsidian.
+        <div className="panel-body">
+          <table className="grid-table">
+            <tbody>
+              <tr><th>Perfil</th><td className="num">{status?.porOrigem?.perfil ?? '--'}</td></tr>
+              <tr><th>Candidatura</th><td className="num">{status?.porOrigem?.candidatura ?? '--'}</td></tr>
+              <tr><th>Nota</th><td className="num">{status?.porOrigem?.nota ?? '--'}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-head">
+          <h2>Atualizar contexto</h2>
+          <span className="label">Perfil, candidaturas e notas Markdown</span>
+        </div>
+        <div className="panel-body">
+          <p className="section-intro">
+            A base usa seu histórico real para selecionar os trechos mais relevantes durante a geração
+            de cada currículo. A geração continua disponível mesmo sem um índice.
           </p>
-          <div className="two-col">
-            <div className="field">
-              <span className="label">Documentos indexados</span>
-              <span className="num" style={{ fontSize: 28 }}>{status?.documentos ?? '--'}</span>
-            </div>
-            <div className="field">
-              <span className="label">Última indexação</span>
-              <span className="num">{status ? fmtData(status.ultimaIndexacao) : '--'}</span>
-            </div>
-          </div>
-          {erro && <span className="error">{erro}</span>}
+          {erro && <p className="error" role="alert">{erro}</p>}
           <div className="row">
-            <button className="primary" onClick={reindexar} disabled={!!processando}>
-              {processando ? 'Indexando...' : 'Reindexar do meu histórico'}
+            <button className="accent" onClick={reindexar} disabled={!!processando}>
+              {processando ? 'Indexando...' : 'Reindexar histórico'}
             </button>
             <label className="upload-btn">
               Enviar notas .md
@@ -103,7 +124,7 @@ export function BaseConhecimento() {
               />
             </label>
             {lote && (
-              <span className="notice num">
+              <span className="notice num" role="status">
                 lote {lote.processados}/{lote.total} {lote.status.toLowerCase()}
               </span>
             )}

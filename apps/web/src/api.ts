@@ -127,6 +127,7 @@ function token(): string | null {
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
     ...(options.headers as Record<string, string>),
   };
   const t = token();
@@ -249,7 +250,7 @@ export function listarCandidaturas() {
 
 export function atualizarCandidatura(
   id: string,
-  dto: { status?: StatusCandidatura; notas?: string },
+  dto: { status?: StatusCandidatura; notas?: string; curriculoId?: string | null },
 ) {
   return request<Candidatura>(`/candidaturas/${id}`, {
     method: 'PATCH',
@@ -260,6 +261,8 @@ export function atualizarCandidatura(
 export interface ContextoStatus {
   documentos: number;
   ultimaIndexacao: string | null;
+  porOrigem?: { perfil: number; candidatura: number; nota: number };
+  disponivel?: boolean;
 }
 
 export function getContextoStatus() {
@@ -301,4 +304,417 @@ export async function baixarArquivo(url: string, nomeArquivo: string) {
   link.download = nomeArquivo;
   link.click();
   URL.revokeObjectURL(objectUrl);
+}
+
+export type PrioridadeOportunidade = 'BAIXA' | 'MEDIA' | 'ALTA';
+export type ApresentacaoOportunidade = 'ENTRADA' | 'ATIVA' | 'ENCERRADA';
+export type EtapaPipeline =
+  | 'PREPARACAO'
+  | 'INSCRITA'
+  | 'EM_PROCESSO'
+  | 'ENTREVISTA'
+  | 'OFERTA'
+  | 'ENCERRADAS';
+export type DestinoTransicao =
+  | 'PREPARACAO'
+  | 'INSCRITA'
+  | 'EM_PROCESSO'
+  | 'ENTREVISTA'
+  | 'OFERTA'
+  | 'REJEITADA'
+  | 'DESISTIU'
+  | 'ARQUIVADA'
+  | 'REABRIR';
+export type TipoAcaoOportunidade =
+  | 'REVISAR_VAGA'
+  | 'GERAR_CURRICULO'
+  | 'ENVIAR_CANDIDATURA'
+  | 'FAZER_FOLLOW_UP'
+  | 'PREPARAR_ENTREVISTA'
+  | 'PARTICIPAR_ENTREVISTA'
+  | 'ENVIAR_MATERIAL'
+  | 'OUTRO';
+export type StatusGeracaoCurriculo =
+  | 'PENDENTE'
+  | 'ANALISANDO'
+  | 'GERANDO'
+  | 'VALIDANDO'
+  | 'CONCLUIDA'
+  | 'ERRO';
+export type PipelineModo = 'kanban' | 'canvas' | 'grafo';
+
+export interface ProximoPasso {
+  id: string;
+  titulo: string;
+  tipo?: TipoAcaoOportunidade | string;
+  principal?: boolean;
+  venceEm: string | null;
+  lembrarEm?: string | null;
+}
+
+export interface OportunidadeItem {
+  tipo: 'ENTRADA' | 'OPORTUNIDADE';
+  id: string;
+  titulo: string;
+  empresa: string;
+  categoria: string | null;
+  nivel: string | null;
+  prioridade: PrioridadeOportunidade | null;
+  etapa: EtapaPipeline | null;
+  apresentacao: ApresentacaoOportunidade;
+  curriculoVinculado: { id: string; rotulo: string; score: number | null } | null;
+  score: number | null;
+  proximoPasso: ProximoPasso | null;
+  ultimaAtividade: string;
+  origem: string;
+  keywords: Keyword[];
+  descricao?: string;
+  fonte?: string | null;
+  statusCandidatura?: StatusCandidatura | null;
+  arquivadaEm?: string | null;
+}
+
+export interface EventoOportunidade {
+  id: string;
+  vagaId: string;
+  tipo: string;
+  origem: string;
+  descricao: string;
+  dados: Record<string, unknown>;
+  ocorridoEm: string;
+}
+
+export interface AcaoOportunidade extends ProximoPasso {
+  vagaId?: string;
+  candidaturaId?: string | null;
+  concluidaEm?: string | null;
+  canceladaEm?: string | null;
+}
+
+export interface CandidaturaWorkspace {
+  id: string;
+  status: StatusCandidatura;
+  notas: string;
+  principal: boolean;
+  enviadaEm: string | null;
+  encerradaEm: string | null;
+  motivoEncerramento: string | null;
+  curriculoId: string | null;
+  vinculo: {
+    curriculoId: string | null;
+    rotulo?: string;
+    score?: number | null;
+    situacao: string;
+  };
+}
+
+export interface WorkspaceOportunidade {
+  oportunidade: OportunidadeItem;
+  candidatura: CandidaturaWorkspace | null;
+  curriculos: { id: string; rotulo: string; score: number | null; geradoEm: string }[];
+  acaoPrincipal: AcaoOportunidade | null;
+  acoes: AcaoOportunidade[];
+  timeline: EventoOportunidade[];
+}
+
+export interface HojeAcao {
+  id: string;
+  vagaId: string;
+  titulo: string;
+  tipo: string;
+  principal: boolean;
+  venceEm: string | null;
+  lembrarEm: string | null;
+  quando: string;
+  oportunidade: { id: string; titulo: string; empresa: string };
+}
+
+export interface HojeResposta {
+  fusoHorario: string;
+  inicioDia: string;
+  fimDia: string;
+  atrasadas: HojeAcao[];
+  hoje: HojeAcao[];
+  proximosDias: HojeAcao[];
+  semProximoPasso: { id: string; titulo: string; empresa: string }[];
+  atividadeRecente: {
+    id: string;
+    vagaId: string;
+    titulo: string;
+    empresa: string;
+    tipo: string;
+    descricao: string;
+    ocorridoEm: string;
+  }[];
+  resumoAts: { curriculos: number; comScore: number; media: number | null };
+}
+
+export interface PipelineItem {
+  id: string;
+  titulo: string;
+  empresa: string;
+  categoria: string | null;
+  nivel: string | null;
+  prioridade: PrioridadeOportunidade;
+  apresentacao: ApresentacaoOportunidade;
+  etapa: EtapaPipeline;
+  statusCandidatura: StatusCandidatura | null;
+  arquivadaEm: string | null;
+  score: number | null;
+  curriculo: { id: string; rotulo: string; score: number | null } | null;
+  proximoPasso: ProximoPasso | null;
+  ultimaAtividade: string;
+  keywords: Keyword[];
+}
+
+export interface PipelineFiltros {
+  busca?: string;
+  apresentacao?: string;
+  statusCandidatura?: string;
+  categoria?: string;
+  nivel?: string;
+  empresa?: string;
+  prioridade?: string;
+  comCurriculo?: string;
+  scoreMinimo?: string;
+  prazo?: string;
+  atividadeDesde?: string;
+  ordenarPor?: string;
+}
+
+export interface CanvasLayout {
+  revisao: number;
+  viewport: { x: number; y: number; zoom: number };
+  posicoes: { vagaId: string; x: number; y: number }[];
+}
+
+export interface GrafoResposta {
+  schemaVersion: string;
+  nodes: { id: string; tipo: string; rotulo: string }[];
+  edges: { id: string; origem: string; destino: string; tipo: string }[];
+  facets: {
+    empresas: string[];
+    categorias: string[];
+    niveis: string[];
+    skills: string[];
+  };
+}
+
+export interface GeracaoCurriculo {
+  id: string;
+  vagaId: string;
+  status: StatusGeracaoCurriculo;
+  erro: string | null;
+  curriculoId: string | null;
+}
+
+export interface CurriculoGlobal {
+  id: string;
+  rotulo: string;
+  score: number | null;
+  breakdown: ScoreBreakdown;
+  geradoEm: string;
+  vagaId: string;
+  oportunidade: { id: string; titulo: string; empresa: string };
+  vinculo: { candidaturaId: string; principal: boolean; status: string } | null;
+  downloadDocxUrl: string | null;
+  downloadPdfUrl: string | null;
+}
+
+export interface PreferenciasUsuario {
+  usuarioId: string;
+  fusoHorario: string;
+  canvasX: number;
+  canvasY: number;
+  canvasZoom: number;
+  canvasRevisao: number;
+}
+
+function query(params: object) {
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params as Record<string, unknown>)) {
+    if (v !== undefined && v !== null && v !== '') sp.set(k, String(v));
+  }
+  const s = sp.toString();
+  return s ? `?${s}` : '';
+}
+
+export function getHoje(de?: string, ate?: string) {
+  return request<HojeResposta>(`/hoje${query({ de, ate })}`);
+}
+
+export function getPreferencias() {
+  return request<PreferenciasUsuario>('/preferencias');
+}
+
+export function patchPreferencias(dto: { fusoHorario?: string }) {
+  return request<PreferenciasUsuario>('/preferencias', {
+    method: 'PATCH',
+    body: JSON.stringify(dto),
+  });
+}
+
+export function listarOportunidades(params: {
+  visao?: string;
+  busca?: string;
+  categoria?: string;
+  nivel?: string;
+  prioridade?: string;
+  ordenarPor?: string;
+}) {
+  return request<OportunidadeItem[]>(`/oportunidades${query(params)}`);
+}
+
+export function criarOportunidade(dto: {
+  titulo: string;
+  empresa: string;
+  descricao: string;
+  fonte?: string;
+}) {
+  return request<OportunidadeItem>('/oportunidades', {
+    method: 'POST',
+    body: JSON.stringify(dto),
+  });
+}
+
+export function importarOportunidades(itens: ItemImportacao[]) {
+  return request<{ loteId: string; total: number }>('/oportunidades/importar', {
+    method: 'POST',
+    body: JSON.stringify({ itens }),
+  });
+}
+
+export function ativarEntrada(id: string) {
+  return request<OportunidadeItem>(`/oportunidades/entradas/${id}/ativar`, {
+    method: 'POST',
+  });
+}
+
+export function getWorkspace(id: string) {
+  return request<WorkspaceOportunidade>(`/oportunidades/${id}/workspace`);
+}
+
+export function patchOportunidade(
+  id: string,
+  dto: { prioridade?: PrioridadeOportunidade; arquivar?: boolean },
+) {
+  return request<OportunidadeItem>(`/oportunidades/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(dto),
+  });
+}
+
+export function transicionarOportunidade(
+  id: string,
+  destino: DestinoTransicao,
+  motivo?: string,
+) {
+  return request(`/oportunidades/${id}/transicoes`, {
+    method: 'POST',
+    body: JSON.stringify({ destino, motivo }),
+  });
+}
+
+export function candidaturaPrincipal(id: string) {
+  return request<Candidatura>(`/oportunidades/${id}/candidatura-principal`, {
+    method: 'POST',
+  });
+}
+
+export function listarAcoes(vagaId: string) {
+  return request<AcaoOportunidade[]>(`/oportunidades/${vagaId}/acoes`);
+}
+
+export function criarAcao(
+  vagaId: string,
+  dto: {
+    titulo: string;
+    tipo: TipoAcaoOportunidade;
+    principal?: boolean;
+    venceEm?: string;
+    lembrarEm?: string;
+  },
+) {
+  return request<AcaoOportunidade>(`/oportunidades/${vagaId}/acoes`, {
+    method: 'POST',
+    body: JSON.stringify(dto),
+  });
+}
+
+export function patchAcao(
+  id: string,
+  dto: { venceEm?: string | null; lembrarEm?: string | null; principal?: boolean; titulo?: string },
+) {
+  return request<AcaoOportunidade>(`/acoes/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(dto),
+  });
+}
+
+export function concluirAcao(id: string) {
+  return request<AcaoOportunidade>(`/acoes/${id}/concluir`, { method: 'POST' });
+}
+
+export function cancelarAcao(id: string) {
+  return request<AcaoOportunidade>(`/acoes/${id}/cancelar`, { method: 'POST' });
+}
+
+export function getTimeline(vagaId: string, cursor?: string) {
+  return request<{ itens: EventoOportunidade[]; proximoCursor: string | null }>(
+    `/oportunidades/${vagaId}/timeline${query({ cursor })}`,
+  );
+}
+
+export function postNotaTimeline(vagaId: string, descricao: string) {
+  return request<EventoOportunidade>(`/oportunidades/${vagaId}/timeline/notas`, {
+    method: 'POST',
+    body: JSON.stringify({ descricao }),
+  });
+}
+
+export function gerarCvOportunidade(id: string) {
+  return request<{ jobId: string }>(`/oportunidades/${id}/gerar-cv`, {
+    method: 'POST',
+  });
+}
+
+export function getGeracao(jobId: string) {
+  return request<GeracaoCurriculo>(`/geracoes-curriculo/${jobId}`);
+}
+
+export function listarCurriculosGlobal(params: {
+  vagaId?: string;
+  scoreMinimo?: string;
+  vinculado?: string;
+  de?: string;
+  ate?: string;
+}) {
+  return request<CurriculoGlobal[]>(`/curriculos${query(params)}`);
+}
+
+export function getPipeline(filtros: PipelineFiltros) {
+  return request<PipelineItem[]>(`/pipeline${query(filtros)}`);
+}
+
+export function getPipelineCanvas() {
+  return request<CanvasLayout>('/pipeline/canvas');
+}
+
+export function putPipelineCanvas(dto: {
+  revisaoBase: number;
+  viewport: { x: number; y: number; zoom: number };
+  posicoes: { vagaId: string; x: number; y: number }[];
+}) {
+  return request<CanvasLayout>('/pipeline/canvas', {
+    method: 'PUT',
+    body: JSON.stringify(dto),
+  });
+}
+
+export function getPipelineGrafo(filtros: PipelineFiltros) {
+  return request<GrafoResposta>(`/pipeline/grafo${query(filtros)}`);
+}
+
+export function gerarCvAlias(vagaId: string) {
+  return request<{ jobId: string }>(`/vagas/${vagaId}/gerar-cv`, { method: 'POST' });
 }

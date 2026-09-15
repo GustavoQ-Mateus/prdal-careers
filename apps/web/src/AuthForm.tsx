@@ -6,16 +6,20 @@ export function AuthForm({ onAuth }: { onAuth: () => void }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
+    setEnviando(true);
     try {
       if (modo === 'login') await login(email, senha);
       else await registrar(email, senha);
       onAuth();
     } catch (err) {
       setErro((err as Error).message);
+    } finally {
+      setEnviando(false);
     }
   }
 
@@ -31,11 +35,11 @@ export function AuthForm({ onAuth }: { onAuth: () => void }) {
           : 'Comece a gerar currículos tailored e medir o score ATS.'}
       </p>
       <form onSubmit={enviar} className="auth-form">
-        <div className="field">
+        <label className="field">
           <span className="label">E-mail de acesso</span>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </div>
-        <div className="field">
+        </label>
+        <label className="field">
           <span className="label">Senha</span>
           <input
             type="password"
@@ -44,10 +48,10 @@ export function AuthForm({ onAuth }: { onAuth: () => void }) {
             required
             minLength={6}
           />
-        </div>
-        {erro && <span className="error">{erro}</span>}
-        <button type="submit" className="primary btn-block">
-          {login_ ? 'Acessar' : 'Criar conta'}
+        </label>
+        {erro && <span className="error" role="alert">{erro}</span>}
+        <button type="submit" className="primary btn-block" disabled={enviando}>
+          {enviando ? 'Aguarde...' : login_ ? 'Acessar' : 'Criar conta'}
         </button>
         <button type="button" className="link-btn" onClick={() => setModo(login_ ? 'registro' : 'login')}>
           {login_ ? 'Criar uma conta' : 'Já tenho conta'}
