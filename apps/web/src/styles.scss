@@ -59,22 +59,25 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
+.legacy-surface,
+.auth-split {
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
 
-button,
-a,
-input,
-textarea,
-select,
-summary {
-  &:focus-visible {
-    outline: 2px solid var(--cobalt);
-    outline-offset: 2px;
+  button,
+  a,
+  input,
+  textarea,
+  select,
+  summary {
+    &:focus-visible {
+      outline: 2px solid var(--cobalt);
+      outline-offset: 2px;
+    }
   }
 }
 
@@ -425,89 +428,92 @@ a {
   gap: 6px;
 }
 
-input,
-textarea,
-select {
-  width: 100%;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--control);
-  border-radius: var(--radius);
-  padding: 9px 11px;
-  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+.legacy-surface,
+.auth-split {
+  input,
+  textarea,
+  select {
+    width: 100%;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--control);
+    border-radius: var(--radius);
+    padding: 9px 11px;
+    transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
 
-  &::placeholder {
-    color: var(--text-faint);
-  }
-
-  &:hover:not(:disabled) {
-    border-color: var(--text-faint);
-  }
-
-  &:focus {
-    outline: 0;
-    border-color: var(--cobalt);
-    box-shadow: 0 0 0 3px var(--focus);
-  }
-
-  &:disabled {
-    color: var(--text-faint);
-    background: var(--surface-subtle);
-  }
-}
-
-textarea {
-  resize: vertical;
-}
-
-button {
-  min-height: 38px;
-  padding: 8px 13px;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--control);
-  border-radius: var(--radius);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 620;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
-
-  &:hover:not(:disabled) {
-    background: var(--surface-subtle);
-    border-color: var(--text-faint);
-  }
-
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.55;
-  }
-
-  &.primary {
-    color: white;
-    background: var(--text);
-    border-color: var(--text);
+    &::placeholder {
+      color: var(--text-faint);
+    }
 
     &:hover:not(:disabled) {
-      background: var(--text-hover);
-      border-color: var(--text-hover);
+      border-color: var(--text-faint);
+    }
+
+    &:focus {
+      outline: 0;
+      border-color: var(--cobalt);
+      box-shadow: 0 0 0 3px var(--focus);
+    }
+
+    &:disabled {
+      color: var(--text-faint);
+      background: var(--surface-subtle);
     }
   }
 
-  &.accent {
-    color: white;
-    background: var(--cobalt);
-    border-color: var(--cobalt);
-
-    &:hover:not(:disabled) {
-      background: var(--cobalt-hover);
-      border-color: var(--cobalt-hover);
-    }
+  textarea {
+    resize: vertical;
   }
 
-  &.ghost {
-    padding-inline: 8px;
-    background: transparent;
-    border-color: transparent;
+  button {
+    min-height: 38px;
+    padding: 8px 13px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--control);
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 620;
+    transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+
+    &:hover:not(:disabled) {
+      background: var(--surface-subtle);
+      border-color: var(--text-faint);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    &.primary {
+      color: white;
+      background: var(--text);
+      border-color: var(--text);
+
+      &:hover:not(:disabled) {
+        background: var(--text-hover);
+        border-color: var(--text-hover);
+      }
+    }
+
+    &.accent {
+      color: white;
+      background: var(--cobalt);
+      border-color: var(--cobalt);
+
+      &:hover:not(:disabled) {
+        background: var(--cobalt-hover);
+        border-color: var(--cobalt-hover);
+      }
+    }
+
+    &.ghost {
+      padding-inline: 8px;
+      background: transparent;
+      border-color: transparent;
+    }
   }
 }
 
@@ -1029,18 +1035,21 @@ button {
     font-size: 14px;
   }
 
-  button,
-  input,
-  textarea,
-  select,
-  .upload-btn {
-    min-height: 44px;
-  }
+  .legacy-surface,
+  .auth-split {
+    button,
+    input,
+    textarea,
+    select,
+    .upload-btn {
+      min-height: 44px;
+    }
 
-  input,
-  textarea,
-  select {
-    font-size: 16px;
+    input,
+    textarea,
+    select {
+      font-size: 16px;
+    }
   }
 
   .page-header {
