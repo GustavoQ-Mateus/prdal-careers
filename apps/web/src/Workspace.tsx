@@ -13,6 +13,7 @@ import {
 import { ROTULO_ACAO, ROTULO_ETAPA, ROTULO_PRIORIDADE, ROTULO_STATUS } from './rotulos';
 import { fmtData } from './ui';
 import { ScoreNum } from './components/Score';
+import { Markdown } from './components/Markdown';
 import { EditarDialog } from './OportunidadeDialogs';
 import { AcaoDialog } from './WorkspaceDialogs';
 import { GeracaoWizard } from './GeracaoWizard';
@@ -206,7 +207,7 @@ export function Workspace({
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="flex flex-col gap-8">
           <Regiao id="descricao" titulo="Resumo e descricao">
-            <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-2">{o.descricao}</p>
+            <Markdown source={o.descricao ?? ''} className="text-[15px]" />
             {o.keywords.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {o.keywords.map((k) => (
