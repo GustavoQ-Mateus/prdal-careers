@@ -1141,17 +1141,13 @@ button {
   text-align: left;
 }
 
-.agenda-list,
-.plain-list,
-.timeline {
+.plain-list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.agenda-item,
-.plain-list > li,
-.timeline > li {
+.plain-list > li {
   padding: 14px 0;
   border-bottom: 1px solid var(--divider);
 }
