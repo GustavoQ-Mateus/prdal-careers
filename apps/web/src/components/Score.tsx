@@ -22,6 +22,22 @@ export function ScoreNum({ valor, className }: { valor: number; className?: stri
   );
 }
 
+export function ScoreDelta({ valor }: { valor: number }) {
+  if (valor === 0) return <span className="font-mono text-[13px] tabular-nums text-muted">0</span>;
+  const positivo = valor > 0;
+  return (
+    <span
+      className={cn(
+        'font-mono text-[13px] font-semibold tabular-nums',
+        positivo ? 'text-score-good' : 'text-score-bad',
+      )}
+    >
+      {positivo ? '+' : ''}
+      {valor}
+    </span>
+  );
+}
+
 export function ScoreMeter({ valor }: { valor: number }) {
   const limitado = Math.max(0, Math.min(100, valor));
   const faixa = faixaScore(limitado);

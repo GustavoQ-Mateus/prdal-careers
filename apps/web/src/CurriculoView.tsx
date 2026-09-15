@@ -1,8 +1,21 @@
 import { useEffect, useState } from 'react';
 import { baixarArquivo, editarCurriculo, getCurriculo, type Curriculo } from './api';
-import { Breakdown, fmtData, Meter, Score } from './ui';
+import { fmtData } from './ui';
+import { Breakdown, ScoreMeter, ScoreNum } from './components/Score';
+import { Markdown } from './components/Markdown';
+import { VagaVersoes } from './VagaVersoes';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
-export function CurriculoView({ id }: { id: string }) {
+export function CurriculoView({
+  id,
+  onAbrirVersao,
+}: {
+  id: string;
+  onAbrirVersao: (curriculoId: string) => void;
+}) {
   const [curriculo, setCurriculo] = useState<Curriculo | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [editando, setEditando] = useState(false);
@@ -11,6 +24,7 @@ export function CurriculoView({ id }: { id: string }) {
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
+    setEditando(false);
     getCurriculo(id)
       .then((c) => {
         setCurriculo(c);
@@ -36,100 +50,130 @@ export function CurriculoView({ id }: { id: string }) {
     }
   }
 
-  if (erro && !curriculo) return <div className="error">{erro}</div>;
-  if (!curriculo) return <div className="notice">Carregando currículo...</div>;
+  function cancelar() {
+    if (!curriculo) return;
+    setEditando(false);
+    setMarkdown(curriculo.markdown);
+    setRotulo(curriculo.rotulo);
+  }
+
+  if (erro && !curriculo) {
+    return (
+      <div
+        className="rounded-card border border-score-bad/40 bg-ground px-4 py-3 text-[14px] text-score-bad"
+        role="alert"
+      >
+        {erro}
+      </div>
+    );
+  }
+  if (!curriculo) return <p className="py-10 text-[14px] text-muted">Carregando curriculo...</p>;
 
   return (
-    <div className="stack">
-      <div className="document-toolbar">
-        <div>
-          <h2>{curriculo.rotulo}</h2>
-          <span className="faint" style={{ fontSize: 12 }}>Gerado {fmtData(curriculo.geradoEm)}</span>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-line pb-5">
+        <div className="min-w-0">
+          <h2 className="truncate text-page text-ink">{curriculo.rotulo}</h2>
+          <p className="mt-1 text-[13px] text-muted">Gerado {fmtData(curriculo.geradoEm)}</p>
         </div>
-        <div className="row">
-          {curriculo.downloadDocxUrl ? (
-            <button onClick={() => baixarArquivo(curriculo.downloadDocxUrl!, `${curriculo.rotulo}.docx`)}>
-              Baixar .docx
-            </button>
+        <div className="flex shrink-0 items-center gap-2">
+          {editando ? (
+            <>
+              <Button variant="ghost" onClick={cancelar} disabled={salvando}>
+                Cancelar
+              </Button>
+              <Button onClick={() => void salvar()} disabled={salvando}>
+                {salvando ? 'Recalculando...' : 'Salvar e recalcular'}
+              </Button>
+            </>
           ) : (
-            <span className="notice">.docx indisponível</span>
-          )}
-          {curriculo.downloadPdfUrl ? (
-            <button onClick={() => baixarArquivo(curriculo.downloadPdfUrl!, `${curriculo.rotulo}.pdf`)}>
-              Baixar .pdf
-            </button>
-          ) : (
-            <span className="notice">.pdf indisponível</span>
-          )}
-          {!editando && (
-            <button className="accent" onClick={() => setEditando(true)}>Editar Markdown</button>
+            <>
+              {curriculo.downloadDocxUrl ? (
+                <Button
+                  variant="secondary"
+                  onClick={() => void baixarArquivo(curriculo.downloadDocxUrl!, `${curriculo.rotulo}.docx`)}
+                >
+                  Baixar .docx
+                </Button>
+              ) : (
+                <span className="text-[13px] text-faint">.docx indisponivel</span>
+              )}
+              {curriculo.downloadPdfUrl ? (
+                <Button
+                  variant="secondary"
+                  onClick={() => void baixarArquivo(curriculo.downloadPdfUrl!, `${curriculo.rotulo}.pdf`)}
+                >
+                  Baixar .pdf
+                </Button>
+              ) : (
+                <span className="text-[13px] text-faint">.pdf indisponivel</span>
+              )}
+              <Button variant="secondary" onClick={() => setEditando(true)}>
+                Editar markdown
+              </Button>
+            </>
           )}
         </div>
       </div>
 
-      {erro && <div className="error" role="alert">{erro}</div>}
+      {erro && (
+        <div
+          className="rounded-control border border-score-bad/40 bg-ground px-3 py-2 text-[13px] text-score-bad"
+          role="alert"
+        >
+          {erro}
+        </div>
+      )}
 
-      <div className="analysis-layout">
-        <aside className="analysis-sidebar">
-          <section className="panel">
-            <div className="panel-head">
-              <h2>Score ATS</h2>
+      <div className="grid gap-8 lg:grid-cols-[300px_minmax(0,1fr)]">
+        <aside className="flex flex-col gap-6 lg:sticky lg:top-24 lg:self-start">
+          <section>
+            <h3 className="text-label uppercase text-muted">Score ATS</h3>
+            <div className="mt-3 flex items-baseline gap-2">
+              <span className="text-[44px] font-bold leading-none">
+                <ScoreNum valor={curriculo.score} />
+              </span>
+              <span className="text-label uppercase text-muted">/ 100</span>
             </div>
-            <div className="panel-body stack">
-              <div className="row" style={{ gap: 16 }}>
-                <Score valor={curriculo.score} hero />
-                <span className="label">/ 100</span>
-              </div>
-              <Meter valor={curriculo.score} />
+            <div className="mt-3">
+              <ScoreMeter valor={curriculo.score} />
             </div>
           </section>
-          <section className="panel">
-            <div className="panel-head">
-              <h2>Diagnóstico</h2>
-            </div>
-            <div className="panel-body">
+          <section className="border-t border-line pt-6">
+            <h3 className="text-label uppercase text-muted">Diagnostico</h3>
+            <div className="mt-3">
               <Breakdown breakdown={curriculo.breakdown} />
             </div>
           </section>
         </aside>
 
-        <section className="panel document-workspace">
-          <div className="panel-head">
-            <h2>Conteúdo do currículo</h2>
-            {editando && (
-              <div className="row">
-                <button onClick={() => { setEditando(false); setMarkdown(curriculo.markdown); setRotulo(curriculo.rotulo); }} disabled={salvando}>
-                  Cancelar
-                </button>
-                <button className="accent" onClick={salvar} disabled={salvando}>
-                  {salvando ? 'Recalculando...' : 'Salvar e recalcular'}
-                </button>
+        <section className="min-w-0">
+          {editando ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="cv-rotulo">Rotulo da versao</Label>
+                <Input id="cv-rotulo" value={rotulo} onChange={(e) => setRotulo(e.target.value)} />
               </div>
-            )}
-          </div>
-          <div className="panel-body stack">
-            {editando ? (
-              <>
-                <label className="field">
-                  <span className="label">Rótulo da versão</span>
-                  <input value={rotulo} onChange={(e) => setRotulo(e.target.value)} />
-                </label>
-                <label className="field">
-                  <span className="label">Markdown</span>
-                  <textarea
-                    value={markdown}
-                    onChange={(e) => setMarkdown(e.target.value)}
-                    rows={28}
-                    className="mono"
-                  />
-                </label>
-              </>
-            ) : (
-              <pre className="md-view">{curriculo.markdown}</pre>
-            )}
-          </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="cv-markdown">Markdown</Label>
+                <Textarea
+                  id="cv-markdown"
+                  value={markdown}
+                  onChange={(e) => setMarkdown(e.target.value)}
+                  rows={28}
+                  className="min-h-[560px] font-mono text-[13px] leading-relaxed"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-card border border-line bg-ground p-6 nav:p-8">
+              <Markdown source={curriculo.markdown} />
+            </div>
+          )}
         </section>
       </div>
+
+      <VagaVersoes vagaId={curriculo.vagaId} atualId={curriculo.id} onAbrir={onAbrirVersao} />
     </div>
   );
 }
