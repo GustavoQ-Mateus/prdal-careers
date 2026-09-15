@@ -2,6 +2,7 @@ import { Menu } from 'lucide-react';
 import { AuthForm } from './AuthForm';
 import { BaseConhecimento } from './BaseConhecimento';
 import { AppNav } from './components/AppNav';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Marca } from './components/Marca';
 import { Button } from '@/components/ui/button';
@@ -150,6 +151,7 @@ export function App() {
         </header>
 
         <main className={cn('min-h-0 flex-1 bg-canvas', !migrada && 'legacy-surface')}>
+          <ErrorBoundary resetKey={rota}>
           {migrada ? (
             <div className="px-6 pb-12 nav:px-8">
               {rota.tela === 'oportunidades' && (
@@ -196,6 +198,7 @@ export function App() {
               {rota.tela === 'perfil' && <PerfilForm />}
             </div>
           )}
+          </ErrorBoundary>
         </main>
       </div>
     </div>
