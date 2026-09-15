@@ -26,11 +26,19 @@ export function Score({ valor, hero }: { valor: number; hero?: boolean }) {
 }
 
 export function Meter({ valor }: { valor: number }) {
+  const limitado = Math.max(0, Math.min(100, valor));
   return (
-    <div className="meter">
+    <div
+      className="meter"
+      role="progressbar"
+      aria-label={`Score ${limitado} de 100`}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={limitado}
+    >
       <div
         className={`meter-fill meter-fill--${faixaScore(valor)}`}
-        style={{ width: `${Math.max(0, Math.min(100, valor))}%` }}
+        style={{ width: `${limitado}%` }}
       />
     </div>
   );
