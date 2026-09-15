@@ -94,8 +94,8 @@ export interface Curriculo {
   vagaId: string;
   rotulo: string;
   markdown: string;
-  score: number;
-  breakdown: ScoreBreakdown;
+  score: number | null;
+  breakdown: ScoreBreakdown | null;
   geradoEm: string;
   downloadDocxUrl: string | null;
   downloadPdfUrl: string | null;
@@ -104,8 +104,8 @@ export interface Curriculo {
 export interface CurriculoResumo {
   id: string;
   rotulo: string;
-  score: number;
-  breakdown: ScoreBreakdown;
+  score: number | null;
+  breakdown: ScoreBreakdown | null;
   geradoEm: string;
 }
 
@@ -512,7 +512,7 @@ export interface CurriculoGlobal {
   id: string;
   rotulo: string;
   score: number | null;
-  breakdown: ScoreBreakdown;
+  breakdown: ScoreBreakdown | null;
   geradoEm: string;
   vagaId: string;
   oportunidade: { id: string; titulo: string; empresa: string };
