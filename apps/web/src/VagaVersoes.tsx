@@ -20,8 +20,14 @@ function Comparativo({ versoes }: { versoes: CurriculoResumo[] }) {
   const base = versoes.find((v) => v.id === baseId)!;
   const alvo = versoes.find((v) => v.id === alvoId)!;
 
-  const cobertasAMais = diffFaltando(base.breakdown.faltando, alvo.breakdown.faltando);
-  const faltantesAMais = diffFaltando(alvo.breakdown.faltando, base.breakdown.faltando);
+  const cobertasAMais = diffFaltando(
+    base.breakdown?.faltando ?? [],
+    alvo.breakdown?.faltando ?? [],
+  );
+  const faltantesAMais = diffFaltando(
+    alvo.breakdown?.faltando ?? [],
+    base.breakdown?.faltando ?? [],
+  );
 
   return (
     <section className="border-t border-line pt-6">
@@ -32,7 +38,7 @@ function Comparativo({ versoes }: { versoes: CurriculoResumo[] }) {
             <Label htmlFor="cmp-base">Base</Label>
             <NativeSelect id="cmp-base" value={baseId} onChange={(e) => setBaseId(e.target.value)}>
               {versoes.map((v) => (
-                <option key={v.id} value={v.id}>{`${v.rotulo} (${v.score})`}</option>
+                <option key={v.id} value={v.id}>{`${v.rotulo} · ${v.score ?? '--'}`}</option>
               ))}
             </NativeSelect>
           </div>
@@ -40,7 +46,7 @@ function Comparativo({ versoes }: { versoes: CurriculoResumo[] }) {
             <Label htmlFor="cmp-alvo">Comparar com</Label>
             <NativeSelect id="cmp-alvo" value={alvoId} onChange={(e) => setAlvoId(e.target.value)}>
               {versoes.map((v) => (
-                <option key={v.id} value={v.id}>{`${v.rotulo} (${v.score})`}</option>
+                <option key={v.id} value={v.id}>{`${v.rotulo} · ${v.score ?? '--'}`}</option>
               ))}
             </NativeSelect>
           </div>
@@ -196,7 +202,7 @@ export function VagaVersoes({
                     </div>
                   </td>
                   <td className="px-3 py-3 text-right font-mono tabular-nums text-ink-2">
-                    {v.breakdown.faltando.length}
+                    {v.breakdown?.faltando.length ?? '--'}
                   </td>
                   <td className="px-3 py-3 text-right font-mono text-[13px] tabular-nums text-faint">
                     {fmtData(v.geradoEm)}
