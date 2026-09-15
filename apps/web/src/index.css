@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --canvas: #f6f8f7;
+  --ground: #ffffff;
+  --ink: #0f1512;
+  --ink-2: #3a413d;
+  --muted: #666d69;
+  --faint: #949b97;
+  --line: #e5e8e6;
+  --line-strong: #d6dbd8;
+  --accent: #0c7d6e;
+  --accent-ink: #094f46;
+  --accent-soft: #e2f1ee;
+  --accent-fg: #ffffff;
+  --primary: #12160f;
+  --primary-fg: #ffffff;
+  --score-good: #2e8b57;
+  --score-warn: #b0790a;
+  --score-bad: #d24350;
+
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'Cascadia Mono', Consolas, monospace;
+}
+
+.dark {
+  --canvas: #0d1210;
+  --ground: #141a17;
+  --ink: #eef2f0;
+  --ink-2: #c3cbc7;
+  --muted: #8b938e;
+  --faint: #5c655f;
+  --line: #242c28;
+  --line-strong: #323b36;
+  --accent: #2fb8a3;
+  --accent-ink: #a9e6db;
+  --accent-soft: #16302b;
+  --accent-fg: #06231f;
+  --primary: #eef2f0;
+  --primary-fg: #12160f;
+  --score-good: #3fa76b;
+  --score-warn: #cf9420;
+  --score-bad: #e5606f;
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-width: 0;
+    border-style: solid;
+    border-color: var(--line);
+  }
+
+  .app-root {
+    font-variant-numeric: normal;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-family: var(--font-mono);
+  }
+}
+
+.dark .legacy-surface {
+  --canvas: #f7f7f5;
+  --surface: #ffffff;
+  --surface-subtle: #f1f1ef;
+  --surface-strong: #e8e8e5;
+  --text: #171717;
+  --text-hover: #2e2e2e;
+  --text-muted: #5f5f5b;
+  --text-faint: #898984;
+  --divider: #e2e2de;
+  --control: #cecec8;
+  color: var(--text);
+}
