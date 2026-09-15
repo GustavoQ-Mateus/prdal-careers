@@ -66,7 +66,11 @@ export function App() {
   const abaAtiva = abaDaRota(rota);
   const profunda = rota.tela === 'workspace' || rota.tela === 'curriculo';
   const workspaceScreen = rota.tela === 'workspace';
-  const migrada = rota.tela === 'oportunidades' || workspaceScreen;
+  const migrada =
+    rota.tela === 'oportunidades' ||
+    workspaceScreen ||
+    rota.tela === 'curriculos' ||
+    rota.tela === 'curriculo';
   const contexto = !profunda
     ? CONTEXTO[abaAtiva ?? 'hoje']
     : rota.tela === 'workspace'
@@ -167,12 +171,6 @@ export function App() {
                   }
                 />
               )}
-            </div>
-          ) : (
-            <div className="workspace">
-              {rota.tela === 'hoje' && (
-                <Hoje onAbrir={(id) => ir({ tela: 'workspace', id })} />
-              )}
               {rota.tela === 'curriculos' && (
                 <Curriculos
                   onAbrir={(oportunidadeId, curriculoId) =>
@@ -180,9 +178,22 @@ export function App() {
                   }
                 />
               )}
+              {rota.tela === 'curriculo' && (
+                <CurriculoView
+                  id={rota.curriculoId}
+                  onAbrirVersao={(curriculoId) =>
+                    ir({ tela: 'curriculo', oportunidadeId: rota.oportunidadeId, curriculoId })
+                  }
+                />
+              )}
+            </div>
+          ) : (
+            <div className="workspace">
+              {rota.tela === 'hoje' && (
+                <Hoje onAbrir={(id) => ir({ tela: 'workspace', id })} />
+              )}
               {rota.tela === 'conhecimento' && <BaseConhecimento />}
               {rota.tela === 'perfil' && <PerfilForm />}
-              {rota.tela === 'curriculo' && <CurriculoView id={rota.curriculoId} />}
             </div>
           )}
         </main>

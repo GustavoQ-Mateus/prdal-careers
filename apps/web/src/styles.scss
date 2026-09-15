@@ -705,21 +705,6 @@ button {
   }
 }
 
-.md-view {
-  max-height: 620px;
-  margin: 0;
-  padding: 20px;
-  overflow: auto;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--divider);
-  border-radius: var(--radius);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.7;
-  white-space: pre-wrap;
-}
-
 .import-row {
   display: grid;
   grid-template-columns: minmax(130px, 0.8fr) minmax(130px, 0.8fr) minmax(160px, 1fr) minmax(240px, 2fr) auto;
@@ -817,31 +802,6 @@ button {
   align-items: center;
   gap: 12px;
   background: var(--canvas);
-}
-
-.document-toolbar {
-  min-height: 64px;
-  padding-bottom: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  border-bottom: 1px solid var(--divider);
-}
-
-.analysis-layout {
-  display: grid;
-  grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.7fr);
-  gap: 32px;
-  align-items: start;
-}
-
-.analysis-sidebar {
-  position: sticky;
-  top: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
 }
 
 .auth-split {
@@ -1097,24 +1057,18 @@ button {
   }
 
   .spread,
-  .row,
-  .document-toolbar {
+  .row {
     align-items: stretch;
     flex-wrap: wrap;
   }
 
   .two-col,
-  .analysis-layout,
   .form-section {
     grid-template-columns: 1fr;
   }
 
   .form-section {
     gap: 14px;
-  }
-
-  .analysis-sidebar {
-    position: static;
   }
 
   .operational-strip {
