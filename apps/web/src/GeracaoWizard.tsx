@@ -30,6 +30,8 @@ function passoDeStatus(status: StatusGeracaoCurriculo): number {
   return 0;
 }
 
+type Falha = { titulo: string; detalhe?: string };
+
 export function GeracaoWizard({
   open,
   onOpenChange,
@@ -52,10 +54,10 @@ export function GeracaoWizard({
   const [passo, setPasso] = useState(0);
   const [status, setStatus] = useState<StatusGeracaoCurriculo | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
+  const [erro, setErro] = useState<Falha | null>(null);
   const [curriculo, setCurriculo] = useState<Curriculo | null>(null);
   const [contexto, setContexto] = useState<ContextoStatus | null>(null);
-  const [contextoErro, setContextoErro] = useState<string | null>(null);
+  const [contextoFalha, setContextoFalha] = useState<Falha | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -65,10 +67,15 @@ export function GeracaoWizard({
     setErro(null);
     setCurriculo(null);
     setContexto(null);
-    setContextoErro(null);
+    setContextoFalha(null);
     getContextoStatus()
       .then(setContexto)
-      .catch(() => setContextoErro('Contexto RAG indisponivel no momento.'));
+      .catch((err) =>
+        setContextoFalha({
+          titulo: 'Nao foi possivel recuperar o contexto agora',
+          detalhe: (err as Error).message,
+        }),
+      );
   }, [open]);
 
   useEffect(() => {
@@ -87,19 +94,22 @@ export function GeracaoWizard({
             const cv = await getCurriculo(g.curriculoId);
             setCurriculo(cv);
           } catch (err) {
-            setErro((err as Error).message);
+            setErro({
+              titulo: 'Nao foi possivel abrir o curriculo gerado',
+              detalhe: (err as Error).message,
+            });
           }
           onConcluida();
         }
         if (g.status === 'ERRO') {
           clearInterval(timer);
           setJobId(null);
-          setErro(g.erro ?? 'Falha na geracao do curriculo.');
+          setErro({ titulo: 'A geracao falhou', detalhe: g.erro ?? undefined });
         }
       } catch (err) {
         clearInterval(timer);
         setJobId(null);
-        setErro((err as Error).message);
+        setErro({ titulo: 'A geracao falhou', detalhe: (err as Error).message });
       }
     }, 1200);
     return () => clearInterval(timer);
@@ -115,12 +125,12 @@ export function GeracaoWizard({
       setStatus('PENDENTE');
       setPasso(0);
     } catch (err) {
-      setErro((err as Error).message);
+      setErro({ titulo: 'A geracao falhou', detalhe: (err as Error).message });
     }
   }
 
   const ragIndisponivel =
-    !!contextoErro || contexto?.disponivel === false || (contexto?.documentos ?? 0) === 0;
+    !!contextoFalha || contexto?.disponivel === false || (contexto?.documentos ?? 0) === 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -183,10 +193,13 @@ export function GeracaoWizard({
         <div className="max-h-[62vh] overflow-y-auto">
           {erro && (
             <div
-              className="mb-4 rounded-control border border-score-bad/40 bg-ground px-3 py-2 text-[13px] text-score-bad"
+              className="mb-4 rounded-control border border-score-bad/40 bg-ground px-3 py-2 text-score-bad"
               role="alert"
             >
-              {erro}
+              <p className="text-[13px] font-medium">{erro.titulo}</p>
+              {erro.detalhe && (
+                <p className="mt-0.5 break-words font-mono text-[11px] text-score-bad/70">{erro.detalhe}</p>
+              )}
             </div>
           )}
 
@@ -213,10 +226,17 @@ export function GeracaoWizard({
               <div className="flex flex-col gap-1.5">
                 <span className="text-label uppercase text-muted">Contexto de recuperacao</span>
                 {ragIndisponivel ? (
-                  <p className="rounded-control border border-score-warn/40 bg-ground px-3 py-2 text-[13px] text-score-warn">
-                    {contextoErro ??
-                      'Nenhum documento indexado. A geracao segue apenas com Perfil e notas.'}
-                  </p>
+                  <div className="rounded-control border border-score-warn/40 bg-ground px-3 py-2 text-score-warn">
+                    <p className="text-[13px]">
+                      {contextoFalha?.titulo ??
+                        'Nenhum documento indexado. A geracao segue apenas com Perfil e notas.'}
+                    </p>
+                    {contextoFalha?.detalhe && (
+                      <p className="mt-0.5 break-words font-mono text-[11px] text-score-warn/70">
+                        {contextoFalha.detalhe}
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   <p className="text-[13px] text-muted">
                     {contexto?.documentos} documentos indexados disponíveis para recuperacao.
