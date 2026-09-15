@@ -68,6 +68,7 @@ export function App() {
   const profunda = rota.tela === 'workspace' || rota.tela === 'curriculo';
   const workspaceScreen = rota.tela === 'workspace';
   const migrada =
+    rota.tela === 'hoje' ||
     rota.tela === 'oportunidades' ||
     workspaceScreen ||
     rota.tela === 'curriculos' ||
@@ -154,6 +155,7 @@ export function App() {
           <ErrorBoundary resetKey={rota}>
           {migrada ? (
             <div className="px-6 pb-12 nav:px-8">
+              {rota.tela === 'hoje' && <Hoje onAbrir={(id) => ir({ tela: 'workspace', id })} />}
               {rota.tela === 'oportunidades' && (
                 <Oportunidades
                   visao={rota.visao}
@@ -191,9 +193,6 @@ export function App() {
             </div>
           ) : (
             <div className="workspace">
-              {rota.tela === 'hoje' && (
-                <Hoje onAbrir={(id) => ir({ tela: 'workspace', id })} />
-              )}
               {rota.tela === 'conhecimento' && <BaseConhecimento />}
               {rota.tela === 'perfil' && <PerfilForm />}
             </div>
