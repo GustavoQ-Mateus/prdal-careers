@@ -14,7 +14,10 @@ const COR_BARRA = {
   good: 'bg-score-good',
 } as const;
 
-export function ScoreNum({ valor, className }: { valor: number; className?: string }) {
+export function ScoreNum({ valor, className }: { valor: number | null; className?: string }) {
+  if (valor === null || Number.isNaN(valor)) {
+    return <span className={cn('font-mono tabular-nums text-faint', className)}>--</span>;
+  }
   return (
     <span className={cn('font-mono font-semibold tabular-nums', COR_TEXTO[faixaScore(valor)], className)}>
       {valor}
@@ -22,7 +25,10 @@ export function ScoreNum({ valor, className }: { valor: number; className?: stri
   );
 }
 
-export function ScoreDelta({ valor }: { valor: number }) {
+export function ScoreDelta({ valor }: { valor: number | null }) {
+  if (valor === null || Number.isNaN(valor)) {
+    return <span className="font-mono text-[13px] tabular-nums text-faint">--</span>;
+  }
   if (valor === 0) return <span className="font-mono text-[13px] tabular-nums text-muted">0</span>;
   const positivo = valor > 0;
   return (
@@ -38,7 +44,15 @@ export function ScoreDelta({ valor }: { valor: number }) {
   );
 }
 
-export function ScoreMeter({ valor }: { valor: number }) {
+export function ScoreMeter({ valor }: { valor: number | null }) {
+  if (valor === null || Number.isNaN(valor)) {
+    return (
+      <div className="flex items-center gap-3">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-line" aria-hidden />
+        <ScoreNum valor={null} />
+      </div>
+    );
+  }
   const limitado = Math.max(0, Math.min(100, valor));
   const faixa = faixaScore(limitado);
   return (
@@ -69,7 +83,15 @@ function BarraScore({ rotulo, valor }: { rotulo: string; valor: number }) {
   );
 }
 
-export function Breakdown({ breakdown }: { breakdown: ScoreBreakdown }) {
+export function Breakdown({ breakdown }: { breakdown: ScoreBreakdown | null }) {
+  if (!breakdown) {
+    return (
+      <p className="text-[13px] text-muted">
+        Sem diagnostico ainda. Gere o curriculo para avaliar o score desta
+        versao.
+      </p>
+    );
+  }
   return (
     <div className="flex flex-col gap-3">
       <BarraScore rotulo="Keyword match" valor={breakdown.keywordMatch} />
