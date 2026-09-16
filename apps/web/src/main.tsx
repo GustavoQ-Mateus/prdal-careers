@@ -5,7 +5,6 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import { App } from './App';
 import { applyTheme, initialTheme } from './lib/theme';
-import './styles.scss';
 import './index.css';
 
 applyTheme(initialTheme());

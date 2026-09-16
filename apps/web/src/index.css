@@ -49,43 +49,29 @@
   *,
   ::before,
   ::after {
-    border-width: 0;
-    border-style: solid;
     border-color: var(--line);
   }
 
-  button,
-  input,
-  optgroup,
-  select,
-  textarea {
-    font-family: inherit;
-    font-size: 100%;
-    font-weight: inherit;
-    line-height: inherit;
-    color: inherit;
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
     margin: 0;
-    padding: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
-  button,
-  select {
-    text-transform: none;
-  }
-
-  button,
-  [type='button'],
-  [type='reset'],
-  [type='submit'] {
-    -webkit-appearance: button;
-    appearance: button;
-    background-color: transparent;
-    background-image: none;
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
     cursor: pointer;
-  }
-
-  :disabled {
-    cursor: default;
   }
 
   .app-root {
@@ -98,16 +84,3 @@
   }
 }
 
-.dark .legacy-surface {
-  --canvas: #f7f7f5;
-  --surface: #ffffff;
-  --surface-subtle: #f1f1ef;
-  --surface-strong: #e8e8e5;
-  --text: #171717;
-  --text-hover: #2e2e2e;
-  --text-muted: #5f5f5b;
-  --text-faint: #898984;
-  --divider: #e2e2de;
-  --control: #cecec8;
-  color: var(--text);
-}
