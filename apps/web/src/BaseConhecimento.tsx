@@ -8,17 +8,40 @@ import {
   type LoteStatus,
 } from './api';
 import { fmtData } from './ui';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+
+function Linha({ rotulo, valor }: { rotulo: string; valor: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5">
+      <dt className="text-[14px] text-muted">{rotulo}</dt>
+      <dd className="font-mono text-[14px] tabular-nums text-ink">{valor}</dd>
+    </div>
+  );
+}
 
 export function BaseConhecimento() {
   const [status, setStatus] = useState<ContextoStatus | null>(null);
+  const [statusErro, setStatusErro] = useState<string | null>(null);
   const [lote, setLote] = useState<LoteStatus | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [aberto, setAberto] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   function carregar() {
     getContextoStatus()
-      .then(setStatus)
-      .catch((err) => setErro((err as Error).message));
+      .then((s) => {
+        setStatus(s);
+        setStatusErro(null);
+      })
+      .catch(() => setStatusErro('Nao foi possivel consultar o indice agora.'));
   }
 
   useEffect(carregar, []);
@@ -35,6 +58,7 @@ export function BaseConhecimento() {
           carregar();
         }
       } catch (err) {
+        if (timer.current) clearInterval(timer.current);
         setErro((err as Error).message);
       }
     }, 1000);
@@ -45,8 +69,8 @@ export function BaseConhecimento() {
     try {
       const { loteId } = await reindexarContexto();
       acompanhar(loteId);
-    } catch (err) {
-      setErro((err as Error).message);
+    } catch {
+      setErro('Nao foi possivel iniciar a reindexacao agora. O servico pode estar indisponivel.');
     }
   }
 
@@ -56,81 +80,129 @@ export function BaseConhecimento() {
     try {
       const { loteId } = await uploadContexto(Array.from(arquivos));
       acompanhar(loteId);
-    } catch (err) {
-      setErro((err as Error).message);
+    } catch {
+      setErro('Nao foi possivel enviar as notas agora. O servico pode estar indisponivel.');
     }
   }
 
-  const processando = lote && lote.status !== 'CONCLUIDO';
+  const processando = !!lote && lote.status !== 'CONCLUIDO';
+  const estadoServico = processando
+    ? 'Indexando'
+    : statusErro || status?.disponivel === false
+      ? 'Indisponivel'
+      : status
+        ? 'Disponivel'
+        : '--';
 
   return (
-    <div>
-      <section className="operational-strip" aria-label="Estado da base de conhecimento">
-        <div className="operational-metric">
-          <span>Documentos indexados</span>
-          <strong>{status?.documentos ?? '--'}</strong>
-        </div>
-        <div className="operational-metric">
-          <span>Última indexação</span>
-          <strong style={{ fontSize: 16 }}>{status ? fmtData(status.ultimaIndexacao) : '--'}</strong>
-        </div>
-        <div className="operational-metric">
-          <span>Estado do Chroma</span>
-          <strong style={{ fontSize: 16 }}>
-            {processando ? 'Indexando' : status?.disponivel === false ? 'Indisponivel' : 'Disponivel'}
-          </strong>
-        </div>
-      </section>
-
-      <section className="panel">
-        <div className="panel-head">
-          <h2>Distribuicao por origem</h2>
-        </div>
-        <div className="panel-body">
-          <table className="grid-table">
-            <tbody>
-              <tr><th>Perfil</th><td className="num">{status?.porOrigem?.perfil ?? '--'}</td></tr>
-              <tr><th>Candidatura</th><td className="num">{status?.porOrigem?.candidatura ?? '--'}</td></tr>
-              <tr><th>Nota</th><td className="num">{status?.porOrigem?.nota ?? '--'}</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="panel">
-        <div className="panel-head">
-          <h2>Atualizar contexto</h2>
-          <span className="label">Perfil, candidaturas e notas Markdown</span>
-        </div>
-        <div className="panel-body">
-          <p className="section-intro">
-            A base usa seu histórico real para selecionar os trechos mais relevantes durante a geração
-            de cada currículo. A geração continua disponível mesmo sem um índice.
+    <div className="flex flex-col gap-8">
+      <section>
+        <h2 className="text-section text-ink">Estado do indice</h2>
+        {statusErro && (
+          <p
+            className="mt-3 rounded-control border border-score-warn/40 bg-ground px-3 py-2 text-[13px] text-score-warn"
+            role="status"
+          >
+            {statusErro} O que ja foi indexado continua valendo para a geracao.
           </p>
-          {erro && <p className="error" role="alert">{erro}</p>}
-          <div className="row">
-            <button className="accent" onClick={reindexar} disabled={!!processando}>
-              {processando ? 'Indexando...' : 'Reindexar histórico'}
-            </button>
-            <label className="upload-btn">
-              Enviar notas .md
-              <input
-                type="file"
-                accept=".md"
-                multiple
-                hidden
-                disabled={!!processando}
-                onChange={(e) => enviar(e.target.files)}
-              />
-            </label>
-            {lote && (
-              <span className="notice num" role="status">
-                lote {lote.processados}/{lote.total} {lote.status.toLowerCase()}
-              </span>
+        )}
+        <dl className="mt-3 divide-y divide-line border-t border-line">
+          <Linha rotulo="Documentos indexados" valor={status?.documentos ?? '--'} />
+          <Linha rotulo="Ultima indexacao" valor={status ? fmtData(status.ultimaIndexacao) : '--'} />
+          <Linha rotulo="Estado do servico" valor={estadoServico} />
+          {processando && lote && (
+            <Linha rotulo="Lote atual" valor={`${lote.processados}/${lote.total}`} />
+          )}
+        </dl>
+      </section>
+
+      <section>
+        <h2 className="text-section text-ink">Distribuicao por origem</h2>
+        <dl className="mt-3 divide-y divide-line border-t border-line">
+          <Linha rotulo="Perfil" valor={status?.porOrigem?.perfil ?? '--'} />
+          <Linha rotulo="Candidatura" valor={status?.porOrigem?.candidatura ?? '--'} />
+          <Linha rotulo="Nota" valor={status?.porOrigem?.nota ?? '--'} />
+        </dl>
+      </section>
+
+      <section>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-section text-ink">Atualizar contexto</h2>
+          <Button variant="secondary" onClick={() => setAberto(true)}>
+            Atualizar base
+          </Button>
+        </div>
+        <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-muted">
+          A base usa seu historico real, perfil, candidaturas e notas, para selecionar os trechos
+          mais relevantes durante a geracao de cada curriculo. A geracao continua disponivel mesmo
+          sem um indice.
+        </p>
+        {processando && (
+          <p className="mt-3 text-[13px] text-muted" role="status">
+            Indexando o lote {lote?.processados}/{lote?.total}. Voce pode continuar usando o app.
+          </p>
+        )}
+      </section>
+
+      <Dialog open={aberto} onOpenChange={setAberto}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Atualizar contexto</DialogTitle>
+            <DialogDescription>
+              Reindexe o historico ou envie notas em Markdown para enriquecer a base.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <span className="text-label uppercase text-muted">Reindexar historico</span>
+              <p className="text-[13px] text-muted">
+                Recria o indice a partir de perfil, candidaturas e notas ja registrados.
+              </p>
+              <div className="mt-1">
+                <Button variant="secondary" onClick={() => void reindexar()} disabled={processando}>
+                  {processando ? 'Indexando...' : 'Reindexar historico'}
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5 border-t border-line pt-4">
+              <span className="text-label uppercase text-muted">Enviar notas</span>
+              <p className="text-[13px] text-muted">Arquivos .md com contexto adicional seu.</p>
+              <div className="mt-1">
+                <Button variant="secondary" onClick={() => fileRef.current?.click()} disabled={processando}>
+                  Selecionar notas .md
+                </Button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".md"
+                  multiple
+                  hidden
+                  onChange={(e) => {
+                    void enviar(e.target.files);
+                    e.target.value = '';
+                  }}
+                />
+              </div>
+            </div>
+
+            {processando && lote && (
+              <p className="text-[13px] text-muted" role="status">
+                Lote {lote.processados}/{lote.total} {lote.status.toLowerCase()}.
+              </p>
+            )}
+            {erro && (
+              <div
+                className="rounded-control border border-score-bad/40 bg-ground px-3 py-2 text-[13px] text-score-bad"
+                role="alert"
+              >
+                {erro}
+              </div>
             )}
           </div>
-        </div>
-      </section>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
