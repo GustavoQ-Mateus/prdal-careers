@@ -43,10 +43,10 @@ export default {
         mono: 'var(--font-mono)',
       },
       fontSize: {
-        page: ['28px', { lineHeight: '1.15', fontWeight: '800' }],
-        section: ['18px', { lineHeight: '1.3', fontWeight: '700' }],
-        body: ['15px', { lineHeight: '1.5', fontWeight: '400' }],
-        label: ['12px', { lineHeight: '1.2', fontWeight: '600', letterSpacing: '0.04em' }],
+        page: ['23px', { lineHeight: '1.2', fontWeight: '700' }],
+        section: ['16px', { lineHeight: '1.35', fontWeight: '700' }],
+        body: ['14px', { lineHeight: '1.5', fontWeight: '400' }],
+        label: ['11px', { lineHeight: '1.2', fontWeight: '600', letterSpacing: '0.04em' }],
       },
       borderRadius: {
         card: '12px',
