@@ -12,6 +12,7 @@ import {
 } from './api';
 import { ROTULO_ACAO, ROTULO_ETAPA, ROTULO_PRIORIDADE, ROTULO_STATUS } from './rotulos';
 import { fmtData } from './ui';
+import { Compass } from 'lucide-react';
 import { ScoreNum } from './components/Score';
 import { Markdown } from './components/Markdown';
 import { EditarDialog } from './OportunidadeDialogs';
@@ -61,9 +62,11 @@ function Regiao({
 export function Workspace({
   id,
   onCurriculo,
+  onCopiloto,
 }: {
   id: string;
   onCurriculo: (curriculoId: string) => void;
+  onCopiloto: () => void;
 }) {
   const [ws, setWs] = useState<WorkspaceOportunidade | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -184,6 +187,10 @@ export function Workspace({
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <Button variant="secondary" onClick={onCopiloto}>
+              <Compass />
+              Copiloto
+            </Button>
             <Button variant="secondary" onClick={() => setEditarAberto(true)}>
               Editar
             </Button>

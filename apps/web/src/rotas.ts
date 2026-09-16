@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type Aba = 'hoje' | 'oportunidades' | 'curriculos' | 'conhecimento' | 'perfil';
+export type Aba = 'hoje' | 'oportunidades' | 'copiloto' | 'curriculos' | 'conhecimento' | 'perfil';
 
 export type VisaoHub = 'lista' | 'board' | 'grafo';
 
@@ -16,6 +16,7 @@ export type Rota =
   | { tela: 'hoje' }
   | ({ tela: 'oportunidades' } & FiltrosHub)
   | { tela: 'workspace'; id: string }
+  | { tela: 'copiloto'; oportunidadeId?: string }
   | { tela: 'curriculo'; oportunidadeId: string; curriculoId: string }
   | { tela: 'curriculos' }
   | { tela: 'conhecimento' }
@@ -49,6 +50,10 @@ export function parseRota(
       ordenarPor: q.get('ordenarPor') ?? undefined,
       prioridade: q.get('prioridade') ?? undefined,
     };
+  }
+
+  if (path === '/copiloto') {
+    return { tela: 'copiloto', oportunidadeId: q.get('oportunidade') ?? undefined };
   }
 
   const ws = path.match(/^\/oportunidades\/([^/]+)$/);
@@ -86,6 +91,8 @@ export function hrefRota(rota: Rota): string {
     }
     case 'workspace':
       return `/oportunidades/${rota.id}`;
+    case 'copiloto':
+      return rota.oportunidadeId ? `/copiloto?oportunidade=${rota.oportunidadeId}` : '/copiloto';
     case 'curriculo':
       return `/oportunidades/${rota.oportunidadeId}/curriculos/${rota.curriculoId}`;
     case 'curriculos':
@@ -104,6 +111,8 @@ export function abaDaRota(rota: Rota): Aba | null {
     case 'oportunidades':
     case 'workspace':
       return 'oportunidades';
+    case 'copiloto':
+      return 'copiloto';
     case 'curriculos':
     case 'curriculo':
       return 'curriculos';

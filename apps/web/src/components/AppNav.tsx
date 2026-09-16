@@ -1,4 +1,4 @@
-import { BookOpen, CalendarCheck, FileText, LayoutGrid, LogOut, User } from 'lucide-react';
+import { BookOpen, CalendarCheck, Compass, FileText, LayoutGrid, LogOut, User } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Aba } from '../rotas';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,7 @@ const GRUPOS: Grupo[] = [
     itens: [
       { tela: 'hoje', nome: 'Hoje', icon: CalendarCheck },
       { tela: 'oportunidades', nome: 'Oportunidades', icon: LayoutGrid },
+      { tela: 'copiloto', nome: 'Copiloto', icon: Compass },
       { tela: 'curriculos', nome: 'Curriculos', icon: FileText },
     ],
   },
