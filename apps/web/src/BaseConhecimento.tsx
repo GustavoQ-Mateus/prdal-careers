@@ -41,7 +41,7 @@ export function BaseConhecimento() {
         setStatus(s);
         setStatusErro(null);
       })
-      .catch(() => setStatusErro('Nao foi possivel consultar o indice agora.'));
+      .catch(() => setStatusErro('Não foi possível consultar o índice agora.'));
   }
 
   useEffect(carregar, []);
@@ -70,7 +70,7 @@ export function BaseConhecimento() {
       const { loteId } = await reindexarContexto();
       acompanhar(loteId);
     } catch {
-      setErro('Nao foi possivel iniciar a reindexacao agora. O servico pode estar indisponivel.');
+      setErro('Não foi possível iniciar a reindexação agora. O serviço pode estar indisponível.');
     }
   }
 
@@ -81,7 +81,7 @@ export function BaseConhecimento() {
       const { loteId } = await uploadContexto(Array.from(arquivos));
       acompanhar(loteId);
     } catch {
-      setErro('Nao foi possivel enviar as notas agora. O servico pode estar indisponivel.');
+      setErro('Não foi possível enviar as notas agora. O serviço pode estar indisponível.');
     }
   }
 
@@ -89,27 +89,27 @@ export function BaseConhecimento() {
   const estadoServico = processando
     ? 'Indexando'
     : statusErro || status?.disponivel === false
-      ? 'Indisponivel'
+      ? 'Indisponível'
       : status
-        ? 'Disponivel'
+        ? 'Disponível'
         : '--';
 
   return (
     <div className="flex flex-col gap-8">
       <section>
-        <h2 className="text-section text-ink">Estado do indice</h2>
+        <h2 className="text-section text-ink">Estado do índice</h2>
         {statusErro && (
           <p
             className="mt-3 rounded-control border border-score-warn/40 bg-ground px-3 py-2 text-[13px] text-score-warn"
             role="status"
           >
-            {statusErro} O que ja foi indexado continua valendo para a geracao.
+            {statusErro} O que já foi indexado continua valendo para a geração.
           </p>
         )}
         <dl className="mt-3 divide-y divide-line border-t border-line">
           <Linha rotulo="Documentos indexados" valor={status?.documentos ?? '--'} />
-          <Linha rotulo="Ultima indexacao" valor={status ? fmtData(status.ultimaIndexacao) : '--'} />
-          <Linha rotulo="Estado do servico" valor={estadoServico} />
+          <Linha rotulo="Última indexação" valor={status ? fmtData(status.ultimaIndexacao) : '--'} />
+          <Linha rotulo="Estado do serviço" valor={estadoServico} />
           {processando && lote && (
             <Linha rotulo="Lote atual" valor={`${lote.processados}/${lote.total}`} />
           )}
@@ -117,7 +117,7 @@ export function BaseConhecimento() {
       </section>
 
       <section>
-        <h2 className="text-section text-ink">Distribuicao por origem</h2>
+        <h2 className="text-section text-ink">Distribuição por origem</h2>
         <dl className="mt-3 divide-y divide-line border-t border-line">
           <Linha rotulo="Perfil" valor={status?.porOrigem?.perfil ?? '--'} />
           <Linha rotulo="Candidatura" valor={status?.porOrigem?.candidatura ?? '--'} />
@@ -133,13 +133,13 @@ export function BaseConhecimento() {
           </Button>
         </div>
         <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-muted">
-          A base usa seu historico real, perfil, candidaturas e notas, para selecionar os trechos
-          mais relevantes durante a geracao de cada curriculo. A geracao continua disponivel mesmo
-          sem um indice.
+          A base usa seu histórico real, perfil, candidaturas e notas, para selecionar os trechos
+          mais relevantes durante a geração de cada currículo. A geração continua disponível mesmo
+          sem um índice.
         </p>
         {processando && (
           <p className="mt-3 text-[13px] text-muted" role="status">
-            Indexando o lote {lote?.processados}/{lote?.total}. Voce pode continuar usando o app.
+            Indexando o lote {lote?.processados}/{lote?.total}. Você pode continuar usando o app.
           </p>
         )}
       </section>
@@ -149,19 +149,19 @@ export function BaseConhecimento() {
           <DialogHeader>
             <DialogTitle>Atualizar contexto</DialogTitle>
             <DialogDescription>
-              Reindexe o historico ou envie notas em Markdown para enriquecer a base.
+              Reindexe o histórico ou envie notas em Markdown para enriquecer a base.
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <span className="text-label uppercase text-muted">Reindexar historico</span>
+              <span className="text-label uppercase text-muted">Reindexar histórico</span>
               <p className="text-[13px] text-muted">
-                Recria o indice a partir de perfil, candidaturas e notas ja registrados.
+                Recria o índice a partir de perfil, candidaturas e notas já registrados.
               </p>
               <div className="mt-1">
                 <Button variant="secondary" onClick={() => void reindexar()} disabled={processando}>
-                  {processando ? 'Indexando...' : 'Reindexar historico'}
+                  {processando ? 'Indexando...' : 'Reindexar histórico'}
                 </Button>
               </div>
             </div>

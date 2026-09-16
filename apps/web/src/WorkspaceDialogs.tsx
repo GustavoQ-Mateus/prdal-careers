@@ -75,8 +75,8 @@ export function AcaoDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Definir proximo passo</DialogTitle>
-          <DialogDescription>Registra a acao principal desta oportunidade.</DialogDescription>
+          <DialogTitle>Definir próximo passo</DialogTitle>
+          <DialogDescription>Registra a ação principal desta oportunidade.</DialogDescription>
         </DialogHeader>
 
         {erro && (
@@ -87,7 +87,7 @@ export function AcaoDialog({
 
         <form onSubmit={salvar} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="acao-titulo">Titulo</Label>
+            <Label htmlFor="acao-titulo">Título</Label>
             <Input id="acao-titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">

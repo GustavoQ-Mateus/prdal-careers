@@ -9,12 +9,12 @@ import type {
 
 export const ROTULO_PRIORIDADE: Record<PrioridadeOportunidade, string> = {
   BAIXA: 'Baixa',
-  MEDIA: 'Media',
+  MEDIA: 'Média',
   ALTA: 'Alta',
 };
 
 export const ROTULO_ETAPA: Record<EtapaPipeline, string> = {
-  PREPARACAO: 'Preparacao',
+  PREPARACAO: 'Preparação',
   INSCRITA: 'Inscrita',
   EM_PROCESSO: 'Em processo',
   ENTREVISTA: 'Entrevista',
@@ -34,7 +34,7 @@ export const ROTULO_STATUS: Record<StatusCandidatura, string> = {
 
 export const ROTULO_ACAO: Record<TipoAcaoOportunidade, string> = {
   REVISAR_VAGA: 'Revisar vaga',
-  GERAR_CURRICULO: 'Gerar curriculo',
+  GERAR_CURRICULO: 'Gerar currículo',
   ENVIAR_CANDIDATURA: 'Enviar candidatura',
   FAZER_FOLLOW_UP: 'Follow-up',
   PREPARAR_ENTREVISTA: 'Preparar entrevista',
@@ -46,9 +46,9 @@ export const ROTULO_ACAO: Record<TipoAcaoOportunidade, string> = {
 export const ROTULO_GERACAO: Record<StatusGeracaoCurriculo, string> = {
   PENDENTE: 'Na fila',
   ANALISANDO: 'Analisando vaga e contexto',
-  GERANDO: 'Gerando curriculo',
+  GERANDO: 'Gerando currículo',
   VALIDANDO: 'Validando score ATS',
-  CONCLUIDA: 'Concluida',
+  CONCLUIDA: 'Concluída',
   ERRO: 'Erro',
 };
 

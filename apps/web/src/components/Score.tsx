@@ -87,8 +87,8 @@ export function Breakdown({ breakdown }: { breakdown: ScoreBreakdown | null }) {
   if (!breakdown) {
     return (
       <p className="text-[13px] text-muted">
-        Sem diagnostico ainda. Gere o curriculo para avaliar o score desta
-        versao.
+        Sem diagnóstico ainda. Gere o currículo para avaliar o score desta
+        versão.
       </p>
     );
   }
@@ -96,7 +96,7 @@ export function Breakdown({ breakdown }: { breakdown: ScoreBreakdown | null }) {
     <div className="flex flex-col gap-3">
       <BarraScore rotulo="Keyword match" valor={breakdown.keywordMatch} />
       <BarraScore rotulo="Densidade" valor={breakdown.densidade} />
-      <BarraScore rotulo="Secoes" valor={breakdown.secoes} />
+      <BarraScore rotulo="Seções" valor={breakdown.secoes} />
       <div className="flex flex-col gap-1.5">
         <span className="text-label uppercase text-muted">
           Keywords faltantes ({breakdown.faltando.length})

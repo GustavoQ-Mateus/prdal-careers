@@ -5,16 +5,16 @@ function Fallback({ erro, onTentar }: { erro: Error; onTentar: () => void }) {
   return (
     <div className="flex min-h-[60vh] items-center px-6 py-16 nav:px-8">
       <div className="w-full max-w-md">
-        <h2 className="text-page text-ink">Esta area nao pode ser exibida</h2>
+        <h2 className="text-page text-ink">Esta área não pode ser exibida</h2>
         <p className="mt-2 text-[14px] leading-relaxed text-muted">
-          Algo falhou ao montar esta tela e o restante do aplicativo segue disponivel. Suas
-          informacoes estao seguras. Tente de novo ou use a navegacao para abrir outra area.
+          Algo falhou ao montar esta tela e o restante do aplicativo segue disponível. Suas
+          informações estão seguras. Tente de novo ou use a navegação para abrir outra área.
         </p>
         <div className="mt-5">
           <Button onClick={onTentar}>Tentar de novo</Button>
         </div>
         <details className="mt-6">
-          <summary className="cursor-pointer text-[12px] text-faint">Detalhe tecnico</summary>
+          <summary className="cursor-pointer text-[12px] text-faint">Detalhe técnico</summary>
           <p className="mt-2 break-words font-mono text-[11px] text-faint">{erro.message}</p>
         </details>
       </div>

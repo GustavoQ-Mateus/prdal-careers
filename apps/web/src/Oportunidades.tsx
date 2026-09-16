@@ -42,9 +42,9 @@ const ORDENACOES = [
   { id: 'atividade', nome: 'Atividade recente' },
   { id: 'prioridade', nome: 'Prioridade' },
   { id: 'score', nome: 'Score ATS' },
-  { id: 'keywords', nome: 'Correspondencia de keywords' },
+  { id: 'keywords', nome: 'Correspondência de keywords' },
   { id: 'etapa', nome: 'Etapa' },
-  { id: 'prazo', nome: 'Prazo do proximo passo' },
+  { id: 'prazo', nome: 'Prazo do próximo passo' },
 ];
 
 function selecaoDe(item: OportunidadeItem): Selecao {
@@ -126,7 +126,7 @@ export function Oportunidades({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex rounded-control border border-line-strong p-0.5" role="tablist" aria-label="Visao">
+        <div className="flex rounded-control border border-line-strong p-0.5" role="tablist" aria-label="Visão">
           {VISOES.map((v) => (
             <button
               key={v.id}
@@ -153,7 +153,7 @@ export function Oportunidades({
             className="w-56"
             value={busca}
             onChange={(e) => aplicar({ busca: e.target.value })}
-            placeholder="Titulo ou empresa"
+            placeholder="Título ou empresa"
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -179,7 +179,7 @@ export function Oportunidades({
           >
             <option value="">Todas</option>
             <option value="ALTA">Alta</option>
-            <option value="MEDIA">Media</option>
+            <option value="MEDIA">Média</option>
             <option value="BAIXA">Baixa</option>
           </NativeSelect>
         </div>
@@ -201,7 +201,7 @@ export function Oportunidades({
       </div>
 
       {visao === 'lista' && (
-        <p className="text-[13px] text-faint">Criterio de ordenacao: {criterio}. Nao ha ranking universal.</p>
+        <p className="text-[13px] text-faint">Critério de ordenação: {criterio}. Não há ranking universal.</p>
       )}
       {erro && (
         <div className="rounded-control border border-score-bad/40 bg-ground px-3 py-2 text-[13px] text-score-bad" role="alert">
@@ -222,7 +222,7 @@ export function Oportunidades({
       )}
 
       {visao !== 'lista' && (
-        <Suspense fallback={<p className="py-8 text-[14px] text-muted">Carregando visualizacao...</p>}>
+        <Suspense fallback={<p className="py-8 text-[14px] text-muted">Carregando visualização...</p>}>
           {visao === 'board' && (
             <OportunidadesBoard
               filtros={filtrosPipeline}
@@ -265,12 +265,12 @@ export function Oportunidades({
                   </div>
                 )}
                 <div className="flex flex-col gap-1">
-                  <dt className="text-label uppercase text-muted">Proximo passo</dt>
-                  <dd className="text-ink-2">{selecionada.proximoPasso ?? 'Sem proximo passo definido'}</dd>
+                  <dt className="text-label uppercase text-muted">Próximo passo</dt>
+                  <dd className="text-ink-2">{selecionada.proximoPasso ?? 'Sem próximo passo definido'}</dd>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <dt className="text-label uppercase text-muted">Curriculo vinculado</dt>
-                  <dd className="text-ink-2">{selecionada.curriculo ?? 'Nenhum vinculo'}</dd>
+                  <dt className="text-label uppercase text-muted">Currículo vinculado</dt>
+                  <dd className="text-ink-2">{selecionada.curriculo ?? 'Nenhum vínculo'}</dd>
                 </div>
               </dl>
 
@@ -340,7 +340,7 @@ function ListaOportunidades({
     return (
       <div className="rounded-card border border-line bg-ground p-8 text-center">
         <p className="text-[14px] text-muted">
-          {busca ? 'Nenhum resultado para este filtro.' : 'Nada nesta visao ainda.'}
+          {busca ? 'Nenhum resultado para este filtro.' : 'Nada nesta visão ainda.'}
         </p>
       </div>
     );
@@ -351,7 +351,7 @@ function ListaOportunidades({
       <table className="w-full min-w-[900px] border-collapse text-[14px]">
         <thead>
           <tr className="border-b border-line">
-            {['Oportunidade', 'Setor', 'Prioridade', 'Etapa', 'Curriculo', 'Score', 'Proximo passo', 'Atividade', ''].map(
+            {['Oportunidade', 'Setor', 'Prioridade', 'Etapa', 'Currículo', 'Score', 'Próximo passo', 'Atividade', ''].map(
               (h, i) => (
                 <th
                   key={h || `acao-${i}`}

@@ -34,7 +34,7 @@ function Comparativo({ versoes }: { versoes: CurriculoResumo[] }) {
 
   return (
     <section className="border-t border-line pt-6">
-      <h3 className="text-label uppercase text-muted">Comparar versoes</h3>
+      <h3 className="text-label uppercase text-muted">Comparar versões</h3>
       <div className="mt-4 flex flex-col gap-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
@@ -147,10 +147,10 @@ export function VagaVersoes({
   return (
     <section className="flex flex-col gap-5 border-t border-line pt-8">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-section text-ink">Versoes desta oportunidade</h3>
+        <h3 className="text-section text-ink">Versões desta oportunidade</h3>
         {versoes && versoes.length > 0 && (
           <span className="text-[13px] text-faint">
-            {versoes.length} {versoes.length === 1 ? 'versao' : 'versoes'}
+            {versoes.length} {versoes.length === 1 ? 'versão' : 'versões'}
           </span>
         )}
       </div>
@@ -166,7 +166,7 @@ export function VagaVersoes({
 
       {!versoes && !erro && <p className="text-[14px] text-muted">Carregando...</p>}
       {versoes && versoes.length === 0 && (
-        <p className="text-[14px] text-muted">Nenhum curriculo gerado para esta oportunidade ainda.</p>
+        <p className="text-[14px] text-muted">Nenhum currículo gerado para esta oportunidade ainda.</p>
       )}
 
       {versoes && versoes.length > 0 && (
@@ -174,7 +174,7 @@ export function VagaVersoes({
           <table className="w-full min-w-[640px] border-collapse text-[14px]">
             <thead>
               <tr className="border-b border-line">
-                <th className="px-3 py-2.5 text-left text-label uppercase text-muted">Versao</th>
+                <th className="px-3 py-2.5 text-left text-label uppercase text-muted">Versão</th>
                 <th className="px-3 py-2.5 text-left text-label uppercase text-muted">Score</th>
                 <th className="px-3 py-2.5 text-right text-label uppercase text-muted">Faltantes</th>
                 <th className="px-3 py-2.5 text-right text-label uppercase text-muted">Gerado</th>
@@ -193,7 +193,7 @@ export function VagaVersoes({
                   <td className="px-3 py-3">
                     <span className="flex items-center gap-2">
                       <span className="font-medium text-ink">{v.rotulo}</span>
-                      {v.id === atualId && <Badge variant="accent">Em analise</Badge>}
+                      {v.id === atualId && <Badge variant="accent">Em análise</Badge>}
                     </span>
                   </td>
                   <td className="px-3 py-3">

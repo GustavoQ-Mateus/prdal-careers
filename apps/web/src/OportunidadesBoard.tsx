@@ -214,7 +214,7 @@ function CartaoBoard({
         <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-faint">
           <span>{ROTULO_PRIORIDADE[item.prioridade]}</span>
           <span aria-hidden>·</span>
-          <span>{item.proximoPasso?.titulo ?? 'Sem proximo passo'}</span>
+          <span>{item.proximoPasso?.titulo ?? 'Sem próximo passo'}</span>
           {item.proximoPasso?.venceEm && <span className="font-mono tabular-nums">{fmtData(item.proximoPasso.venceEm)}</span>}
         </div>
       </div>

@@ -36,10 +36,10 @@ const TITULO: Record<Secao, string> = {
   identidade: 'Identidade',
   contato: 'Contato',
   resumo: 'Resumo',
-  experiencias: 'Experiencias',
-  formacao: 'Formacao',
+  experiencias: 'Experiências',
+  formacao: 'Formação',
   skills: 'Skills',
-  fuso: 'Fuso horario',
+  fuso: 'Fuso horário',
 };
 
 function Regiao({
@@ -139,7 +139,7 @@ export function PerfilForm() {
       setSkillsTexto(salvo.skills.join(', '));
       setEditando(null);
       setDesatualizado(true);
-      setMensagem('Secao atualizada. O indice de conhecimento pode estar desatualizado.');
+      setMensagem('Seção atualizada. O índice de conhecimento pode estar desatualizado.');
     } catch (err) {
       setErro((err as Error).message);
     } finally {
@@ -154,7 +154,7 @@ export function PerfilForm() {
       const pref = await patchPreferencias({ fusoHorario: fuso });
       setFuso(pref.fusoHorario);
       setEditando(null);
-      setMensagem('Fuso horario atualizado.');
+      setMensagem('Fuso horário atualizado.');
     } catch (err) {
       setErro((err as Error).message);
     } finally {
@@ -168,7 +168,7 @@ export function PerfilForm() {
     try {
       await reindexarContexto();
       setDesatualizado(false);
-      setMensagem('Reindexacao iniciada.');
+      setMensagem('Reindexação iniciada.');
     } catch (err) {
       setErro((err as Error).message);
     } finally {
@@ -186,7 +186,7 @@ export function PerfilForm() {
           role="status"
         >
           <p className="text-[14px] text-ink-2">
-            O indice de conhecimento pode estar desatualizado apos a edicao do perfil.
+            O índice de conhecimento pode estar desatualizado após a edição do perfil.
           </p>
           <Button size="sm" variant="secondary" onClick={() => void reindexar()} disabled={reindexando}>
             {reindexando ? 'Reindexando...' : 'Reindexar agora'}
@@ -203,7 +203,7 @@ export function PerfilForm() {
         <Regiao
           titulo="Identidade"
           onEditar={() => abrir('identidade')}
-          vazia={perfil.nome ? undefined : 'Adicione seu nome. Ele encabeca todo curriculo gerado.'}
+          vazia={perfil.nome ? undefined : 'Adicione seu nome. Ele encabeça todo currículo gerado.'}
         >
           <p className="text-[15px] text-ink">{perfil.nome}</p>
         </Regiao>
@@ -214,7 +214,7 @@ export function PerfilForm() {
           vazia={
             perfil.contato.email || perfil.contato.telefone || perfil.contato.linkedin
               ? undefined
-              : 'Sem contato ainda. E-mail, telefone e LinkedIn entram no cabecalho do curriculo.'
+              : 'Sem contato ainda. E-mail, telefone e LinkedIn entram no cabeçalho do currículo.'
           }
         >
           <div className="flex flex-col gap-1 text-[14px] text-ink-2">
@@ -230,7 +230,7 @@ export function PerfilForm() {
           vazia={
             perfil.resumo
               ? undefined
-              : 'Sem resumo. Um paragrafo de posicionamento ancora o topo do curriculo.'
+              : 'Sem resumo. Um parágrafo de posicionamento ancora o topo do currículo.'
           }
         >
           <p className="max-w-2xl whitespace-pre-line text-[15px] leading-relaxed text-ink-2">
@@ -239,11 +239,11 @@ export function PerfilForm() {
         </Regiao>
 
         <Regiao
-          titulo="Experiencias"
+          titulo="Experiências"
           onEditar={() => abrir('experiencias')}
           vazia={
             perfil.experiencias.length === 0
-              ? 'Nenhuma experiencia. Elas sao a maior fonte de evidencia para o score ATS.'
+              ? 'Nenhuma experiência. Elas são a maior fonte de evidência para o score ATS.'
               : undefined
           }
         >
@@ -258,9 +258,9 @@ export function PerfilForm() {
         </Regiao>
 
         <Regiao
-          titulo="Formacao"
+          titulo="Formação"
           onEditar={() => abrir('formacao')}
-          vazia={perfil.formacao.length === 0 ? 'Nenhuma formacao registrada.' : undefined}
+          vazia={perfil.formacao.length === 0 ? 'Nenhuma formação registrada.' : undefined}
         >
           <ul className="flex max-w-2xl flex-col gap-1.5 text-[14px] text-ink-2">
             {perfil.formacao.map((e) => (
@@ -277,7 +277,7 @@ export function PerfilForm() {
           onEditar={() => abrir('skills')}
           vazia={
             perfil.skills.length === 0
-              ? 'Nenhuma skill. Elas alimentam a correspondencia de keywords da vaga.'
+              ? 'Nenhuma skill. Elas alimentam a correspondência de keywords da vaga.'
               : undefined
           }
         >
@@ -290,7 +290,7 @@ export function PerfilForm() {
           </div>
         </Regiao>
 
-        <Regiao titulo="Fuso horario" onEditar={() => abrir('fuso')}>
+        <Regiao titulo="Fuso horário" onEditar={() => abrir('fuso')}>
           <p className="font-mono text-[14px] text-ink-2">{fusoAtual}</p>
         </Regiao>
       </div>
@@ -300,7 +300,7 @@ export function PerfilForm() {
           <DialogHeader>
             <DialogTitle>{editando ? `Editar ${TITULO[editando].toLowerCase()}` : ''}</DialogTitle>
             <DialogDescription>
-              Alteracoes valem para todos os curriculos gerados a partir do perfil.
+              Alterações valem para todos os currículos gerados a partir do perfil.
             </DialogDescription>
           </DialogHeader>
 
@@ -362,7 +362,7 @@ export function PerfilForm() {
 
             {editando === 'experiencias' && (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="p-exp">Experiencias</Label>
+                <Label htmlFor="p-exp">Experiências</Label>
                 <Textarea
                   id="p-exp"
                   value={experienciasTexto}
@@ -370,13 +370,13 @@ export function PerfilForm() {
                   rows={10}
                   autoFocus
                 />
-                <span className="text-[12px] text-faint">Uma experiencia por linha.</span>
+                <span className="text-[12px] text-faint">Uma experiência por linha.</span>
               </div>
             )}
 
             {editando === 'formacao' && (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="p-form">Formacao</Label>
+                <Label htmlFor="p-form">Formação</Label>
                 <Textarea
                   id="p-form"
                   value={formacaoTexto}
@@ -384,7 +384,7 @@ export function PerfilForm() {
                   rows={6}
                   autoFocus
                 />
-                <span className="text-[12px] text-faint">Uma formacao por linha.</span>
+                <span className="text-[12px] text-faint">Uma formação por linha.</span>
               </div>
             )}
 
@@ -397,13 +397,13 @@ export function PerfilForm() {
                   onChange={(e) => setSkillsTexto(e.target.value)}
                   autoFocus
                 />
-                <span className="text-[12px] text-faint">Separe por virgula.</span>
+                <span className="text-[12px] text-faint">Separe por vírgula.</span>
               </div>
             )}
 
             {editando === 'fuso' && (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="p-fuso">Fuso horario IANA</Label>
+                <Label htmlFor="p-fuso">Fuso horário IANA</Label>
                 <Input
                   id="p-fuso"
                   value={fuso}

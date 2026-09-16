@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 type Ordenacao = 'geracao' | 'score' | 'oportunidade';
 
 const ORDENACOES: { id: Ordenacao; nome: string }[] = [
-  { id: 'geracao', nome: 'Geracao recente' },
+  { id: 'geracao', nome: 'Geração recente' },
   { id: 'score', nome: 'Maior score' },
   { id: 'oportunidade', nome: 'Oportunidade' },
 ];
@@ -135,7 +135,7 @@ export function Curriculos({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cv-vinculo">Vinculo</Label>
+            <Label htmlFor="cv-vinculo">Vínculo</Label>
             <NativeSelect
               id="cv-vinculo"
               className="w-40"
@@ -144,11 +144,11 @@ export function Curriculos({
             >
               <option value="">Todos</option>
               <option value="true">Vinculados</option>
-              <option value="false">Sem vinculo</option>
+              <option value="false">Sem vínculo</option>
             </NativeSelect>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cv-score">Score minimo</Label>
+            <Label htmlFor="cv-score">Score mínimo</Label>
             <Input
               id="cv-score"
               className="w-28"
@@ -198,11 +198,11 @@ export function Curriculos({
       </div>
 
       {!agrupado && (
-        <p className="text-[13px] text-faint">Ordenado por: {criterio}. Nao ha ranking universal.</p>
+        <p className="text-[13px] text-faint">Ordenado por: {criterio}. Não há ranking universal.</p>
       )}
       {agrupado && (
         <p className="text-[13px] text-faint">
-          Agrupado por oportunidade. Cada grupo compara suas proprias versoes.
+          Agrupado por oportunidade. Cada grupo compara suas próprias versões.
         </p>
       )}
 
@@ -214,10 +214,10 @@ export function Curriculos({
           {erro}
         </div>
       )}
-      {!itens && !erro && <p className="py-8 text-[14px] text-muted">Carregando curriculos...</p>}
+      {!itens && !erro && <p className="py-8 text-[14px] text-muted">Carregando currículos...</p>}
       {itens && itens.length === 0 && (
         <div className="rounded-card border border-line bg-ground p-8 text-center">
-          <p className="text-[14px] text-muted">Nenhum curriculo nesta biblioteca ainda.</p>
+          <p className="text-[14px] text-muted">Nenhum currículo nesta biblioteca ainda.</p>
         </div>
       )}
 
@@ -227,7 +227,7 @@ export function Curriculos({
             <thead>
               <tr className="border-b border-line">
                 <th className="sticky top-0 bg-canvas px-3 py-2.5 text-left text-label uppercase text-muted">
-                  Rotulo
+                  Rótulo
                 </th>
                 {!agrupado && (
                   <th className="sticky top-0 bg-canvas px-3 py-2.5 text-left text-label uppercase text-muted">
@@ -256,7 +256,7 @@ export function Curriculos({
                             <span className="text-[13px] text-faint"> · {g.empresa}</span>
                             <span className="text-[13px] text-faint">
                               {' · '}
-                              {g.itens.length} {g.itens.length === 1 ? 'versao' : 'versoes'}
+                              {g.itens.length} {g.itens.length === 1 ? 'versão' : 'versões'}
                             </span>
                           </span>
                           {g.melhorScore !== null && (

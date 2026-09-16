@@ -26,7 +26,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { cn } from '@/lib/utils';
 
 const TRANSICOES: { valor: DestinoTransicao; nome: string }[] = [
-  { valor: 'PREPARACAO', nome: 'Preparacao' },
+  { valor: 'PREPARACAO', nome: 'Preparação' },
   { valor: 'INSCRITA', nome: 'Inscrita' },
   { valor: 'EM_PROCESSO', nome: 'Em processo' },
   { valor: 'ENTREVISTA', nome: 'Entrevista' },
@@ -158,15 +158,15 @@ export function Workspace({
   }
 
   const acaoDominante = !temCurriculo
-    ? { rotulo: 'Gerar curriculo', run: () => setWizardAberto(true) }
+    ? { rotulo: 'Gerar currículo', run: () => setWizardAberto(true) }
     : !cand
       ? { rotulo: 'Preparar candidatura', run: () => void prepararCandidatura() }
       : cand.status === 'RASCUNHO'
         ? { rotulo: 'Registrar envio', run: () => void registrarEnvio() }
         : !ws.acaoPrincipal
-          ? { rotulo: 'Definir proximo passo', run: () => setAcaoAberta(true) }
+          ? { rotulo: 'Definir próximo passo', run: () => setAcaoAberta(true) }
           : {
-              rotulo: 'Registrar atualizacao',
+              rotulo: 'Registrar atualização',
               run: () => document.getElementById('timeline')?.scrollIntoView({ behavior: 'smooth' }),
             };
 
@@ -213,8 +213,8 @@ export function Workspace({
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="flex flex-col gap-8">
-          <Regiao id="descricao" titulo="Resumo e descricao">
-            <Markdown source={o.descricao ?? ''} className="text-[15px]" />
+          <Regiao id="descricao" titulo="Resumo e descrição">
+            <Markdown source={o.descricao ?? ''} className="text-[14px]" />
             {o.keywords.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {o.keywords.map((k) => (
@@ -228,8 +228,8 @@ export function Workspace({
 
           <Regiao
             id="ats"
-            titulo="Geracao de curriculo"
-            acao={<Button size="sm" onClick={() => setWizardAberto(true)}>Gerar curriculo ATS</Button>}
+            titulo="Geração de currículo"
+            acao={<Button size="sm" onClick={() => setWizardAberto(true)}>Gerar currículo ATS</Button>}
           >
             {temCurriculo ? (
               <ul className="flex flex-col divide-y divide-line">
@@ -250,16 +250,16 @@ export function Workspace({
               </ul>
             ) : (
               <p className="text-[14px] text-muted">
-                Nenhuma versao gerada. Inicie a geracao ATS para produzir o primeiro curriculo tailored.
+                Nenhuma versão gerada. Inicie a geração ATS para produzir o primeiro currículo tailored.
               </p>
             )}
           </Regiao>
 
-          <Regiao id="candidatura" titulo="Candidatura e curriculo vinculado">
+          <Regiao id="candidatura" titulo="Candidatura e currículo vinculado">
             {!cand ? (
               <div className="flex flex-col gap-3">
                 <p className="text-[14px] text-muted">
-                  Nenhuma candidatura principal. Crie para registrar envio, vinculo e etapa.
+                  Nenhuma candidatura principal. Crie para registrar envio, vínculo e etapa.
                 </p>
                 <div>
                   <Button variant="secondary" onClick={() => void prepararCandidatura()}>
@@ -272,18 +272,18 @@ export function Workspace({
                 <p className="text-[14px] text-ink-2">
                   Status {ROTULO_STATUS[cand.status]}
                   {cand.vinculo.situacao === 'VINCULADO' && cand.vinculo.rotulo
-                    ? ` · vinculo ${cand.vinculo.rotulo} (${cand.vinculo.score ?? '--'})`
-                    : ' · curriculo nao registrado'}
+                    ? ` · vínculo ${cand.vinculo.rotulo} (${cand.vinculo.score ?? '--'})`
+                    : ' · currículo não registrado'}
                 </p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="ws-curriculo">Curriculo vinculado</Label>
+                    <Label htmlFor="ws-curriculo">Currículo vinculado</Label>
                     <NativeSelect
                       id="ws-curriculo"
                       value={cand.curriculoId ?? ''}
                       onChange={(e) => void vincular(e.target.value)}
                     >
-                      <option value="">Nao registrado</option>
+                      <option value="">Não registrado</option>
                       {ws.curriculos.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.rotulo}
@@ -310,7 +310,7 @@ export function Workspace({
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="ws-motivo">Motivo da transicao</Label>
+                  <Label htmlFor="ws-motivo">Motivo da transição</Label>
                   <Input
                     id="ws-motivo"
                     value={motivo}
@@ -324,11 +324,11 @@ export function Workspace({
 
           <Regiao
             id="proxima"
-            titulo="Proximos passos"
+            titulo="Próximos passos"
             acao={<Button size="sm" variant="secondary" onClick={() => setAcaoAberta(true)}>Novo passo</Button>}
           >
             {ws.acoes.length === 0 ? (
-              <p className="text-[14px] text-muted">Nenhum passo definido. Registre a proxima acao.</p>
+              <p className="text-[14px] text-muted">Nenhum passo definido. Registre a próxima ação.</p>
             ) : (
               <ul className="flex flex-col divide-y divide-line">
                 {ws.acoes.map((a) => (
@@ -364,7 +364,7 @@ export function Workspace({
               <Input
                 value={nota}
                 onChange={(e) => setNota(e.target.value)}
-                placeholder="Nota imutavel"
+                placeholder="Nota imutável"
                 aria-label="Nova nota"
               />
               <Button type="submit" variant="secondary">
@@ -394,7 +394,7 @@ export function Workspace({
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className="flex flex-col gap-5 rounded-card border border-line bg-ground p-5">
             <div>
-              <span className="text-label uppercase text-muted">Proxima acao</span>
+              <span className="text-label uppercase text-muted">Próxima ação</span>
               <p className="mt-1 text-[14px] text-ink">{ws.acaoPrincipal?.titulo ?? 'Nenhuma definida'}</p>
               {ws.acaoPrincipal?.venceEm && (
                 <span className="font-mono text-[12px] tabular-nums text-faint">
@@ -446,7 +446,7 @@ export function Workspace({
         onOpenChange={setAcaoAberta}
         oportunidadeId={id}
         onCriada={() => {
-          setStatus('Proximo passo definido');
+          setStatus('Próximo passo definido');
           carregar();
         }}
       />
@@ -459,7 +459,7 @@ export function Workspace({
         empresa={o.empresa}
         keywords={o.keywords}
         onConcluida={() => {
-          setStatus('Curriculo gerado');
+          setStatus('Currículo gerado');
           carregar();
         }}
         onAbrirCurriculo={(curriculoId) => {

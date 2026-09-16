@@ -92,7 +92,7 @@ export function MensagemUsuario({ texto }: { texto: string }) {
   return (
     <div className="flex justify-end motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1">
       <div className="max-w-[85%] rounded-card rounded-tr-sm border border-line-strong bg-ground px-3.5 py-2 text-[14px] text-ink shadow-rest">
-        <span className="mb-1 block text-label uppercase text-faint">Voce</span>
+        <span className="mb-1 block text-label uppercase text-faint">Você</span>
         <p className="whitespace-pre-wrap leading-relaxed">{texto}</p>
       </div>
     </div>
@@ -171,7 +171,7 @@ export function PassoTrilha({ item, ligado }: { item: Extract<Item, { tipo: 'pas
         {falhou && (
           <span className="inline-flex items-center gap-1 text-[13px] text-score-bad">
             <TriangleAlert className="size-3.5" />
-            {item.erro ?? 'falha na execucao'}
+            {item.erro ?? 'falha na execução'}
           </span>
         )}
       </div>
@@ -235,10 +235,10 @@ export function CartaoConfirmacao({
       )}
     >
       <div className="flex flex-col gap-1 p-4">
-        <span className="text-label uppercase text-accent-ink">Confirmacao necessaria</span>
+        <span className="text-label uppercase text-accent-ink">Confirmação necessária</span>
         <p className="text-[15px] font-medium text-ink">{item.resumo}</p>
         <p className="text-[13px] text-muted">
-          {rotuloTool(item.tool)}. Nada foi gravado ate voce confirmar.
+          {rotuloTool(item.tool)}. Nada foi gravado até você confirmar.
         </p>
       </div>
 
@@ -319,7 +319,7 @@ export function CartaoEntrega({ item }: { item: Extract<Item, { tipo: 'entrega' 
           {item.texto}
         </p>
         <p className="mt-2.5 text-[12px] text-muted">
-          O envio e seu. O copiloto prepara o texto e nunca envia por voce.
+          O envio é seu. O copiloto prepara o texto e nunca envia por você.
         </p>
       </div>
     </div>
@@ -341,7 +341,7 @@ export function CartaoErro({
         <TriangleAlert className="mt-0.5 size-4 shrink-0 text-score-bad" />
         <div>
           <p className="text-[14px] text-ink">{item.mensagem}</p>
-          <p className="text-[12px] text-muted">A conversa foi preservada. Voce pode repetir o turno.</p>
+          <p className="text-[12px] text-muted">A conversa foi preservada. Você pode repetir o turno.</p>
         </div>
       </div>
       <Button variant="secondary" size="sm" disabled={bloqueado} onClick={onRepetir}>
@@ -388,10 +388,10 @@ export function Composer({
         rows={1}
         placeholder={
           bloqueado
-            ? 'Responda a confirmacao acima para seguir'
+            ? 'Responda à confirmação acima para seguir'
             : autopiloto
               ? 'Diga o objetivo e o copiloto encadeia o loop'
-              : 'Cole uma vaga ou peca o proximo passo'
+              : 'Cole uma vaga ou peça o próximo passo'
         }
         className="min-h-[44px] resize-none border-0 bg-transparent px-2 py-2 text-[15px] shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
       />

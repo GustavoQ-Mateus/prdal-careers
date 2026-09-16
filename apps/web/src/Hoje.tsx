@@ -140,7 +140,7 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
           <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[13px] text-faint">
             <span>{rotuloTipo(item.tipo)}</span>
             <span aria-hidden>·</span>
-            <span>{item.oportunidade?.empresa ?? 'Empresa nao informada'}</span>
+            <span>{item.oportunidade?.empresa ?? 'Empresa não informada'}</span>
             <span aria-hidden>·</span>
             <span className="font-mono tabular-nums">{fmtData(item.venceEm)}</span>
             {atraso && !finalizada && (
@@ -153,7 +153,7 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
 
         <div className="shrink-0">
           {estado === 'concluida' ? (
-            <span className="text-[13px] text-muted">Concluida</span>
+            <span className="text-[13px] text-muted">Concluída</span>
           ) : estado === 'cancelada' ? (
             <span className="text-[13px] text-muted">Cancelada</span>
           ) : emReagendamento ? (
@@ -228,7 +228,7 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
         >
           <span>
             <span className="font-mono tabular-nums text-ink">{dados.resumoAts.curriculos}</span>{' '}
-            curriculos
+            currículos
           </span>
           <span aria-hidden className="h-3.5 w-px bg-line" />
           <span>
@@ -237,7 +237,7 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
           </span>
           <span aria-hidden className="h-3.5 w-px bg-line" />
           <span className="flex items-center gap-1.5">
-            Score medio <ScoreNum valor={dados.resumoAts.media} />
+            Score médio <ScoreNum valor={dados.resumoAts.media} />
           </span>
         </div>
       )}
@@ -253,9 +253,9 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
 
       {vazio ? (
         <div className="py-6">
-          <h2 className="text-section text-ink">Sem pendencias na agenda</h2>
+          <h2 className="text-section text-ink">Sem pendências na agenda</h2>
           <p className="mt-2 max-w-md text-[14px] text-muted">
-            Nada com prazo por aqui. Abra Oportunidades para registrar uma vaga ou defina o proximo
+            Nada com prazo por aqui. Abra Oportunidades para registrar uma vaga ou defina o próximo
             passo de uma candidatura ativa.
           </p>
         </div>
@@ -265,14 +265,14 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
             {dados.atrasadas.length > 0 && renderGrupo('Atrasados', dados.atrasadas, '', true)}
             {renderGrupo('Hoje', dados.hoje, 'Nada com prazo para hoje.')}
             {renderGrupo(
-              'Proximos sete dias',
+              'Próximos sete dias',
               dados.proximosDias,
-              'Nenhum prazo nos proximos sete dias.',
+              'Nenhum prazo nos próximos sete dias.',
             )}
 
             {semPasso.length > 0 && (
               <section>
-                <GrupoTitulo titulo="Sem proximo passo" contagem={semPasso.length} />
+                <GrupoTitulo titulo="Sem próximo passo" contagem={semPasso.length} />
                 <ul className="divide-y divide-line border-t border-line">
                   {semPasso.map((item) => {
                     const definido = passosDefinidos[item.id];
@@ -293,7 +293,7 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
                         </div>
                         <div className="shrink-0">
                           {definido ? (
-                            <span className="text-[13px] text-muted">Proximo passo definido</span>
+                            <span className="text-[13px] text-muted">Próximo passo definido</span>
                           ) : editando ? (
                             <form
                               className="flex flex-wrap items-center gap-2"
@@ -303,9 +303,9 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
                               }}
                             >
                               <Input
-                                aria-label="Proximo passo"
+                                aria-label="Próximo passo"
                                 className="h-8 w-56"
-                                placeholder="Ex: revisar vaga e gerar curriculo"
+                                placeholder="Ex: revisar vaga e gerar currículo"
                                 value={passoTitulo}
                                 onChange={(e) => setPassoTitulo(e.target.value)}
                                 autoFocus
@@ -335,7 +335,7 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
                                 setPassoTitulo('');
                               }}
                             >
-                              Definir proximo passo
+                              Definir próximo passo
                             </Button>
                           )}
                         </div>
@@ -353,7 +353,7 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
         <GrupoTitulo titulo="Atividade recente" />
         {atividade.length === 0 ? (
           <p className="border-t border-line py-3.5 text-[14px] text-muted">
-            Ainda nao ha historico. As acoes que voce concluir aparecem aqui.
+            Ainda não há histórico. As ações que você concluir aparecem aqui.
           </p>
         ) : (
           <ul className="divide-y divide-line border-t border-line">

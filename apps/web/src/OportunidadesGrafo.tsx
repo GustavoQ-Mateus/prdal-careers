@@ -116,13 +116,13 @@ export function OportunidadesGrafo({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="grafo-busca">Buscar nos</Label>
+            <Label htmlFor="grafo-busca">Buscar nós</Label>
             <Input
               id="grafo-busca"
               className="w-56"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Rotulo do no"
+              placeholder="Rótulo do nó"
             />
           </div>
           <Button variant="secondary" size="sm" onClick={() => setLayoutAtivo((v) => !v)}>
@@ -160,7 +160,7 @@ export function OportunidadesGrafo({
       </div>
 
       <div>
-        <p className="pb-2 text-label uppercase text-muted">Nos ({filtrados.length})</p>
+        <p className="pb-2 text-label uppercase text-muted">Nós ({filtrados.length})</p>
         <ul className="divide-y divide-line rounded-card border border-line bg-ground">
           {filtrados.map((n) => (
             <li key={n.id} className="flex items-center gap-3 px-4 py-2.5 text-[14px]">
