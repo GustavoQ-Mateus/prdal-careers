@@ -4,9 +4,6 @@ import animate from 'tailwindcss-animate';
 export default {
   darkMode: ['class'],
   content: ['./index.html', './src/**/*.{ts,tsx}'],
-  corePlugins: {
-    preflight: false,
-  },
   theme: {
     extend: {
       screens: {
