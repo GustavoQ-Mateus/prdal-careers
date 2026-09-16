@@ -50,29 +50,28 @@ export function AppNav({
   onAlternarColapso?: () => void;
 }) {
   return (
-    <div className="flex h-full flex-col">
-      <div className={cn('flex h-14 items-center', colapsada ? 'justify-center px-0' : 'px-5')}>
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex h-14 items-center px-3">
         {colapsada ? (
           <>
-            <Marca variante="marca" fundo="claro" className="h-6 w-auto dark:hidden" />
-            <Marca variante="marca" fundo="escuro" className="hidden h-6 w-auto dark:block" />
+            <Marca variante="marca" fundo="claro" className="h-6 w-auto shrink-0 dark:hidden" />
+            <Marca variante="marca" fundo="escuro" className="hidden h-6 w-auto shrink-0 dark:block" />
           </>
         ) : (
           <>
-            <Marca variante="lockup" fundo="claro" className="h-6 w-auto dark:hidden" />
-            <Marca variante="lockup" fundo="escuro" className="hidden h-6 w-auto dark:block" />
+            <Marca variante="lockup" fundo="claro" className="h-6 w-auto shrink-0 dark:hidden" />
+            <Marca variante="lockup" fundo="escuro" className="hidden h-6 w-auto shrink-0 dark:block" />
           </>
         )}
       </div>
 
-      <nav
-        className={cn('flex flex-1 flex-col gap-6 py-4', colapsada ? 'px-2' : 'px-3')}
-        aria-label="Navegação principal"
-      >
+      <nav className="flex flex-1 flex-col gap-6 px-3 py-4" aria-label="Navegação principal">
         {GRUPOS.map((grupo, i) => (
           <div key={grupo.titulo ?? `grupo-${i}`} className="flex flex-col gap-1">
             {grupo.titulo && !colapsada && (
-              <span className="px-3 pb-1 text-label uppercase text-faint">{grupo.titulo}</span>
+              <span className="whitespace-nowrap px-3 pb-1 text-label uppercase text-faint">
+                {grupo.titulo}
+              </span>
             )}
             {grupo.itens.map((item) => {
               const Icon = item.icon;
@@ -83,17 +82,22 @@ export function AppNav({
                   onClick={() => onNavegar(item.tela)}
                   aria-current={ativo ? 'page' : undefined}
                   title={colapsada ? item.nome : undefined}
-                  aria-label={colapsada ? item.nome : undefined}
                   className={cn(
-                    'flex h-9 items-center rounded-control text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
-                    colapsada ? 'justify-center px-0' : 'gap-3 px-3',
+                    'flex h-9 w-full items-center gap-3 rounded-control px-2 text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
                     ativo
                       ? 'bg-accent-soft font-medium text-accent-ink'
                       : 'text-muted hover:bg-canvas hover:text-ink',
                   )}
                 >
                   <Icon className={cn('size-[18px] shrink-0', ativo ? 'text-accent' : 'text-faint')} />
-                  {!colapsada && item.nome}
+                  <span
+                    className={cn(
+                      'whitespace-nowrap transition-opacity duration-200',
+                      colapsada && 'opacity-0',
+                    )}
+                  >
+                    {item.nome}
+                  </span>
                 </button>
               );
             })}
@@ -101,37 +105,44 @@ export function AppNav({
         ))}
       </nav>
 
-      <div className={cn('flex flex-col gap-1 border-t border-line py-3', colapsada ? 'px-2' : 'px-3')}>
+      <div className="flex flex-col gap-1 border-t border-line px-3 py-3">
         {onAlternarColapso && (
           <button
             onClick={onAlternarColapso}
             aria-expanded={!colapsada}
             aria-label={colapsada ? 'Expandir navegação' : 'Recolher navegação'}
             title={colapsada ? 'Expandir navegação' : 'Recolher navegação'}
-            className={cn(
-              'flex h-9 items-center rounded-control text-[14px] text-muted transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
-              colapsada ? 'justify-center px-0' : 'gap-3 px-3',
-            )}
+            className="flex h-9 w-full items-center gap-3 rounded-control px-2 text-[14px] text-muted transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             {colapsada ? (
               <PanelLeftOpen className="size-[18px] shrink-0 text-faint" />
             ) : (
               <PanelLeftClose className="size-[18px] shrink-0 text-faint" />
             )}
-            {!colapsada && 'Recolher'}
+            <span
+              className={cn(
+                'whitespace-nowrap transition-opacity duration-200',
+                colapsada && 'opacity-0',
+              )}
+            >
+              Recolher
+            </span>
           </button>
         )}
         <button
           onClick={onSair}
-          aria-label={colapsada ? 'Sair' : undefined}
           title={colapsada ? 'Sair' : undefined}
-          className={cn(
-            'flex h-9 items-center rounded-control text-[14px] text-muted transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
-            colapsada ? 'w-full justify-center px-0' : 'w-full gap-3 px-3',
-          )}
+          className="flex h-9 w-full items-center gap-3 rounded-control px-2 text-[14px] text-muted transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           <LogOut className="size-[18px] shrink-0 text-faint" />
-          {!colapsada && 'Sair'}
+          <span
+            className={cn(
+              'whitespace-nowrap transition-opacity duration-200',
+              colapsada && 'opacity-0',
+            )}
+          >
+            Sair
+          </span>
         </button>
       </div>
     </div>

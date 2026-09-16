@@ -132,11 +132,11 @@ export function App() {
   }
 
   return (
-    <div className="app-root flex min-h-screen bg-canvas font-sans text-[15px] text-ink">
+    <div className="app-root flex min-h-screen bg-canvas font-sans text-[14px] text-ink">
       <aside
         className={cn(
           'hidden shrink-0 border-r border-line bg-ground transition-[width] duration-200 nav:block',
-          navColapsada ? 'w-[68px]' : 'w-[248px]',
+          navColapsada ? 'w-[60px]' : 'w-[248px]',
         )}
       >
         <div className="sticky top-0 h-screen">
