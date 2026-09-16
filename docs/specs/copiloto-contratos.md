@@ -2,12 +2,12 @@
 
 | Campo | Valor |
 |---|---|
-| **Status** | Draft |
+| **Status** | Backend implementado |
 | **Data** | 2026-09-16 |
 | **Base** | ADR 0018, `spec-v1.6.0` seção 8 |
-| **Escopo** | Contratos que o P7 implementa. Não é código; é a fonte da verdade dos contratos do copiloto. |
+| **Escopo** | Contratos do copiloto. Backend implementado, sem lacuna aberta; a UI é implementada em cima deste documento. |
 
-Este documento fecha o que a ADR 0018 deixou aberto: o endpoint de chat, o schema dos eventos do stream, o registro de tools mapeado para os endpoints atuais, o protocolo de confirmação, o modo autopiloto, o tratamento de falha e os estados que a UI do P7 precisa renderizar. Toda tool aponta para um endpoint que a `api` já expõe; onde não existe endpoint, o passo está na seção de lacunas, não inventado como rota.
+Este documento fecha o que a ADR 0018 deixou aberto: o endpoint de chat, o schema dos eventos do stream, o registro de tools mapeado para os endpoints atuais, o protocolo de confirmação, o modo autopiloto, o tratamento de falha e os estados que a UI precisa renderizar. Toda tool aponta para um endpoint que a `api` expõe; as capacidades que faltavam viraram endpoints de leitura na seção 9.
 
 Linguagem do produto: escopo do candidato, nunca lado empresa. O copiloto prepara o interno e reversível; o candidato dispara o externo.
 
@@ -177,8 +177,8 @@ Cada tool tem nome, endpoint interno que aciona, entrada, efeito e exigência de
 
 | Tool | Endpoint interno | Entrada | Efeito |
 |---|---|---|---|
-| `redigir_mensagem_recrutador` | lacuna, ver seção 7 | `oportunidadeId`, contexto do candidato e da vaga | leitura que produz texto, resultado vai em `entrega_externa` |
-| `redigir_respostas_formulario` | lacuna, ver seção 7 | `oportunidadeId`, campos do formulário | leitura que produz texto, resultado vai em `entrega_externa` |
+| `redigir_mensagem_recrutador` | `POST /copiloto/mensagem-recrutador` | `oportunidadeId`, `contexto?` | leitura que produz texto, resultado vai em `entrega_externa` |
+| `redigir_respostas_formulario` | `POST /copiloto/respostas-formulario` | `oportunidadeId`, `campos` | leitura que produz texto, resultado vai em `entrega_externa` |
 
 Essas duas tools não gravam e não enviam nada. Produzem texto que sai por `entrega_externa` para o candidato revisar e usar. O registro da candidatura, depois que o candidato de fato se inscreveu, é feito por `registrar_candidatura` ou `atualizar_candidatura`, que são de escrita e confirmadas.
 
@@ -240,13 +240,18 @@ A UI do copiloto renderiza estados derivados do stream:
 - **autopiloto_parado_externo:** `fim_turno` motivo `aguardando_acao_externa`, aguardando o candidato agir fora do produto.
 - **erro_turno:** recebeu `erro`, mostra a mensagem localizada e a opção de repetir, preservando o histórico.
 
-## 9. Lacunas de endpoint a resolver no P7
+## 9. Endpoints das lacunas, resolvidos
 
-Passos do loop sem endpoint próprio hoje. Nenhuma rota foi inventada; cada lacuna é uma decisão do P7:
+Cada lacuna virou um endpoint de leitura na `api`, autenticado pelo mesmo `JwtAuthGuard` e sem persistir nada. Todos ficam agrupados sob `/copiloto`, apoiados numa capacidade que já existe no `ai-service`.
 
-1. **Prévia de keywords sem criar a vaga.** A extração existe no `ai-service`, mas a `api` só a dispara dentro de `POST /oportunidades` e `PUT /vagas/:id`. Para o copiloto mostrar keywords antes de gravar, o P7 decide entre expor uma prévia de leitura na `api` ou aceitar que a extração só acontece ao registrar a oportunidade.
-2. **Consulta de RAG como passo visível.** `contextQuery` existe no cliente interno de IA, mas a `api` não a publica; o RAG só é consumido dentro da geração. Para o copiloto puxar RAG como passo, o P7 decide entre expor uma consulta de leitura na `api` ou manter o RAG embutido na geração.
-3. **Score avulso de um texto.** A função de score determinística existe no `ai-service`, mas a `api` só a aciona dentro da geração e da edição de currículo. Para medir um texto sem regerar nem editar, o P7 decide entre expor um score de leitura na `api` ou restringir a medição aos fluxos que já a computam.
-4. **Redação de mensagem ao recrutador.** Não há endpoint. O P7 define uma geração de texto no `ai-service` exposta pela `api`, de leitura, cujo resultado sai por `entrega_externa`. Não grava e não envia.
-5. **Redação de respostas de formulário.** Mesma situação da anterior, com entrada dos campos do formulário.
-6. **Endpoint de chat do copiloto.** `POST /copiloto/chat` com SSE e a rota conversacional correspondente no `ai-service` são novos e implementados no P7, conforme as seções 1 e 2.
+1. **Prévia de keywords sem criar a vaga.** `POST /copiloto/keywords-previa`. Entrada `{ descricao }`, saída `{ keywords }`. Aciona a extração do `ai-service` e devolve as keywords sem gravar vaga.
+2. **Consulta de RAG como passo visível.** `POST /copiloto/rag/consulta`. Entrada `{ query, k? }`, saída `{ chunks }`. Consulta o Chroma aterrado nos dados do candidato e devolve os trechos recuperados. Chroma fora do ar degrada conforme a seção 7.
+3. **Score avulso de um texto.** `POST /copiloto/score`. Entrada `{ markdown, oportunidadeId? , keywords? }`, saída `{ score, breakdown }`. Usa a função determinística da ADR 0005; as keywords vêm da oportunidade quando `oportunidadeId` é informado, senão das `keywords` do corpo. Não regera nem edita currículo.
+4. **Redação de mensagem ao recrutador.** `POST /copiloto/mensagem-recrutador`. Entrada `{ oportunidadeId, contexto? }`, saída `{ tipo, titulo, texto, destino }`. A `api` compõe perfil e vaga, o `ai-service` redige, o resultado sai por `entrega_externa`. Não grava e não envia.
+5. **Redação de respostas de formulário.** `POST /copiloto/respostas-formulario`. Entrada `{ oportunidadeId, campos }`, saída `{ tipo, titulo, respostas, texto }`. Mesma fronteira da anterior, com um texto por campo e um texto consolidado.
+6. **Endpoint de chat do copiloto.** `POST /copiloto/chat` com SSE, conforme as seções 1 e 2. A rota conversacional correspondente no `ai-service` é `POST /copiloto/turn`: a cada rodada recebe histórico, tools disponíveis e o modo, e devolve `{ tipo, texto?, tool?, args }`, texto ou intenção de tool-call. O `ai-service` nunca executa a tool; quem executa é a `api`.
+
+Duas notas de contrato que a implementação fixou, sem abrir lacuna nova:
+
+- O evento `fim_turno` carrega `conversaId` além de `motivo`, para o cliente retomar a conversa entre turnos.
+- Os eventos de token do agente vêm de fragmentar o texto que o `ai-service` devolve no turno; o transporte é sempre SSE token a token.
