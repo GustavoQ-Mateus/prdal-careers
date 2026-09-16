@@ -67,7 +67,7 @@ export function CurriculoView({
       </div>
     );
   }
-  if (!curriculo) return <p className="py-10 text-[14px] text-muted">Carregando curriculo...</p>;
+  if (!curriculo) return <p className="py-10 text-[14px] text-muted">Carregando currículo...</p>;
 
   return (
     <div className="flex flex-col gap-8">
@@ -96,7 +96,7 @@ export function CurriculoView({
                   Baixar .docx
                 </Button>
               ) : (
-                <span className="text-[13px] text-faint">.docx indisponivel</span>
+                <span className="text-[13px] text-faint">.docx indisponível</span>
               )}
               {curriculo.downloadPdfUrl ? (
                 <Button
@@ -106,7 +106,7 @@ export function CurriculoView({
                   Baixar .pdf
                 </Button>
               ) : (
-                <span className="text-[13px] text-faint">.pdf indisponivel</span>
+                <span className="text-[13px] text-faint">.pdf indisponível</span>
               )}
               <Button variant="secondary" onClick={() => setEditando(true)}>
                 Editar markdown
@@ -140,7 +140,7 @@ export function CurriculoView({
             </div>
           </section>
           <section className="border-t border-line pt-6">
-            <h3 className="text-label uppercase text-muted">Diagnostico</h3>
+            <h3 className="text-label uppercase text-muted">Diagnóstico</h3>
             <div className="mt-3">
               <Breakdown breakdown={curriculo.breakdown} />
             </div>
@@ -151,7 +151,7 @@ export function CurriculoView({
           {editando ? (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="cv-rotulo">Rotulo da versao</Label>
+                <Label htmlFor="cv-rotulo">Rótulo da versão</Label>
                 <Input id="cv-rotulo" value={rotulo} onChange={(e) => setRotulo(e.target.value)} />
               </div>
               <div className="flex flex-col gap-1.5">

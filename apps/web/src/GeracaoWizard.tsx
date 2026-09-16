@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 const PASSOS = [
   { titulo: 'Analisar', descricao: 'Vaga e contexto' },
   { titulo: 'Gerar', descricao: 'LLM, RAG, Perfil e notas' },
-  { titulo: 'Revisar', descricao: 'Score e exportacao' },
+  { titulo: 'Revisar', descricao: 'Score e exportação' },
 ] as const;
 
 function passoDeStatus(status: StatusGeracaoCurriculo): number {
@@ -72,7 +72,7 @@ export function GeracaoWizard({
       .then(setContexto)
       .catch((err) =>
         setContextoFalha({
-          titulo: 'Nao foi possivel recuperar o contexto agora',
+          titulo: 'Não foi possível recuperar o contexto agora',
           detalhe: (err as Error).message,
         }),
       );
@@ -95,7 +95,7 @@ export function GeracaoWizard({
             setCurriculo(cv);
           } catch (err) {
             setErro({
-              titulo: 'Nao foi possivel abrir o curriculo gerado',
+              titulo: 'Não foi possível abrir o currículo gerado',
               detalhe: (err as Error).message,
             });
           }
@@ -104,12 +104,12 @@ export function GeracaoWizard({
         if (g.status === 'ERRO') {
           clearInterval(timer);
           setJobId(null);
-          setErro({ titulo: 'A geracao falhou', detalhe: g.erro ?? undefined });
+          setErro({ titulo: 'A geração falhou', detalhe: g.erro ?? undefined });
         }
       } catch (err) {
         clearInterval(timer);
         setJobId(null);
-        setErro({ titulo: 'A geracao falhou', detalhe: (err as Error).message });
+        setErro({ titulo: 'A geração falhou', detalhe: (err as Error).message });
       }
     }, 1200);
     return () => clearInterval(timer);
@@ -125,7 +125,7 @@ export function GeracaoWizard({
       setStatus('PENDENTE');
       setPasso(0);
     } catch (err) {
-      setErro({ titulo: 'A geracao falhou', detalhe: (err as Error).message });
+      setErro({ titulo: 'A geração falhou', detalhe: (err as Error).message });
     }
   }
 
@@ -136,13 +136,13 @@ export function GeracaoWizard({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl gap-5">
         <DialogHeader>
-          <DialogTitle>Geracao de curriculo ATS</DialogTitle>
+          <DialogTitle>Geração de currículo ATS</DialogTitle>
           <DialogDescription>
             {titulo} · {empresa}
           </DialogDescription>
         </DialogHeader>
 
-        <ol className="flex items-center gap-2" aria-label="Progresso da geracao">
+        <ol className="flex items-center gap-2" aria-label="Progresso da geração">
           {PASSOS.map((p, i) => {
             const estado: 'feito' | 'atual' | 'erro' | 'pendente' =
               !!erro && i === passo && !curriculo
@@ -206,8 +206,8 @@ export function GeracaoWizard({
           {!curriculo && passo === 0 && (
             <div className="flex flex-col gap-4">
               <p className="text-[14px] text-ink-2">
-                A geracao analisa a vaga, recupera o contexto do RAG e combina Perfil e notas para
-                produzir a versao tailored e medir o score determinístico.
+                A geração analisa a vaga, recupera o contexto do RAG e combina Perfil e notas para
+                produzir a versão tailored e medir o score determinístico.
               </p>
 
               {keywords.length > 0 && (
@@ -224,12 +224,12 @@ export function GeracaoWizard({
               )}
 
               <div className="flex flex-col gap-1.5">
-                <span className="text-label uppercase text-muted">Contexto de recuperacao</span>
+                <span className="text-label uppercase text-muted">Contexto de recuperação</span>
                 {ragIndisponivel ? (
                   <div className="rounded-control border border-score-warn/40 bg-ground px-3 py-2 text-score-warn">
                     <p className="text-[13px]">
                       {contextoFalha?.titulo ??
-                        'Nenhum documento indexado. A geracao segue apenas com Perfil e notas.'}
+                        'Nenhum documento indexado. A geração segue apenas com Perfil e notas.'}
                     </p>
                     {contextoFalha?.detalhe && (
                       <p className="mt-0.5 break-words font-mono text-[11px] text-score-warn/70">
@@ -239,7 +239,7 @@ export function GeracaoWizard({
                   </div>
                 ) : (
                   <p className="text-[13px] text-muted">
-                    {contexto?.documentos} documentos indexados disponíveis para recuperacao.
+                    {contexto?.documentos} documentos indexados disponíveis para recuperação.
                   </p>
                 )}
               </div>
@@ -251,7 +251,7 @@ export function GeracaoWizard({
                       <Loader2 className="animate-spin" /> Analisando
                     </>
                   ) : (
-                    'Iniciar geracao'
+                    'Iniciar geração'
                   )}
                 </Button>
               </div>
@@ -261,7 +261,7 @@ export function GeracaoWizard({
           {!curriculo && passo === 1 && (
             <div className="flex flex-col items-center gap-3 py-10 text-center" role="status">
               <Loader2 className="size-5 animate-spin text-accent" />
-              <p className="text-[14px] text-ink-2">Gerando o curriculo com LLM, RAG, Perfil e notas...</p>
+              <p className="text-[14px] text-ink-2">Gerando o currículo com LLM, RAG, Perfil e notas...</p>
             </div>
           )}
 
@@ -312,9 +312,9 @@ export function GeracaoWizard({
                 )}
                 <div className="ml-auto flex gap-2">
                   <Button variant="ghost" onClick={() => void iniciar()} disabled={gerando}>
-                    Gerar nova versao
+                    Gerar nova versão
                   </Button>
-                  <Button onClick={() => onAbrirCurriculo(curriculo.id)}>Abrir curriculo</Button>
+                  <Button onClick={() => onAbrirCurriculo(curriculo.id)}>Abrir currículo</Button>
                 </div>
               </div>
             </div>

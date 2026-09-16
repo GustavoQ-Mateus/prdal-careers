@@ -7,17 +7,17 @@ import { Label } from '@/components/ui/label';
 function mensagemAmigavel(bruto: string, modo: 'login' | 'registro'): string {
   const t = bruto.toLowerCase();
   if (t.includes('econnrefused') || t.includes('failed to fetch') || t.includes('network') || t.includes('erro 5')) {
-    return 'Nao foi possivel conectar ao servidor agora. Tente novamente em instantes.';
+    return 'Não foi possível conectar ao servidor agora. Tente novamente em instantes.';
   }
   if (t.includes('409') || t.includes('existe') || t.includes('conflict')) {
-    return 'Ja existe uma conta com esse e-mail. Tente entrar.';
+    return 'Já existe uma conta com esse e-mail. Tente entrar.';
   }
   if (t.includes('401') || t.includes('credenc') || t.includes('inval') || t.includes('senha')) {
     return 'E-mail ou senha incorretos.';
   }
   return modo === 'login'
-    ? 'Nao foi possivel entrar. Confira os dados e tente de novo.'
-    : 'Nao foi possivel criar a conta. Tente de novo.';
+    ? 'Não foi possível entrar. Confira os dados e tente de novo.'
+    : 'Não foi possível criar a conta. Tente de novo.';
 }
 
 export function AuthForm({ onAuth }: { onAuth: () => void }) {
@@ -47,13 +47,13 @@ export function AuthForm({ onAuth }: { onAuth: () => void }) {
   return (
     <div className="w-full">
       <span className="text-label uppercase text-muted">{login_ ? 'Acesso' : 'Nova conta'}</span>
-      <h1 className="mt-2 text-[28px] font-bold leading-tight text-ink">
+      <h1 className="mt-2 text-[24px] font-bold leading-tight text-ink">
         {login_ ? 'Bem-vindo de volta.' : 'Crie sua conta.'}
       </h1>
       <p className="mt-2 text-[14px] text-muted">
         {login_
-          ? 'Entre para gerar e analisar seus curriculos por vaga.'
-          : 'Comece a gerar curriculos tailored e medir o score ATS.'}
+          ? 'Entre para gerar e analisar seus currículos por vaga.'
+          : 'Comece a gerar currículos tailored e medir o score ATS.'}
       </p>
 
       <form onSubmit={enviar} className="mt-7 flex flex-col gap-4">
@@ -101,7 +101,7 @@ export function AuthForm({ onAuth }: { onAuth: () => void }) {
           }}
           className="rounded-control text-[13px] font-medium text-accent transition-colors hover:text-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
-          {login_ ? 'Criar uma conta' : 'Ja tenho conta'}
+          {login_ ? 'Criar uma conta' : 'Já tenho conta'}
         </button>
       </form>
     </div>

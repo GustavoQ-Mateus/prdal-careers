@@ -23,14 +23,14 @@ function EstadoVazio({ autopiloto }: { autopiloto: boolean }) {
       <span className="flex size-11 items-center justify-center rounded-card border border-line-strong bg-ground text-accent shadow-rest">
         <Compass className="size-5" />
       </span>
-      <h2 className="mt-4 text-[19px] font-semibold text-ink">Conduza a candidatura em conversa</h2>
+      <h2 className="mt-4 text-[18px] font-semibold text-ink">Conduza a candidatura em conversa</h2>
       <p className="mt-2 max-w-md text-[14px] leading-relaxed text-muted">
-        Cole a descricao de uma vaga, peca o proximo passo ou deixe o copiloto preparar o curriculo
-        e o texto para voce revisar. Ler e analisar roda sozinho. Gravar sempre pede sua confirmacao.
+        Cole a descrição de uma vaga, peça o próximo passo ou deixe o copiloto preparar o currículo
+        e o texto para você revisar. Ler e analisar roda sozinho. Gravar sempre pede sua confirmação.
       </p>
       {autopiloto && (
         <p className="mt-3 max-w-md text-[13px] text-muted">
-          Em autopiloto ele encadeia o loop e para antes de qualquer acao externa, com o conteudo
+          Em autopiloto ele encadeia o loop e para antes de qualquer ação externa, com o conteúdo
           pronto a usar.
         </p>
       )}
@@ -43,7 +43,7 @@ function AvisoParadoExterno() {
     <div className="flex items-start gap-2 rounded-card border border-accent/40 bg-accent-soft px-4 py-3 text-[13px] text-accent-ink motion-safe:animate-in motion-safe:fade-in">
       <ExternalLink className="mt-0.5 size-4 shrink-0" />
       <p>
-        O copiloto parou aqui. Ele preparou o conteudo e a proxima acao e sua, fora do produto.
+        O copiloto parou aqui. Ele preparou o conteúdo e a próxima ação é sua, fora do produto.
         Quando agir, volte e registre o resultado para o loop seguir.
       </p>
     </div>

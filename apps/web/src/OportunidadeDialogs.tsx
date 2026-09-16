@@ -148,7 +148,7 @@ export function RegistrarDialog({
           <form onSubmit={criar} className="flex flex-col gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="op-titulo">Titulo</Label>
+                <Label htmlFor="op-titulo">Título</Label>
                 <Input id="op-titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
               </div>
               <div className="flex flex-col gap-1.5">
@@ -157,7 +157,7 @@ export function RegistrarDialog({
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="op-descricao">Descricao</Label>
+              <Label htmlFor="op-descricao">Descrição</Label>
               <Textarea
                 id="op-descricao"
                 rows={5}
@@ -167,7 +167,7 @@ export function RegistrarDialog({
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="op-fonte">Fonte opcional</Label>
+              <Label htmlFor="op-fonte">Link da vaga</Label>
               <Input id="op-fonte" value={fonte} onChange={(e) => setFonte(e.target.value)} />
             </div>
             <DialogFooter>
@@ -294,7 +294,7 @@ export function EditarDialog({
 
         {entrada ? (
           <p className="text-[14px] text-ink-2">
-            Esta oportunidade esta na entrada. Ative para trabalhar prioridade, etapa e candidatura.
+            Esta oportunidade está na entrada. Ative para trabalhar prioridade, etapa e candidatura.
           </p>
         ) : (
           <div className="flex flex-col gap-1.5">
