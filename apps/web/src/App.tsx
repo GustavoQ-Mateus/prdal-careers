@@ -20,28 +20,43 @@ import { abaDaRota, useRota, type Aba, type Rota } from './rotas';
 import { useEffect, useState } from 'react';
 
 const CONTEXTO: Record<Aba, { titulo: string; descricao: string }> = {
-  hoje: { titulo: 'Hoje', descricao: 'O que precisa da sua atencao neste momento' },
+  hoje: { titulo: 'Hoje', descricao: 'O que precisa da sua atenção neste momento' },
   oportunidades: {
     titulo: 'Oportunidades',
-    descricao: 'Inventario e as visoes de lista, board e grafo no mesmo hub',
+    descricao: 'Inventário e as visões de lista, board e grafo no mesmo hub',
   },
   copiloto: {
     titulo: 'Copiloto',
-    descricao: 'Conduza a candidatura em conversa, do curriculo ao texto pronto',
+    descricao: 'Conduza a candidatura em conversa, do currículo ao texto pronto',
   },
-  curriculos: { titulo: 'Curriculos', descricao: 'Biblioteca de versoes geradas para cada oportunidade' },
-  conhecimento: { titulo: 'Conhecimento', descricao: 'Fontes usadas pelo RAG na geracao ATS' },
-  perfil: { titulo: 'Perfil', descricao: 'Historico profissional canonico para os curriculos' },
+  curriculos: { titulo: 'Currículos', descricao: 'Biblioteca de versões geradas para cada oportunidade' },
+  conhecimento: { titulo: 'Conhecimento', descricao: 'Fontes usadas pelo RAG na geração ATS' },
+  perfil: { titulo: 'Perfil', descricao: 'Histórico profissional canônico para os currículos' },
 };
 
 export function App() {
   const [autenticado, setAutenticado] = useState(estaAutenticado());
   const { rota, ir } = useRota();
   const [mobileAberta, setMobileAberta] = useState(false);
+  const [navColapsada, setNavColapsada] = useState(() => {
+    try {
+      return localStorage.getItem('nav-colapsada') === '1';
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     if (window.location.pathname === '/') ir({ tela: 'hoje' }, true);
   }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('nav-colapsada', navColapsada ? '1' : '0');
+    } catch {
+      /* preferência não persistida */
+    }
+  }, [navColapsada]);
 
   if (!autenticado) {
     return (
@@ -71,18 +86,18 @@ export function App() {
           </div>
           <div className="max-w-md">
             <span className="text-label uppercase text-muted">Seu processo, sob controle</span>
-            <h2 className="mt-3 text-[32px] font-bold leading-[1.12] text-ink">
+            <h2 className="mt-3 text-[27px] font-bold leading-[1.14] text-ink">
               Uma vaga.
               <br />
-              O curriculo certo.
+              O currículo certo.
             </h2>
-            <p className="mt-4 text-[15px] leading-relaxed text-muted">
+            <p className="mt-4 text-[14px] leading-relaxed text-muted">
               Organize oportunidades, acompanhe candidaturas e entenda cada ponto do seu score ATS.
             </p>
-            <ul className="mt-8 flex flex-col gap-2.5 text-[14px] text-ink-2">
-              <li>Um hub unico com lista, board e grafo das suas oportunidades.</li>
-              <li>Curriculos tailored por vaga com score determinístico.</li>
-              <li>Uma agenda do que precisa da sua atencao hoje.</li>
+            <ul className="mt-8 flex flex-col gap-2.5 text-[13px] text-ink-2">
+              <li>Um hub único com lista, board e grafo das suas oportunidades.</li>
+              <li>Currículos tailored por vaga com score determinístico.</li>
+              <li>Uma agenda do que precisa da sua atenção hoje.</li>
             </ul>
           </div>
         </aside>
@@ -96,8 +111,8 @@ export function App() {
   const contexto = !profunda
     ? CONTEXTO[abaAtiva ?? 'hoje']
     : rota.tela === 'workspace'
-      ? { titulo: 'Workspace', descricao: 'Curriculo, candidatura, acoes e historico desta oportunidade' }
-      : { titulo: 'Curriculo', descricao: 'Analise, edicao e arquivos da versao' };
+      ? { titulo: 'Workspace', descricao: 'Currículo, candidatura, ações e histórico desta oportunidade' }
+      : { titulo: 'Currículo', descricao: 'Análise, edição e arquivos da versão' };
 
   function navegar(tela: Aba) {
     const dest: Rota = tela === 'oportunidades' ? { tela, visao: 'lista' } : { tela };
@@ -118,9 +133,20 @@ export function App() {
 
   return (
     <div className="app-root flex min-h-screen bg-canvas font-sans text-[15px] text-ink">
-      <aside className="hidden w-[248px] shrink-0 border-r border-line bg-ground nav:block">
+      <aside
+        className={cn(
+          'hidden shrink-0 border-r border-line bg-ground transition-[width] duration-200 nav:block',
+          navColapsada ? 'w-[68px]' : 'w-[248px]',
+        )}
+      >
         <div className="sticky top-0 h-screen">
-          <AppNav ativa={abaAtiva} onNavegar={navegar} onSair={sair} />
+          <AppNav
+            ativa={abaAtiva}
+            onNavegar={navegar}
+            onSair={sair}
+            colapsada={navColapsada}
+            onAlternarColapso={() => setNavColapsada((v) => !v)}
+          />
         </div>
       </aside>
 
@@ -135,7 +161,7 @@ export function App() {
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Abrir navegacao"
+            aria-label="Abrir navegação"
             onClick={() => setMobileAberta(true)}
           >
             <Menu />
