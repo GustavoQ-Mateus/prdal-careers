@@ -1,6 +1,7 @@
 import { Menu } from 'lucide-react';
 import { AuthForm } from './AuthForm';
 import { BaseConhecimento } from './BaseConhecimento';
+import { Copiloto } from './Copiloto';
 import { AppNav } from './components/AppNav';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ThemeToggle } from './components/ThemeToggle';
@@ -23,6 +24,10 @@ const CONTEXTO: Record<Aba, { titulo: string; descricao: string }> = {
   oportunidades: {
     titulo: 'Oportunidades',
     descricao: 'Inventario e as visoes de lista, board e grafo no mesmo hub',
+  },
+  copiloto: {
+    titulo: 'Copiloto',
+    descricao: 'Conduza a candidatura em conversa, do curriculo ao texto pronto',
   },
   curriculos: { titulo: 'Curriculos', descricao: 'Biblioteca de versoes geradas para cada oportunidade' },
   conhecimento: { titulo: 'Conhecimento', descricao: 'Fontes usadas pelo RAG na geracao ATS' },
@@ -187,8 +192,10 @@ export function App() {
                   onCurriculo={(curriculoId) =>
                     ir({ tela: 'curriculo', oportunidadeId: rota.id, curriculoId })
                   }
+                  onCopiloto={() => ir({ tela: 'copiloto', oportunidadeId: rota.id })}
                 />
               )}
+              {rota.tela === 'copiloto' && <Copiloto oportunidadeId={rota.oportunidadeId} />}
               {rota.tela === 'curriculos' && (
                 <Curriculos
                   onAbrir={(oportunidadeId, curriculoId) =>
