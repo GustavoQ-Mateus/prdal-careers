@@ -718,3 +718,108 @@ export function getPipelineGrafo(filtros: PipelineFiltros) {
 export function gerarCvAlias(vagaId: string) {
   return request<{ jobId: string }>(`/vagas/${vagaId}/gerar-cv`, { method: 'POST' });
 }
+
+export type ModoCopiloto = 'assistido' | 'autopiloto';
+
+export interface ConfirmacaoCopiloto {
+  callId: string;
+  decisao: 'confirmar' | 'recusar';
+  ajustes?: Record<string, unknown>;
+}
+
+export interface CopilotoChatBody {
+  conversaId?: string;
+  modo?: ModoCopiloto;
+  oportunidadeId?: string;
+  mensagem?: string;
+  confirmacao?: ConfirmacaoCopiloto;
+}
+
+export type EfeitoTool = 'leitura' | 'escrita';
+
+export type CopilotoEvento =
+  | { evento: 'token'; data: { delta: string } }
+  | {
+      evento: 'tool_call';
+      data: {
+        callId: string;
+        tool: string;
+        efeito: EfeitoTool;
+        args: Record<string, unknown>;
+        exigeConfirmacao: boolean;
+      };
+    }
+  | {
+      evento: 'confirmacao';
+      data: { callId: string; tool: string; resumo: string; args: Record<string, unknown> };
+    }
+  | {
+      evento: 'tool_resultado';
+      data: {
+        callId: string;
+        tool: string;
+        ok: boolean;
+        resultado: unknown;
+        erro: { mensagem: string; recuperavel: boolean } | null;
+      };
+    }
+  | {
+      evento: 'entrega_externa';
+      data: { tipo: string; titulo: string; texto: string; destino?: string };
+    }
+  | { evento: 'erro'; data: { escopo: string; mensagem: string; recuperavel: boolean } }
+  | { evento: 'fim_turno'; data: { motivo: string; conversaId: string } };
+
+function parseFrameCopiloto(frame: string): CopilotoEvento | null {
+  let evento = '';
+  let data = '';
+  for (const linha of frame.split('\n')) {
+    const l = linha.replace(/\r$/, '');
+    if (l.startsWith('event:')) evento = l.slice(6).trim();
+    else if (l.startsWith('data:')) data += l.slice(5).trim();
+  }
+  if (!evento || !data) return null;
+  try {
+    return { evento, data: JSON.parse(data) } as CopilotoEvento;
+  } catch {
+    return null;
+  }
+}
+
+export async function streamCopiloto(
+  body: CopilotoChatBody,
+  onEvento: (ev: CopilotoEvento) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const t = token();
+  const res = await fetch(`${API_URL}/copiloto/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+      ...(t ? { Authorization: `Bearer ${t}` } : {}),
+    },
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (!res.ok || !res.body) {
+    const b = await res.json().catch(() => ({}));
+    throw new Error(b.message ?? `erro ${res.status}`);
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let sep = buffer.indexOf('\n\n');
+    while (sep !== -1) {
+      const frame = buffer.slice(0, sep);
+      buffer = buffer.slice(sep + 2);
+      const ev = parseFrameCopiloto(frame);
+      if (ev) onEvento(ev);
+      sep = buffer.indexOf('\n\n');
+    }
+  }
+}
