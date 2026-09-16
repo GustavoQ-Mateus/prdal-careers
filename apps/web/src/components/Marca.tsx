@@ -1,3 +1,5 @@
+import { cn } from '@/lib/utils';
+
 type Variante = 'marca' | 'lockup';
 type Fundo = 'escuro' | 'claro';
 
@@ -23,7 +25,7 @@ export function Marca({
 }) {
   return (
     <img
-      className={`marca-prdal marca-prdal-${variante}${className ? ` ${className}` : ''}`}
+      className={cn('block select-none object-contain', className)}
       src={ARQUIVOS[variante][fundo]}
       alt="PRDAL Careers"
       draggable={false}

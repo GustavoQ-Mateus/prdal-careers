@@ -40,24 +40,45 @@ export function App() {
 
   if (!autenticado) {
     return (
-      <div className="auth-split">
-        <div className="auth-form-pane">
-          <Marca variante="lockup" fundo="claro" className="auth-brand-logo" />
-          <AuthForm onAuth={() => {
-            setAutenticado(true);
-            ir({ tela: 'hoje' }, true);
-          }} />
-          <span className="auth-foot">© 2026 PRDAL Careers</span>
+      <div className="grid min-h-screen bg-ground font-sans text-ink lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+        <div className="relative flex items-center justify-center px-6 py-20 sm:px-10">
+          <div className="absolute left-8 top-8">
+            <Marca variante="lockup" fundo="claro" className="h-7 w-auto dark:hidden" />
+            <Marca variante="lockup" fundo="escuro" className="hidden h-7 w-auto dark:block" />
+          </div>
+          <div className="w-full max-w-sm">
+            <AuthForm
+              onAuth={() => {
+                setAutenticado(true);
+                ir({ tela: 'hoje' }, true);
+              }}
+            />
+          </div>
+          <span className="absolute bottom-6 left-8 font-mono text-[11px] text-faint">
+            © 2026 PRDAL Careers
+          </span>
         </div>
-        <aside className="auth-hero">
-          <Marca variante="lockup" fundo="escuro" className="auth-hero-logo" />
-          <div className="auth-hero-mark">
-            <div className="auth-hero-accent" />
-            <span className="auth-hero-kicker">Seu processo, sob controle.</span>
-            <h2 className="auth-hero-title">Uma vaga.<br />O curriculo certo.</h2>
-            <p className="auth-hero-copy">
+
+        <aside className="relative hidden flex-col justify-between border-l border-line bg-canvas px-14 py-16 lg:flex">
+          <div>
+            <Marca variante="lockup" fundo="claro" className="h-7 w-auto dark:hidden" />
+            <Marca variante="lockup" fundo="escuro" className="hidden h-7 w-auto dark:block" />
+          </div>
+          <div className="max-w-md">
+            <span className="text-label uppercase text-muted">Seu processo, sob controle</span>
+            <h2 className="mt-3 text-[32px] font-bold leading-[1.12] text-ink">
+              Uma vaga.
+              <br />
+              O curriculo certo.
+            </h2>
+            <p className="mt-4 text-[15px] leading-relaxed text-muted">
               Organize oportunidades, acompanhe candidaturas e entenda cada ponto do seu score ATS.
             </p>
+            <ul className="mt-8 flex flex-col gap-2.5 text-[14px] text-ink-2">
+              <li>Um hub unico com lista, board e grafo das suas oportunidades.</li>
+              <li>Curriculos tailored por vaga com score determinístico.</li>
+              <li>Uma agenda do que precisa da sua atencao hoje.</li>
+            </ul>
           </div>
         </aside>
       </div>
@@ -67,12 +88,6 @@ export function App() {
   const abaAtiva = abaDaRota(rota);
   const profunda = rota.tela === 'workspace' || rota.tela === 'curriculo';
   const workspaceScreen = rota.tela === 'workspace';
-  const migrada =
-    rota.tela === 'hoje' ||
-    rota.tela === 'oportunidades' ||
-    workspaceScreen ||
-    rota.tela === 'curriculos' ||
-    rota.tela === 'curriculo';
   const contexto = !profunda
     ? CONTEXTO[abaAtiva ?? 'hoje']
     : rota.tela === 'workspace'
@@ -151,9 +166,8 @@ export function App() {
           </div>
         </header>
 
-        <main className={cn('min-h-0 flex-1 bg-canvas', !migrada && 'legacy-surface')}>
+        <main className="min-h-0 flex-1 bg-canvas">
           <ErrorBoundary resetKey={rota}>
-          {migrada ? (
             <div className="px-6 pb-12 nav:px-8">
               {rota.tela === 'hoje' && <Hoje onAbrir={(id) => ir({ tela: 'workspace', id })} />}
               {rota.tela === 'oportunidades' && (
@@ -190,13 +204,9 @@ export function App() {
                   }
                 />
               )}
-            </div>
-          ) : (
-            <div className="workspace">
               {rota.tela === 'conhecimento' && <BaseConhecimento />}
               {rota.tela === 'perfil' && <PerfilForm />}
             </div>
-          )}
           </ErrorBoundary>
         </main>
       </div>
