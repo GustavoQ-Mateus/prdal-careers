@@ -60,13 +60,13 @@ export function App() {
 
   if (!autenticado) {
     return (
-      <div className="grid min-h-screen bg-ground font-sans text-ink lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+      <div className="grid min-h-screen bg-ground font-sans text-ink lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <div className="relative flex items-center justify-center px-6 py-20 sm:px-10">
-          <div className="absolute left-8 top-8">
-            <Marca variante="lockup" fundo="claro" className="h-7 w-auto dark:hidden" />
-            <Marca variante="lockup" fundo="escuro" className="hidden h-7 w-auto dark:block" />
-          </div>
           <div className="w-full max-w-sm">
+            <div className="mb-8 flex justify-center">
+              <Marca variante="lockup" fundo="claro" className="h-7 w-auto dark:hidden" />
+              <Marca variante="lockup" fundo="escuro" className="hidden h-7 w-auto dark:block" />
+            </div>
             <AuthForm
               onAuth={() => {
                 setAutenticado(true);
@@ -74,31 +74,27 @@ export function App() {
               }}
             />
           </div>
-          <span className="absolute bottom-6 left-8 font-mono text-[11px] text-faint">
+          <span className="absolute inset-x-6 bottom-6 text-center font-mono text-[11px] text-faint">
             © 2026 PRDAL Careers
           </span>
         </div>
 
-        <aside className="relative hidden flex-col justify-between border-l border-line bg-canvas px-14 py-16 lg:flex">
-          <div>
-            <Marca variante="lockup" fundo="claro" className="h-7 w-auto dark:hidden" />
-            <Marca variante="lockup" fundo="escuro" className="hidden h-7 w-auto dark:block" />
+        <aside className="dark relative hidden flex-col border-l border-line bg-canvas px-14 py-12 lg:flex xl:px-20 xl:py-16">
+          <div className="flex flex-1 items-center">
+            <div className="max-w-2xl">
+              <span className="text-[13px] font-medium text-muted">Seu processo, sob controle</span>
+              <h2 className="mt-5 text-[clamp(3.25rem,5.4vw,5rem)] font-bold leading-[0.98] tracking-[-0.045em] text-ink">
+                Uma vaga.
+                <br />
+                O currículo certo.
+              </h2>
+              <p className="mt-6 max-w-lg text-[15px] leading-relaxed text-muted">
+                Organize oportunidades, acompanhe candidaturas e entenda cada ponto do seu score ATS.
+              </p>
+            </div>
           </div>
-          <div className="max-w-md">
-            <span className="text-label uppercase text-muted">Seu processo, sob controle</span>
-            <h2 className="mt-3 text-[27px] font-bold leading-[1.14] text-ink">
-              Uma vaga.
-              <br />
-              O currículo certo.
-            </h2>
-            <p className="mt-4 text-[14px] leading-relaxed text-muted">
-              Organize oportunidades, acompanhe candidaturas e entenda cada ponto do seu score ATS.
-            </p>
-            <ul className="mt-8 flex flex-col gap-2.5 text-[13px] text-ink-2">
-              <li>Um hub único com lista, board e grafo das suas oportunidades.</li>
-              <li>Currículos tailored por vaga com score determinístico.</li>
-              <li>Uma agenda do que precisa da sua atenção hoje.</li>
-            </ul>
+          <div className="flex shrink-0 justify-center pt-10">
+            <Marca variante="lockup" fundo="escuro" className="h-7 w-auto" />
           </div>
         </aside>
       </div>
