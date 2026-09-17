@@ -20,7 +20,7 @@ function CarregarGrafo({ dados, layoutAtivo }: { dados: GrafoResposta; layoutAti
   const layout = useRef<FA2Layout | null>(null);
 
   useEffect(() => {
-    const corOportunidade = cor('--accent', '#0c7d6e');
+    const corOportunidade = cor('--accent', '#2563eb');
     const corEntidade = cor('--faint', '#949b97');
     const graph = new Graph({ type: 'undirected', multi: false });
     for (const node of dados.nodes) {
