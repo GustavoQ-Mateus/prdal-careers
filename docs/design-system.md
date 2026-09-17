@@ -16,8 +16,8 @@ A marca vive em `apps/web/public/brand/`. O lockup aparece no topo da navegaçã
 
 1. Branco total como base. Superfície branco puro, canvas neutro levíssimo com viés frio.
 2. Separação por borda de 1px e sombra sutil, não por peso de cor.
-3. Acento teal apenas em interação, foco, estado ativo e seleção.
-4. Ação primária em grafite quase preto. O teal não é a cor da ação primária.
+3. Acento azul apenas em interação, foco, estado ativo e seleção.
+4. Ação primária em grafite quase preto. O azul não é a cor da ação primária.
 5. Score usa a tríade reservada e nunca vira acento decorativo.
 6. Acabamento consistente. Cada objeto que precisa ser percebido como unidade tem moldura e elevação claras.
 7. Padrões corporativos servem ao fluxo: modal para cadastro e edição, slide-over para detalhe, wizard para etapas, card elevado no board.
@@ -41,17 +41,17 @@ Os tokens são a fonte única de estilo. Ficam como CSS variables e são consumi
 | `--faint` | `#949b97` | metadado, placeholder e ícone inativo |
 | `--line` | `#e5e8e6` | borda e divisor padrão de 1px |
 | `--line-strong` | `#d6dbd8` | borda de ênfase e separação de controle |
-| `--accent` | `#0c7d6e` | interação, foco, estado ativo e seleção |
-| `--accent-ink` | `#094f46` | texto ou ícone sobre `--accent-soft` |
-| `--accent-soft` | `#e2f1ee` | fundo de seleção e realce discreto |
+| `--accent` | `#2563eb` | interação, foco, estado ativo e seleção |
+| `--accent-ink` | `#1d4ed8` | texto ou ícone sobre `--accent-soft` |
+| `--accent-soft` | `#eff6ff` | fundo de seleção e realce discreto |
 | `--primary` | `#12160f` | ação primária, grafite quase preto |
-| `--score-good` | `#2e8b57` | score alto e sucesso |
+| `--score-good` | `#1d4ed8` | score alto e confirmação positiva |
 | `--score-warn` | `#b0790a` | score intermediário e atenção |
 | `--score-bad` | `#d24350` | score baixo e erro |
 
 ### Cor, tema escuro
 
-O tema escuro preserva a mesma leitura: superfície calma, acento teal reservado à interação, tríade de score semântica. A base é um escuro neutro, cinzas sem matiz verde, com canvas bem escuro próximo do preto. O teal aparece só em interação, foco, ativo e seleção, nunca como fundo de superfície.
+O tema escuro preserva a mesma leitura: superfície calma, acento azul reservado à interação, tríade de score semântica. A base é um escuro neutro, cinzas sem matiz verde, com canvas bem escuro próximo do preto. O azul aparece só em interação, foco, ativo e seleção, nunca como fundo de superfície.
 
 | Token | Valor | Uso |
 |---|---|---|
@@ -63,15 +63,15 @@ O tema escuro preserva a mesma leitura: superfície calma, acento teal reservado
 | `--faint` | `#5b6266` | metadado, placeholder e ícone inativo |
 | `--line` | `#24282a` | borda e divisor padrão de 1px |
 | `--line-strong` | `#333739` | borda de ênfase e separação de controle |
-| `--accent` | `#2fb8a3` | interação, foco, estado ativo e seleção |
-| `--accent-ink` | `#a9e6db` | texto ou ícone sobre `--accent-soft` |
-| `--accent-soft` | `#16302b` | fundo de seleção e realce discreto |
+| `--accent` | `#60a5fa` | interação, foco, estado ativo e seleção |
+| `--accent-ink` | `#bfdbfe` | texto ou ícone sobre `--accent-soft` |
+| `--accent-soft` | `#172554` | fundo de seleção e realce discreto |
 | `--primary` | `#e9edee` | ação primária, superfície clara com texto escuro |
-| `--score-good` | `#3fa76b` | score alto e sucesso |
+| `--score-good` | `#60a5fa` | score alto e confirmação positiva |
 | `--score-warn` | `#cf9420` | score intermediário e atenção |
 | `--score-bad` | `#e5606f` | score baixo e erro |
 
-No tema claro, a ação primária é grafite quase preto com texto branco. No tema escuro, ela vira superfície clara com texto grafite, para preservar peso sem competir com o acento. O acento teal nunca colore grandes superfícies de conteúdo em nenhum dos temas.
+No tema claro, a ação primária é grafite quase preto com texto branco. No tema escuro, ela vira superfície clara com texto grafite, para preservar peso sem competir com o acento. O acento azul nunca colore grandes superfícies de conteúdo em nenhum dos temas.
 
 ### Tipografia
 
@@ -207,7 +207,7 @@ Entradas principais:
 
 O hub de Oportunidades absorve o antigo Pipeline. A aba Pipeline deixa de existir como destino separado e o board e o grafo passam a ser visões dentro de Oportunidades, alternadas por um seletor de visão. O Workspace da oportunidade não aparece na navegação; abre a partir de qualquer representação de uma oportunidade.
 
-O shell usa navegação clara sobre superfície branca, sem sidebar escura. Item ativo é marcado com o acento teal de forma discreta, por realce e não por bloco pesado de cor. No desktop a barra lateral recolhe para uma faixa só de ícones, com o rótulo em tooltip no hover e o item ativo ainda evidente; a preferência persiste em `localStorage` e o controle expõe `aria-expanded`. No mobile, a navegação vira drawer acessível que contém o foco e fecha por Escape ou backdrop.
+O shell usa navegação clara sobre superfície branca, sem sidebar escura. Item ativo é marcado com o acento azul de forma discreta, por realce e não por bloco pesado de cor. No desktop a barra lateral recolhe para uma faixa só de ícones, com o rótulo em tooltip no hover e o item ativo ainda evidente; a preferência persiste em `localStorage` e o controle expõe `aria-expanded`. No mobile, a navegação vira drawer acessível que contém o foco e fecha por Escape ou backdrop.
 
 O cabeçalho contextual mantém título e descrição à esquerda e ações primárias à direita. Ele não fica dentro de card.
 
@@ -215,7 +215,7 @@ O cabeçalho contextual mantém título e descrição à esquerda e ações prim
 
 ### Login
 
-Composição de produto com formulário claro e um plano de destaque. Sem card genérico centralizado sobre gradiente. O plano de destaque usa marca, mensagem curta e composição tipográfica.
+Composição de produto em proporção 40/60 no desktop, com formulário no painel menor e plano escuro de destaque no painel maior. A marca do formulário integra o bloco de acesso; a marca do plano escuro fecha o rodapé. Sem card genérico centralizado sobre gradiente. O plano de destaque usa mensagem curta e composição tipográfica de forte contraste. No mobile, apenas o formulário aparece.
 
 ### Hoje
 
@@ -311,4 +311,4 @@ Para cada tela:
 5. Conferir loading, vazio, erro e sucesso.
 6. Procurar overflow da página.
 7. Confirmar que cada modal, card e sombra comunica algo necessário.
-8. Confirmar que o teal aparece só em interação, foco, ativo e seleção, e que o score usa apenas a tríade reservada.
+8. Confirmar que o azul aparece só em interação, foco, ativo e seleção, e que o score usa apenas a tríade reservada.
