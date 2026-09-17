@@ -1,5 +1,10 @@
 import * as React from 'react';
-import { Tooltip as RechartsTooltip, type TooltipContentProps, type TooltipProps } from 'recharts';
+import {
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+  type TooltipContentProps,
+  type TooltipProps,
+} from 'recharts';
 import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import { cn } from '@/lib/utils';
 
@@ -22,7 +27,9 @@ export function ChartContainer({
         className={cn('h-[260px] w-full min-w-0', className)}
         style={Object.fromEntries(Object.entries(config).map(([key, item]) => [`--color-${key}`, item.color])) as React.CSSProperties}
       >
-        {children}
+        <ResponsiveContainer width="100%" height="100%">
+          {children}
+        </ResponsiveContainer>
       </div>
     </ChartConfigContext.Provider>
   );
