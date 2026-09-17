@@ -171,12 +171,12 @@ export function Curriculos({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-end gap-2.5">
+      <div className="flex flex-wrap items-end gap-2">
         <div className="flex flex-col gap-1">
           <Label htmlFor="cv-categoria">Categoria</Label>
           <NativeSelect
             id="cv-categoria"
-            className="w-36"
+            className="w-32"
             value={categoria}
             onChange={(e) => aplicar({ categoria: e.target.value })}
           >
@@ -190,7 +190,7 @@ export function Curriculos({
           <Label htmlFor="cv-nivel">Nível</Label>
           <NativeSelect
             id="cv-nivel"
-            className="w-32"
+            className="w-28"
             value={nivel}
             onChange={(e) => aplicar({ nivel: e.target.value })}
           >
@@ -204,7 +204,7 @@ export function Curriculos({
           <Label htmlFor="cv-vinculo">Vínculo</Label>
           <NativeSelect
             id="cv-vinculo"
-            className="w-36"
+            className="w-32"
             value={vinculado}
             onChange={(e) => aplicar({ vinculado: e.target.value })}
           >
@@ -217,7 +217,7 @@ export function Curriculos({
           <Label htmlFor="cv-score">Score mínimo</Label>
           <Input
             id="cv-score"
-            className="w-28"
+            className="w-24"
             type="number"
             min={0}
             max={100}
@@ -229,7 +229,7 @@ export function Curriculos({
           <Label htmlFor="cv-ordenar">Ordenar por</Label>
           <NativeSelect
             id="cv-ordenar"
-            className="w-44"
+            className="w-40"
             value={ordenarPor}
             onChange={(e) => aplicar({ ordenarPor: e.target.value })}
           >

@@ -97,7 +97,7 @@ export function BaseConhecimento() {
   return (
     <div className="flex flex-col gap-8">
       <section>
-        <h2 className="text-section text-ink">Estado do índice</h2>
+        <h2 className="text-section text-ink">Contexto usado na geração</h2>
         {statusErro && (
           <p
             className="mt-3 rounded-control border border-score-warn/40 bg-ground px-3 py-2 text-[13px] text-score-warn"
@@ -117,7 +117,7 @@ export function BaseConhecimento() {
       </section>
 
       <section>
-        <h2 className="text-section text-ink">Distribuição por origem</h2>
+        <h2 className="text-section text-ink">Fontes do contexto</h2>
         <dl className="mt-3 divide-y divide-line border-t border-line">
           <Linha rotulo="Perfil" valor={status?.porOrigem?.perfil ?? '--'} />
           <Linha rotulo="Candidatura" valor={status?.porOrigem?.candidatura ?? '--'} />
@@ -133,9 +133,9 @@ export function BaseConhecimento() {
           </Button>
         </div>
         <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-muted">
-          A base usa seu histórico real, perfil, candidaturas e notas, para selecionar os trechos
-          mais relevantes durante a geração de cada currículo. A geração continua disponível mesmo
-          sem um índice.
+          O contexto é formado pelo seu perfil, candidaturas e notas em Markdown. Esses documentos
+          são as fontes consultadas para selecionar trechos relevantes durante a geração de cada
+          currículo. A geração continua disponível mesmo sem um índice.
         </p>
         {processando && (
           <p className="mt-3 text-[13px] text-muted" role="status">
