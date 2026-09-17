@@ -311,12 +311,12 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
   const atividade = dados.atividadeRecente ?? [];
   const prioridades = [...dados.atrasadas, ...dados.hoje];
   const proximaAcao = dados.proximosDias[0];
-  const proximoMovimento = semPasso[0]
-    ? `definir um próximo passo para ${semPasso[0].titulo}`
-    : proximaAcao
-      ? `${proximaAcao.titulo} em ${fmtData(proximaAcao.venceEm)}`
-      : prioridades[0]
-        ? `${prioridades[0].titulo} em ${fmtData(prioridades[0].venceEm)}`
+  const proximoMovimento = prioridades[0]
+    ? `${prioridades[0].titulo} em ${fmtData(prioridades[0].venceEm)}`
+    : semPasso[0]
+      ? `definir um próximo passo para ${semPasso[0].titulo}`
+      : proximaAcao
+        ? `${proximaAcao.titulo} em ${fmtData(proximaAcao.venceEm)}`
         : 'registrar a próxima oportunidade';
   const totalAgenda = dados.atrasadas.length + dados.hoje.length + dados.proximosDias.length + semPasso.length + atividade.length;
 
