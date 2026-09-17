@@ -173,12 +173,12 @@ export function Oportunidades({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-end gap-2.5">
+      <div className="flex flex-wrap items-end gap-2">
         <div className="flex flex-col gap-1">
           <Label htmlFor="hub-busca">Busca</Label>
           <Input
             id="hub-busca"
-            className="w-48"
+            className="w-40"
             value={busca}
             onChange={(e) => aplicar({ busca: e.target.value })}
             placeholder="Título ou empresa"
@@ -188,7 +188,7 @@ export function Oportunidades({
           <Label htmlFor="hub-estado">Estado</Label>
           <NativeSelect
             id="hub-estado"
-            className="w-32"
+            className="w-28"
             value={estado}
             onChange={(e) => aplicar({ estado: e.target.value })}
           >
@@ -201,7 +201,7 @@ export function Oportunidades({
           <Label htmlFor="hub-categoria">Categoria</Label>
           <NativeSelect
             id="hub-categoria"
-            className="w-36"
+            className="w-32"
             value={categoria}
             onChange={(e) => aplicar({ categoria: e.target.value })}
           >
@@ -215,7 +215,7 @@ export function Oportunidades({
           <Label htmlFor="hub-nivel">Nível</Label>
           <NativeSelect
             id="hub-nivel"
-            className="w-32"
+            className="w-28"
             value={nivel}
             onChange={(e) => aplicar({ nivel: e.target.value })}
           >
@@ -229,7 +229,7 @@ export function Oportunidades({
           <Label htmlFor="hub-prioridade">Prioridade</Label>
           <NativeSelect
             id="hub-prioridade"
-            className="w-32"
+            className="w-28"
             value={prioridade}
             onChange={(e) => aplicar({ prioridade: e.target.value })}
           >
@@ -244,7 +244,7 @@ export function Oportunidades({
             <Label htmlFor="hub-ordenar">Ordenar por</Label>
             <NativeSelect
               id="hub-ordenar"
-              className="w-48"
+            className="w-40"
               value={ordenarPor}
               onChange={(e) => aplicar({ ordenarPor: e.target.value })}
             >
