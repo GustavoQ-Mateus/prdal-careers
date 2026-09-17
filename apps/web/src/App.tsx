@@ -196,7 +196,12 @@ export function App() {
         <main className="min-h-0 flex-1 bg-canvas">
           <ErrorBoundary resetKey={rota}>
             <div className="px-6 pb-12 nav:px-8">
-              {rota.tela === 'hoje' && <Hoje onAbrir={(id) => ir({ tela: 'workspace', id })} />}
+              {rota.tela === 'hoje' && (
+                <Hoje
+                  onAbrir={(id) => ir({ tela: 'workspace', id })}
+                  onRevisarOportunidades={() => ir({ tela: 'oportunidades', visao: 'lista' })}
+                />
+              )}
               {rota.tela === 'oportunidades' && (
                 <Oportunidades
                   visao={rota.visao}

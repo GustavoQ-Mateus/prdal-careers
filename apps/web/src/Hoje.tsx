@@ -3,7 +3,6 @@ import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'rec
 import {
   cancelarAcao,
   concluirAcao,
-  criarAcao,
   getHoje,
   patchAcao,
   type HojeAcao,
@@ -89,7 +88,7 @@ function DashboardTemporal({
     <section className="border-y border-line py-6" aria-labelledby="dashboard-hoje">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 id="dashboard-hoje" className="text-section text-ink">Evolução da candidatura</h2>
+          <h2 id="dashboard-hoje" className="text-section text-ink">Movimento do período</h2>
           <p className="mt-1 text-[13px] text-muted">
             Dados reais de {serie.inicio} a {serie.fim}, no fuso do seu perfil.
           </p>
@@ -218,16 +217,13 @@ function DashboardTemporal({
   );
 }
 
-export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
+export function Hoje({ onAbrir, onRevisarOportunidades }: { onAbrir: (id: string) => void; onRevisarOportunidades: () => void }) {
   const [dados, setDados] = useState<HojeResposta | null>(null);
   const [periodo, setPeriodo] = useState<7 | 30 | 90>(30);
   const [erro, setErro] = useState<string | null>(null);
   const [estados, setEstados] = useState<Record<string, EstadoAcao>>({});
   const [reagendandoId, setReagendandoId] = useState<string | null>(null);
   const [quando, setQuando] = useState('');
-  const [passoId, setPassoId] = useState<string | null>(null);
-  const [passoTitulo, setPassoTitulo] = useState('');
-  const [passosDefinidos, setPassosDefinidos] = useState<Record<string, string>>({});
 
   function carregar() {
     setErro(null);
@@ -281,20 +277,6 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
     }
   }
 
-  async function definirPasso(vagaId: string) {
-    const titulo = passoTitulo.trim();
-    if (passoId !== vagaId || !titulo) return;
-    setErro(null);
-    try {
-      await criarAcao(vagaId, { titulo, tipo: 'OUTRO' as TipoAcaoOportunidade, principal: true });
-      setPassosDefinidos((prev) => ({ ...prev, [vagaId]: titulo }));
-      setPassoId(null);
-      setPassoTitulo('');
-    } catch (err) {
-      setErro((err as Error).message);
-    }
-  }
-
   if (!dados && !erro) return <p className="py-10 text-[14px] text-muted">Carregando painel de decisão...</p>;
 
   if (!dados) {
@@ -313,12 +295,9 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
   const proximaAcao = dados.proximosDias[0];
   const proximoMovimento = prioridades[0]
     ? `${prioridades[0].titulo} em ${fmtData(prioridades[0].venceEm)}`
-    : semPasso[0]
-      ? `definir um próximo passo para ${semPasso[0].titulo}`
-      : proximaAcao
-        ? `${proximaAcao.titulo} em ${fmtData(proximaAcao.venceEm)}`
-        : 'registrar a próxima oportunidade';
-  const totalAgenda = dados.atrasadas.length + dados.hoje.length + dados.proximosDias.length + semPasso.length + atividade.length;
+    : proximaAcao
+      ? `${proximaAcao.titulo} em ${fmtData(proximaAcao.venceEm)}`
+      : 'registrar a próxima oportunidade';
 
   function renderAcao(item: HojeAcao, atraso?: boolean) {
     const estado = estados[item.id];
@@ -363,47 +342,6 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
     );
   }
 
-  function renderGrupo(titulo: string, itens: HojeAcao[], vazioTexto: string, atraso?: boolean) {
-    return (
-      <section>
-        <GrupoTitulo titulo={titulo} contagem={itens.length} />
-        {itens.length === 0 ? (
-          <p className="border-t border-line py-3.5 text-[14px] text-muted">{vazioTexto}</p>
-        ) : (
-          <ul className="divide-y divide-line border-t border-line">{itens.map((item) => renderAcao(item, atraso))}</ul>
-        )}
-      </section>
-    );
-  }
-
-  function renderSemPasso(item: (typeof semPasso)[number]) {
-    const definido = passosDefinidos[item.id];
-    const editando = passoId === item.id;
-    return (
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 py-3.5">
-        <div className="min-w-0">
-          <button onClick={() => onAbrir(item.id)} className="rounded-control text-left text-[15px] font-medium text-ink transition-colors hover:text-accent focus-visible:text-accent focus-visible:outline-none">
-            {item.titulo}
-          </button>
-          <p className="text-[13px] text-faint">{item.empresa}</p>
-        </div>
-        <div className="shrink-0">
-          {definido ? (
-            <span className="text-[13px] text-muted">Próximo passo definido</span>
-          ) : editando ? (
-            <form className="flex flex-wrap items-center gap-2" onSubmit={(event) => { event.preventDefault(); void definirPasso(item.id); }}>
-              <Input aria-label="Próximo passo" className="h-8 w-56" placeholder="Ex.: revisar vaga e gerar currículo" value={passoTitulo} onChange={(event) => setPassoTitulo(event.target.value)} autoFocus required />
-              <Button size="sm" type="submit">Definir</Button>
-              <Button size="sm" variant="ghost" type="button" onClick={() => { setPassoId(null); setPassoTitulo(''); }}>Voltar</Button>
-            </form>
-          ) : (
-            <Button size="sm" variant="secondary" onClick={() => { setPassoId(item.id); setPassoTitulo(''); }}>Definir próximo passo</Button>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-8">
       {erro && (
@@ -414,34 +352,16 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
 
       <DashboardTemporal serie={dados.serieTemporal} resumoAts={dados.resumoAts} periodo={periodo} atrasadas={dados.atrasadas.length} paraHoje={dados.hoje.length} proximoMovimento={proximoMovimento} onPeriodo={setPeriodo} />
 
-      <section className="grid gap-8 border-b border-line pb-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]" aria-labelledby="atencao-agora">
-        <div>
-          <GrupoTitulo titulo="Atenção agora" contagem={prioridades.length} />
-          {prioridades.length === 0 ? (
-            <p className="border-t border-line py-3.5 text-[14px] text-muted">Nenhuma ação atrasada ou prevista para hoje.</p>
-          ) : (
-            <ul className="divide-y divide-line border-t border-line">
-              {prioridades.slice(0, 3).map((item) => renderAcao(item, dados.atrasadas.some((atrasada) => atrasada.id === item.id)))}
-            </ul>
-          )}
-          {prioridades.length > 3 && <p className="mt-2 text-[13px] text-muted">Mais {prioridades.length - 3} item{prioridades.length - 3 === 1 ? '' : 's'} na agenda completa.</p>}
-        </div>
-        <div>
-          <GrupoTitulo titulo="Próximo movimento" />
-          <div className="border-t border-line">
-            {semPasso[0] ? renderSemPasso(semPasso[0]) : proximaAcao ? (
-              <div className="py-3.5">
-                <button onClick={() => onAbrir(proximaAcao.vagaId)} className="rounded-control text-left text-[15px] font-medium text-ink transition-colors hover:text-accent focus-visible:text-accent focus-visible:outline-none">
-                  {proximaAcao.oportunidade?.titulo ?? 'Oportunidade'}
-                </button>
-                <p className="text-[14px] text-ink-2">{proximaAcao.titulo}</p>
-                <p className="mt-0.5 text-[13px] text-faint">{fmtData(proximaAcao.venceEm)}</p>
-              </div>
-            ) : (
-              <p className="py-3.5 text-[14px] text-muted">Sem próximo prazo. Registre uma oportunidade para continuar o fluxo.</p>
-            )}
-          </div>
-        </div>
+      <section className="border-b border-line pb-8" aria-labelledby="atencao-agora">
+        <GrupoTitulo titulo="Atenção agora" contagem={prioridades.length} />
+        {prioridades.length === 0 ? (
+          <p className="border-t border-line py-3.5 text-[14px] text-muted">Nenhuma ação atrasada ou prevista para hoje.</p>
+        ) : (
+          <ul className="divide-y divide-line border-t border-line">
+            {prioridades.slice(0, 3).map((item) => renderAcao(item, dados.atrasadas.some((atrasada) => atrasada.id === item.id)))}
+          </ul>
+        )}
+        {prioridades.length > 3 && <Button className="mt-3" size="sm" variant="ghost" onClick={onRevisarOportunidades}>Ver agenda em Oportunidades</Button>}
       </section>
 
       <section className="grid gap-5 border-b border-line pb-6 md:grid-cols-3" aria-label="Contexto operacional">
@@ -453,7 +373,8 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
         </div>
         <div>
           <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted">Sem próximo passo</p>
-          <p className="mt-1 text-[14px] text-muted"><span className="font-mono tabular-nums text-ink">{semPasso.length}</span> oportunidade{semPasso.length === 1 ? '' : 's'} a organizar</p>
+          <p className="mt-1 text-[14px] text-muted"><span className="font-mono tabular-nums text-ink">{semPasso.length}</span> oportunidade{semPasso.length === 1 ? '' : 's'} sem próximo passo</p>
+          <Button className="mt-2" size="sm" variant="ghost" onClick={onRevisarOportunidades}>Revisar oportunidades</Button>
         </div>
         <div>
           <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted">Atividade recente</p>
@@ -463,35 +384,29 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
         </div>
       </section>
 
-      <details className="border-b border-line pb-6">
-        <summary className="cursor-pointer text-[14px] font-medium text-accent-ink">Ver agenda completa{totalAgenda ? ` (${totalAgenda})` : ''}</summary>
-        <div className="mt-6 flex flex-col gap-8">
-          {renderGrupo('Atrasados', dados.atrasadas, 'Nenhuma ação atrasada.', true)}
-          {renderGrupo('Hoje', dados.hoje, 'Nada com prazo para hoje.')}
-          {renderGrupo('Próximos sete dias', dados.proximosDias, 'Nenhum prazo nos próximos sete dias.')}
-          <section>
-            <GrupoTitulo titulo="Sem próximo passo" contagem={semPasso.length} />
-            {semPasso.length === 0 ? (
-              <p className="border-t border-line py-3.5 text-[14px] text-muted">Todas as oportunidades ativas têm um próximo passo.</p>
-            ) : <div className="divide-y divide-line border-t border-line">{semPasso.map(renderSemPasso)}</div>}
-          </section>
-          <section>
-            <GrupoTitulo titulo="Atividade recente" />
-            {atividade.length === 0 ? (
-              <p className="border-t border-line py-3.5 text-[14px] text-muted">Ainda não há histórico.</p>
-            ) : (
-              <ul className="divide-y divide-line border-t border-line">
-                {atividade.map((evento) => (
-                  <li key={evento.id} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 py-3">
-                    <button onClick={() => onAbrir(evento.vagaId)} className="rounded-control text-left text-[14px] font-medium text-ink hover:text-accent focus-visible:text-accent focus-visible:outline-none">{evento.titulo}</button>
-                    <span className="text-[13px] text-faint">{evento.descricao} · <span className="font-mono tabular-nums">{fmtData(evento.ocorridoEm)}</span></span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </div>
-      </details>
+      {dados.proximosDias.length > 0 && (
+        <section className="border-b border-line pb-6">
+          <GrupoTitulo titulo="Próximos sete dias" contagem={dados.proximosDias.length} />
+          <ul className="divide-y divide-line border-t border-line">{dados.proximosDias.slice(0, 3).map((item) => renderAcao(item))}</ul>
+          {dados.proximosDias.length > 3 && <Button className="mt-3" size="sm" variant="ghost" onClick={onRevisarOportunidades}>Ver em Oportunidades</Button>}
+        </section>
+      )}
+
+      <section className="border-b border-line pb-6">
+        <GrupoTitulo titulo="Atividade recente" contagem={atividade.length} />
+        {atividade.length === 0 ? (
+          <p className="border-t border-line py-3.5 text-[14px] text-muted">Ainda não há histórico.</p>
+        ) : (
+          <ul className="divide-y divide-line border-t border-line">
+            {atividade.slice(0, 5).map((evento) => (
+              <li key={evento.id} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 py-3">
+                <button onClick={() => onAbrir(evento.vagaId)} className="rounded-control text-left text-[14px] font-medium text-ink hover:text-accent focus-visible:text-accent focus-visible:outline-none">{evento.titulo}</button>
+                <span className="text-[13px] text-faint">{evento.descricao} · <span className="font-mono tabular-nums">{fmtData(evento.ocorridoEm)}</span></span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
