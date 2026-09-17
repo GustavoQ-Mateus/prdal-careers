@@ -65,3 +65,26 @@ export function destinoDaEtapa(etapa: EtapaPipeline): DestinoTransicao | null {
   if (etapa === 'ENCERRADAS') return null;
   return etapa;
 }
+
+const ROTULO_TAXONOMIA: Record<string, string> = {
+  ia: 'IA',
+  dados: 'Dados',
+  mobile: 'Mobile',
+  devops: 'DevOps',
+  qa: 'QA',
+  design: 'Design',
+  produto: 'Produto',
+  backend: 'Backend',
+  frontend: 'Frontend',
+  fullstack: 'Fullstack',
+  outro: 'Outro',
+  estagio: 'Estágio',
+  junior: 'Júnior',
+  pleno: 'Pleno',
+  senior: 'Sênior',
+  indefinido: 'Indefinido',
+};
+
+export function rotuloTaxonomia(valor: string): string {
+  return ROTULO_TAXONOMIA[valor] ?? valor.charAt(0).toUpperCase() + valor.slice(1);
+}

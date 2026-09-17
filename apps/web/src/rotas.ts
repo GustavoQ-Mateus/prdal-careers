@@ -3,13 +3,25 @@ import { useEffect, useState } from 'react';
 export type Aba = 'hoje' | 'oportunidades' | 'copiloto' | 'curriculos' | 'conhecimento' | 'perfil';
 
 export type VisaoHub = 'lista' | 'board' | 'grafo';
+export type ModoCurriculos = 'lista' | 'oportunidade';
 
 export type FiltrosHub = {
   visao: VisaoHub;
   busca?: string;
   estado?: string;
+  categoria?: string;
+  nivel?: string;
   ordenarPor?: string;
   prioridade?: string;
+};
+
+export type FiltrosCurriculos = {
+  modo: ModoCurriculos;
+  categoria?: string;
+  nivel?: string;
+  vinculado?: string;
+  scoreMinimo?: string;
+  ordenarPor?: string;
 };
 
 export type Rota =
@@ -18,7 +30,7 @@ export type Rota =
   | { tela: 'workspace'; id: string }
   | { tela: 'copiloto'; oportunidadeId?: string }
   | { tela: 'curriculo'; oportunidadeId: string; curriculoId: string }
-  | { tela: 'curriculos' }
+  | ({ tela: 'curriculos' } & Partial<FiltrosCurriculos>)
   | { tela: 'conhecimento' }
   | { tela: 'perfil' };
 
@@ -47,6 +59,8 @@ export function parseRota(
       visao: normalizarVisao(q.get('visao')),
       busca: q.get('busca') ?? undefined,
       estado: q.get('estado') ?? (path === '/banco-vagas' ? 'entrada' : undefined),
+      categoria: q.get('categoria') ?? undefined,
+      nivel: q.get('nivel') ?? undefined,
       ordenarPor: q.get('ordenarPor') ?? undefined,
       prioridade: q.get('prioridade') ?? undefined,
     };
@@ -70,7 +84,17 @@ export function parseRota(
     };
   }
 
-  if (path === '/curriculos') return { tela: 'curriculos' };
+  if (path === '/curriculos') {
+    return {
+      tela: 'curriculos',
+      modo: q.get('modo') === 'oportunidade' ? 'oportunidade' : 'lista',
+      categoria: q.get('categoria') ?? undefined,
+      nivel: q.get('nivel') ?? undefined,
+      vinculado: q.get('vinculado') ?? undefined,
+      scoreMinimo: q.get('scoreMinimo') ?? undefined,
+      ordenarPor: q.get('ordenarPor') ?? undefined,
+    };
+  }
   if (path === '/conhecimento') return { tela: 'conhecimento' };
   if (path === '/perfil') return { tela: 'perfil' };
   return { tela: 'hoje' };
@@ -85,6 +109,8 @@ export function hrefRota(rota: Rota): string {
       q.set('visao', rota.visao);
       if (rota.busca) q.set('busca', rota.busca);
       if (rota.estado) q.set('estado', rota.estado);
+      if (rota.categoria) q.set('categoria', rota.categoria);
+      if (rota.nivel) q.set('nivel', rota.nivel);
       if (rota.ordenarPor) q.set('ordenarPor', rota.ordenarPor);
       if (rota.prioridade) q.set('prioridade', rota.prioridade);
       return `/oportunidades?${q.toString()}`;
@@ -95,8 +121,17 @@ export function hrefRota(rota: Rota): string {
       return rota.oportunidadeId ? `/copiloto?oportunidade=${rota.oportunidadeId}` : '/copiloto';
     case 'curriculo':
       return `/oportunidades/${rota.oportunidadeId}/curriculos/${rota.curriculoId}`;
-    case 'curriculos':
-      return '/curriculos';
+    case 'curriculos': {
+      const q = new URLSearchParams();
+      if (rota.modo && rota.modo !== 'lista') q.set('modo', rota.modo);
+      if (rota.categoria) q.set('categoria', rota.categoria);
+      if (rota.nivel) q.set('nivel', rota.nivel);
+      if (rota.vinculado) q.set('vinculado', rota.vinculado);
+      if (rota.scoreMinimo) q.set('scoreMinimo', rota.scoreMinimo);
+      if (rota.ordenarPor && rota.ordenarPor !== 'geracao') q.set('ordenarPor', rota.ordenarPor);
+      const query = q.toString();
+      return query ? `/curriculos?${query}` : '/curriculos';
+    }
     case 'conhecimento':
       return '/conhecimento';
     case 'perfil':

@@ -515,10 +515,24 @@ export interface CurriculoGlobal {
   breakdown: ScoreBreakdown | null;
   geradoEm: string;
   vagaId: string;
+  categoria: string | null;
+  nivel: string | null;
   oportunidade: { id: string; titulo: string; empresa: string };
   vinculo: { candidaturaId: string; principal: boolean; status: string } | null;
   downloadDocxUrl: string | null;
   downloadPdfUrl: string | null;
+}
+
+export interface Pagina<T> {
+  itens: T[];
+  total: number;
+  limit: number | null;
+  offset: number;
+}
+
+export interface Taxonomia {
+  categorias: string[];
+  niveis: string[];
 }
 
 export interface PreferenciasUsuario {
@@ -554,6 +568,10 @@ export function patchPreferencias(dto: { fusoHorario?: string }) {
   });
 }
 
+export function getTaxonomia() {
+  return request<Taxonomia>('/taxonomia');
+}
+
 export function listarOportunidades(params: {
   visao?: string;
   busca?: string;
@@ -561,8 +579,10 @@ export function listarOportunidades(params: {
   nivel?: string;
   prioridade?: string;
   ordenarPor?: string;
+  limit?: number;
+  offset?: number;
 }) {
-  return request<OportunidadeItem[]>(`/oportunidades${query(params)}`);
+  return request<Pagina<OportunidadeItem>>(`/oportunidades${query(params)}`);
 }
 
 export function criarOportunidade(dto: {
@@ -686,10 +706,15 @@ export function listarCurriculosGlobal(params: {
   vagaId?: string;
   scoreMinimo?: string;
   vinculado?: string;
+  categoria?: string;
+  nivel?: string;
+  ordenarPor?: string;
   de?: string;
   ate?: string;
+  limit?: number;
+  offset?: number;
 }) {
-  return request<CurriculoGlobal[]>(`/curriculos${query(params)}`);
+  return request<Pagina<CurriculoGlobal>>(`/curriculos${query(params)}`);
 }
 
 export function getPipeline(filtros: PipelineFiltros) {
