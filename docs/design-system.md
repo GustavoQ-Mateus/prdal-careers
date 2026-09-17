@@ -219,7 +219,7 @@ Composição de produto em proporção 40/60 no desktop, com formulário no pain
 
 ### Hoje
 
-Agenda operacional, não dashboard de métricas. Atrasados, itens do dia e próximos sete dias formam uma lista temporal contínua. Oportunidades sem próximo passo aparecem como exceção acionável. Métricas ATS ocupam uma faixa secundária, sem mosaico de KPI. Concluir e reagendar não deslocam a lista.
+Agenda operacional com leitura temporal acessível. Atrasados, itens do dia e próximos sete dias formam uma lista contínua. Oportunidades sem próximo passo aparecem como exceção acionável. O dashboard do período usa apenas séries reais de oportunidades criadas, ações concluídas, currículos gerados e score médio, com gráficos acompanhados por dados tabulares. Métricas ATS ocupam uma faixa secundária, sem mosaico de KPI. Concluir e reagendar não deslocam a lista.
 
 ### Oportunidades, hub único
 

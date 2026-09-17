@@ -473,6 +473,18 @@ export interface HojeResposta {
     ocorridoEm: string;
   }[];
   resumoAts: { curriculos: number; comScore: number; media: number | null };
+  serieTemporal: {
+    inicio: string;
+    fim: string;
+    periodoDias: 7 | 30 | 90;
+    pontos: {
+      data: string;
+      oportunidadesCriadas: number;
+      acoesConcluidas: number;
+      curriculosGerados: number;
+      scoreMedio: number | null;
+    }[];
+  };
 }
 
 export interface PipelineItem {
@@ -579,8 +591,8 @@ function query(params: object) {
   return s ? `?${s}` : '';
 }
 
-export function getHoje(de?: string, ate?: string) {
-  return request<HojeResposta>(`/hoje${query({ de, ate })}`);
+export function getHoje(de?: string, ate?: string, periodo?: 7 | 30 | 90) {
+  return request<HojeResposta>(`/hoje${query({ de, ate, periodo })}`);
 }
 
 export function getPreferencias() {
