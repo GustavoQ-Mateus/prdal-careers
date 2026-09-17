@@ -73,11 +73,37 @@ export interface ItemImportacao {
   descricao: string;
 }
 
+export type TipoContatoPerfil =
+  | 'email'
+  | 'telefone'
+  | 'linkedin'
+  | 'github'
+  | 'site'
+  | 'localizacao'
+  | 'outro';
+
+export interface ContatoPerfil {
+  id: string;
+  tipo: TipoContatoPerfil;
+  valor: string;
+  rotulo?: string;
+}
+
+export interface ExperienciaPerfil {
+  id: string;
+  cargo: string;
+  empresa: string;
+  periodo: string;
+  local?: string;
+  descricao: string;
+  tecnologias?: string[];
+}
+
 export interface PerfilMestre {
   nome: string;
-  contato: Record<string, string>;
+  contato: ContatoPerfil[];
   resumo: string;
-  experiencias: string[];
+  experiencias: ExperienciaPerfil[];
   formacao: string[];
   skills: string[];
 }

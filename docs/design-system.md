@@ -249,7 +249,7 @@ Estado, origem dos documentos, distribuição por perfil, candidatura e nota, a�
 
 ### Perfil, fundação
 
-Modo leitura como padrão. Identidade, Contato, Resumo, Experiências, Formação e Skills são editadas uma por vez em modal. O estado desatualizado do índice aparece junto à ação de reindexar.
+O perfil-mestre é a fonte factual dos currículos adaptados. Contato é uma lista ordenada de canais tipados. Experiências aparecem como registros factuais individuais, identificados por cargo e empresa, com período, local, descrição e competências quando informados. Novos contatos e experiências são incluídos e editados em formulários focados em uma entrada por vez. O estado desatualizado do índice aparece junto à ação de reindexar.
 
 ## 8. Blocklist anti AI slop, revisada
 
