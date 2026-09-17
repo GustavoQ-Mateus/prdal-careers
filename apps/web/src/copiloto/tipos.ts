@@ -101,6 +101,9 @@ export function resumirResultado(tool: string, resultado: unknown): string {
   }
   if (typeof resultado === 'object') {
     const o = resultado as Record<string, unknown>;
+    if (tool === 'gerar_curriculo' && o.status === 'CONCLUIDA') return 'Geração concluída';
+    if (tool === 'gerar_curriculo' && o.status === 'ERRO') return 'Geração com erro recuperável';
+    if (tool === 'registrar_oportunidade' && o.id) return 'Oportunidade registrada';
     if (tool === 'status_geracao' && o.status) return `Status ${String(o.status)}`;
     if (tool === 'buscar_curriculo' && o.score != null) return `Score ${String(o.score)}`;
     if (tool === 'gerar_curriculo' && o.jobId) return 'Geração iniciada';
