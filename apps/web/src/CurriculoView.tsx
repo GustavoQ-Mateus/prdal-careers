@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { baixarArquivo, editarCurriculo, getCurriculo, type Curriculo } from './api';
+import { baixarArquivo, editarCurriculo, getCurriculo, type AtsAnalysis, type Curriculo } from './api';
 import { fmtData } from './ui';
 import { Breakdown, ScoreMeter, ScoreNum } from './components/Score';
 import { Markdown } from './components/Markdown';
@@ -8,6 +8,51 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+
+function ListaAts({ titulo, itens }: { titulo: string; itens: string[] }) {
+  return (
+    <div>
+      <p className="text-label uppercase text-muted">{titulo}</p>
+      {itens.length ? (
+        <ul className="mt-2 space-y-1 text-[13px] leading-relaxed text-ink-2">
+          {itens.slice(0, 8).map((item) => (
+            <li key={item}>• {item}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2 text-[13px] text-faint">Sem itens.</p>
+      )}
+    </div>
+  );
+}
+
+function EtapaAts({ titulo, analise }: { titulo: string; analise: AtsAnalysis | null }) {
+  if (!analise) {
+    return (
+      <section className="border-t border-line pt-6">
+        <h3 className="text-label uppercase text-muted">{titulo}</h3>
+        <p className="mt-2 text-[13px] text-faint">Ainda nao registrada.</p>
+      </section>
+    );
+  }
+  return (
+    <section className="border-t border-line pt-6">
+      <h3 className="text-label uppercase text-muted">{titulo}</h3>
+      <div className="mt-3 flex items-baseline gap-2">
+        <span className="text-[34px] font-bold leading-none">
+          <ScoreNum valor={analise.score} />
+        </span>
+        <span className="text-label uppercase text-muted">/ 100</span>
+      </div>
+      <p className="mt-2 text-[13px] leading-relaxed text-ink-2">{analise.veredicto}</p>
+      <div className="mt-4 flex flex-col gap-4">
+        <ListaAts titulo="Encontradas" itens={analise.keywordsEncontradas} />
+        <ListaAts titulo="Ausentes criticas" itens={analise.keywordsCriticasAusentes} />
+        <ListaAts titulo="Eliminatorios" itens={analise.pontosEliminatorios} />
+      </div>
+    </section>
+  );
+}
 
 export function CurriculoView({
   id,
@@ -145,6 +190,19 @@ export function CurriculoView({
               <Breakdown breakdown={curriculo.breakdown} />
             </div>
           </section>
+          <EtapaAts titulo="1. Analise ATS inicial" analise={curriculo.analiseInicial} />
+          <section className="border-t border-line pt-6">
+            <h3 className="text-label uppercase text-muted">2. Reescrita otimizada</h3>
+            <p className="mt-2 text-[13px] leading-relaxed text-ink-2">
+              Markdown ATS gerado com Perfil, RAG e Groq como fonte factual.
+            </p>
+            {curriculo.degradacao && (
+              <p className="mt-2 text-[13px] leading-relaxed text-score-warn">
+                {curriculo.degradacao}
+              </p>
+            )}
+          </section>
+          <EtapaAts titulo="3. Score ATS final" analise={curriculo.analiseFinal} />
         </aside>
 
         <section className="min-w-0">

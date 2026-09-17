@@ -115,6 +115,15 @@ export interface ScoreBreakdown {
   faltando: string[];
 }
 
+export interface AtsAnalysis {
+  score: number;
+  keywordsEncontradas: string[];
+  keywordsCriticasAusentes: string[];
+  pontosEliminatorios: string[];
+  veredicto: string;
+  breakdown: ScoreBreakdown;
+}
+
 export interface Curriculo {
   id: string;
   vagaId: string;
@@ -122,6 +131,9 @@ export interface Curriculo {
   markdown: string;
   score: number | null;
   breakdown: ScoreBreakdown | null;
+  analiseInicial: AtsAnalysis | null;
+  analiseFinal: AtsAnalysis | null;
+  degradacao: string | null;
   geradoEm: string;
   downloadDocxUrl: string | null;
   downloadPdfUrl: string | null;
@@ -132,6 +144,9 @@ export interface CurriculoResumo {
   rotulo: string;
   score: number | null;
   breakdown: ScoreBreakdown | null;
+  analiseInicial: AtsAnalysis | null;
+  analiseFinal: AtsAnalysis | null;
+  degradacao: string | null;
   geradoEm: string;
 }
 
@@ -544,6 +559,12 @@ export interface GeracaoCurriculo {
   status: StatusGeracaoCurriculo;
   erro: string | null;
   curriculoId: string | null;
+  etapas?: {
+    analiseInicial: AtsAnalysis | null;
+    reescrita: boolean;
+    analiseFinal: AtsAnalysis | null;
+    degradacao: string | null;
+  };
 }
 
 export interface CurriculoGlobal {
@@ -551,6 +572,9 @@ export interface CurriculoGlobal {
   rotulo: string;
   score: number | null;
   breakdown: ScoreBreakdown | null;
+  analiseInicial: AtsAnalysis | null;
+  analiseFinal: AtsAnalysis | null;
+  degradacao: string | null;
   geradoEm: string;
   vagaId: string;
   categoria: string | null;
