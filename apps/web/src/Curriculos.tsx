@@ -1,15 +1,27 @@
 import { useEffect, useMemo, useState } from 'react';
-import { baixarArquivo, listarCurriculosGlobal, type CurriculoGlobal } from './api';
+import { Layers3, List } from 'lucide-react';
+import {
+  baixarArquivo,
+  listarCurriculosGlobal,
+  type CurriculoGlobal,
+  type Pagina,
+} from './api';
+import type { FiltrosCurriculos, ModoCurriculos } from './rotas';
+import { rotuloTaxonomia } from './rotulos';
+import { useTaxonomia } from './useTaxonomia';
 import { fmtData } from './ui';
+import { Paginacao } from './components/Paginacao';
 import { ScoreNum } from './components/Score';
+import { SegmentoIcones, type OpcaoSegmento } from './components/SegmentoIcones';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { NativeSelect } from '@/components/ui/native-select';
-import { cn } from '@/lib/utils';
 
 type Ordenacao = 'geracao' | 'score' | 'oportunidade';
+
+const LIMITE_LISTA = 20;
 
 const ORDENACOES: { id: Ordenacao; nome: string }[] = [
   { id: 'geracao', nome: 'Geração recente' },
@@ -17,22 +29,10 @@ const ORDENACOES: { id: Ordenacao; nome: string }[] = [
   { id: 'oportunidade', nome: 'Oportunidade' },
 ];
 
-function ordenar(itens: CurriculoGlobal[], por: Ordenacao): CurriculoGlobal[] {
-  const copia = [...itens];
-  if (por === 'score') {
-    copia.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
-  } else if (por === 'oportunidade') {
-    copia.sort(
-      (a, b) =>
-        a.oportunidade.empresa.localeCompare(b.oportunidade.empresa) ||
-        a.oportunidade.titulo.localeCompare(b.oportunidade.titulo) ||
-        b.geradoEm.localeCompare(a.geradoEm),
-    );
-  } else {
-    copia.sort((a, b) => b.geradoEm.localeCompare(a.geradoEm));
-  }
-  return copia;
-}
+const MODOS: OpcaoSegmento<ModoCurriculos>[] = [
+  { id: 'lista', nome: 'Lista plana', icon: List },
+  { id: 'oportunidade', nome: 'Por oportunidade', icon: Layers3 },
+];
 
 type Grupo = {
   id: string;
@@ -92,30 +92,69 @@ function Arquivos({ curriculo }: { curriculo: CurriculoGlobal }) {
 }
 
 export function Curriculos({
+  modo,
+  categoria,
+  nivel,
+  vinculado,
+  scoreMinimo,
+  ordenarPor,
+  onRota,
   onAbrir,
 }: {
+  modo: ModoCurriculos;
+  categoria: string;
+  nivel: string;
+  vinculado: string;
+  scoreMinimo: string;
+  ordenarPor: string;
+  onRota: (filtros: FiltrosCurriculos) => void;
   onAbrir: (oportunidadeId: string, curriculoId: string) => void;
 }) {
-  const [itens, setItens] = useState<CurriculoGlobal[] | null>(null);
+  const [pagina, setPagina] = useState<Pagina<CurriculoGlobal> | null>(null);
   const [erro, setErro] = useState<string | null>(null);
-  const [vinculado, setVinculado] = useState('');
-  const [scoreMinimo, setScoreMinimo] = useState('');
-  const [ordenarPor, setOrdenarPor] = useState<Ordenacao>('geracao');
-  const [agrupado, setAgrupado] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const taxonomia = useTaxonomia();
+  const agrupado = modo === 'oportunidade';
+  const base: FiltrosCurriculos = {
+    modo,
+    categoria,
+    nivel,
+    vinculado,
+    scoreMinimo,
+    ordenarPor,
+  };
+
+  function aplicar(patch: Partial<FiltrosCurriculos>) {
+    setOffset(0);
+    onRota({ ...base, ...patch });
+  }
 
   useEffect(() => {
-    setItens(null);
+    let ativo = true;
+    setPagina(null);
     setErro(null);
     listarCurriculosGlobal({
       vinculado: vinculado || undefined,
       scoreMinimo: scoreMinimo || undefined,
+      categoria: categoria || undefined,
+      nivel: nivel || undefined,
+      ordenarPor,
+      limit: agrupado ? undefined : LIMITE_LISTA,
+      offset: agrupado ? undefined : offset,
     })
-      .then(setItens)
-      .catch((err) => setErro((err as Error).message));
-  }, [vinculado, scoreMinimo]);
+      .then((resposta) => {
+        if (ativo) setPagina(resposta);
+      })
+      .catch((err) => {
+        if (ativo) setErro((err as Error).message);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [agrupado, categoria, nivel, vinculado, scoreMinimo, ordenarPor, offset]);
 
-  const ordenados = useMemo(() => (itens ? ordenar(itens, ordenarPor) : null), [itens, ordenarPor]);
-  const grupos = useMemo(() => (ordenados ? agrupar(ordenados) : null), [ordenados]);
+  const itens = pagina?.itens ?? null;
+  const grupos = useMemo(() => (itens ? agrupar(itens) : null), [itens]);
 
   const criterio = ORDENACOES.find((o) => o.id === ordenarPor)?.nome ?? '';
 
@@ -132,69 +171,79 @@ export function Curriculos({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cv-vinculo">Vínculo</Label>
-            <NativeSelect
-              id="cv-vinculo"
-              className="w-40"
-              value={vinculado}
-              onChange={(e) => setVinculado(e.target.value)}
-            >
-              <option value="">Todos</option>
-              <option value="true">Vinculados</option>
-              <option value="false">Sem vínculo</option>
-            </NativeSelect>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cv-score">Score mínimo</Label>
-            <Input
-              id="cv-score"
-              className="w-28"
-              type="number"
-              min={0}
-              max={100}
-              value={scoreMinimo}
-              onChange={(e) => setScoreMinimo(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cv-ordenar">Ordenar por</Label>
-            <NativeSelect
-              id="cv-ordenar"
-              className="w-48"
-              value={ordenarPor}
-              onChange={(e) => setOrdenarPor(e.target.value as Ordenacao)}
-            >
-              {ORDENACOES.map((o) => (
-                <option key={o.id} value={o.id}>{o.nome}</option>
-              ))}
-            </NativeSelect>
-          </div>
-        </div>
-        <div className="flex rounded-control border border-line-strong p-0.5" role="group" aria-label="Agrupamento">
-          <button
-            aria-pressed={!agrupado}
-            onClick={() => setAgrupado(false)}
-            className={cn(
-              'h-8 rounded-[6px] px-3.5 text-[13px] font-medium transition-colors',
-              !agrupado ? 'bg-accent-soft text-accent-ink' : 'text-muted hover:text-ink',
-            )}
+      <div className="flex flex-wrap items-end gap-2.5">
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="cv-categoria">Categoria</Label>
+          <NativeSelect
+            id="cv-categoria"
+            className="w-36"
+            value={categoria}
+            onChange={(e) => aplicar({ categoria: e.target.value })}
           >
-            Lista plana
-          </button>
-          <button
-            aria-pressed={agrupado}
-            onClick={() => setAgrupado(true)}
-            className={cn(
-              'h-8 rounded-[6px] px-3.5 text-[13px] font-medium transition-colors',
-              agrupado ? 'bg-accent-soft text-accent-ink' : 'text-muted hover:text-ink',
-            )}
-          >
-            Por oportunidade
-          </button>
+            <option value="">Todas</option>
+            {taxonomia.categorias.map((valor) => (
+              <option key={valor} value={valor}>{rotuloTaxonomia(valor)}</option>
+            ))}
+          </NativeSelect>
         </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="cv-nivel">Nível</Label>
+          <NativeSelect
+            id="cv-nivel"
+            className="w-32"
+            value={nivel}
+            onChange={(e) => aplicar({ nivel: e.target.value })}
+          >
+            <option value="">Todos</option>
+            {taxonomia.niveis.map((valor) => (
+              <option key={valor} value={valor}>{rotuloTaxonomia(valor)}</option>
+            ))}
+          </NativeSelect>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="cv-vinculo">Vínculo</Label>
+          <NativeSelect
+            id="cv-vinculo"
+            className="w-36"
+            value={vinculado}
+            onChange={(e) => aplicar({ vinculado: e.target.value })}
+          >
+            <option value="">Todos</option>
+            <option value="true">Vinculados</option>
+            <option value="false">Sem vínculo</option>
+          </NativeSelect>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="cv-score">Score mínimo</Label>
+          <Input
+            id="cv-score"
+            className="w-28"
+            type="number"
+            min={0}
+            max={100}
+            value={scoreMinimo}
+            onChange={(e) => aplicar({ scoreMinimo: e.target.value })}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="cv-ordenar">Ordenar por</Label>
+          <NativeSelect
+            id="cv-ordenar"
+            className="w-44"
+            value={ordenarPor}
+            onChange={(e) => aplicar({ ordenarPor: e.target.value })}
+          >
+            {ORDENACOES.map((o) => (
+              <option key={o.id} value={o.id}>{o.nome}</option>
+            ))}
+          </NativeSelect>
+        </div>
+        <SegmentoIcones
+          opcoes={MODOS}
+          valor={modo}
+          onValor={(valor) => aplicar({ modo: valor })}
+          aria="Organização dos currículos"
+        />
       </div>
 
       {!agrupado && (
@@ -221,7 +270,7 @@ export function Curriculos({
         </div>
       )}
 
-      {ordenados && ordenados.length > 0 && (
+      {itens && itens.length > 0 && (
         <div className="overflow-x-auto rounded-card border border-line bg-ground">
           <table className="w-full min-w-[760px] border-collapse text-[14px]">
             <thead>
@@ -293,7 +342,7 @@ export function Curriculos({
                 ))
               : (
                 <tbody>
-                  {ordenados.map((c) => (
+                  {itens.map((c) => (
                     <tr
                       key={c.id}
                       className="border-b border-line last:border-0 transition-colors hover:bg-canvas"
@@ -323,6 +372,15 @@ export function Curriculos({
               )}
           </table>
         </div>
+      )}
+
+      {!agrupado && pagina && pagina.total > 0 && (
+        <Paginacao
+          total={pagina.total}
+          limit={LIMITE_LISTA}
+          offset={pagina.offset}
+          onOffset={setOffset}
+        />
       )}
     </div>
   );

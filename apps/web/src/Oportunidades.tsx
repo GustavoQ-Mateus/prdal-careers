@@ -1,15 +1,20 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
+import { Columns3, List, Network } from 'lucide-react';
 import {
   ativarEntrada,
   listarOportunidades,
   type OportunidadeItem,
+  type Pagina,
   type PipelineFiltros,
 } from './api';
-import { ROTULO_ETAPA, ROTULO_PRIORIDADE } from './rotulos';
+import { ROTULO_ETAPA, ROTULO_PRIORIDADE, rotuloTaxonomia } from './rotulos';
 import type { FiltrosHub, VisaoHub } from './rotas';
 import type { Selecao } from './hubTipos';
+import { useTaxonomia } from './useTaxonomia';
 import { fmtData } from './ui';
 import { ScoreNum, ScoreMeter } from './components/Score';
+import { Paginacao } from './components/Paginacao';
+import { SegmentoIcones, type OpcaoSegmento } from './components/SegmentoIcones';
 import { RegistrarDialog, EditarDialog } from './OportunidadeDialogs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,11 +31,13 @@ const OportunidadesGrafo = lazy(() =>
   import('./OportunidadesGrafo').then((m) => ({ default: m.OportunidadesGrafo })),
 );
 
-const VISOES: { id: VisaoHub; nome: string }[] = [
-  { id: 'lista', nome: 'Lista' },
-  { id: 'board', nome: 'Board' },
-  { id: 'grafo', nome: 'Grafo' },
+const VISOES: OpcaoSegmento<VisaoHub>[] = [
+  { id: 'lista', nome: 'Lista', icon: List },
+  { id: 'board', nome: 'Board', icon: Columns3 },
+  { id: 'grafo', nome: 'Grafo', icon: Network },
 ];
+
+const LIMITE_LISTA = 20;
 
 const ESTADOS = [
   { id: 'entrada', nome: 'Entrada' },
@@ -65,6 +72,8 @@ export function Oportunidades({
   visao,
   busca,
   estado,
+  categoria,
+  nivel,
   ordenarPor,
   prioridade,
   onRota,
@@ -73,39 +82,78 @@ export function Oportunidades({
   visao: VisaoHub;
   busca: string;
   estado: string;
+  categoria: string;
+  nivel: string;
   ordenarPor: string;
   prioridade: string;
   onRota: (prox: FiltrosHub) => void;
   onAbrir: (id: string) => void;
 }) {
-  const [itens, setItens] = useState<OportunidadeItem[] | null>(null);
+  const [pagina, setPagina] = useState<Pagina<OportunidadeItem> | null>(null);
+  const [offset, setOffset] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
   const [status, setStatus] = useState('');
   const [selecionada, setSelecionada] = useState<Selecao | null>(null);
   const [registrarAberto, setRegistrarAberto] = useState(false);
   const [editarAberto, setEditarAberto] = useState(false);
+  const taxonomia = useTaxonomia();
 
-  const base = { busca, estado, ordenarPor, prioridade };
+  const base = { busca, estado, categoria, nivel, ordenarPor, prioridade };
   function aplicar(patch: Partial<FiltrosHub>) {
+    setOffset(0);
     onRota({ visao, ...base, ...patch });
   }
 
   const filtrosPipeline: PipelineFiltros = {
     busca: busca || undefined,
+    categoria: categoria || undefined,
+    nivel: nivel || undefined,
     prioridade: prioridade || undefined,
     apresentacao: estado === 'ativas' ? 'ATIVA' : estado === 'encerradas' ? 'ENCERRADA' : undefined,
   };
 
   function carregarLista() {
-    listarOportunidades({ visao: estado, busca, ordenarPor, prioridade: prioridade || undefined })
-      .then(setItens)
+    setPagina(null);
+    setErro(null);
+    listarOportunidades({
+      visao: estado,
+      busca,
+      categoria: categoria || undefined,
+      nivel: nivel || undefined,
+      ordenarPor,
+      prioridade: prioridade || undefined,
+      limit: LIMITE_LISTA,
+      offset,
+    })
+      .then(setPagina)
       .catch((err) => setErro((err as Error).message));
   }
 
   useEffect(() => {
     if (visao !== 'lista') return;
-    carregarLista();
-  }, [visao, estado, busca, ordenarPor, prioridade]);
+    let ativo = true;
+    setPagina(null);
+    setErro(null);
+    listarOportunidades({
+      visao: estado,
+      busca,
+      categoria: categoria || undefined,
+      nivel: nivel || undefined,
+      ordenarPor,
+      prioridade: prioridade || undefined,
+      limit: LIMITE_LISTA,
+      offset,
+    })
+      .then((resposta) => {
+        if (ativo) setPagina(resposta);
+      })
+      .catch((err) => {
+        if (ativo) setErro((err as Error).message);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [visao, estado, busca, categoria, nivel, ordenarPor, prioridade, offset]);
 
   async function ativar(id: string) {
     setErro(null);
@@ -125,42 +173,22 @@ export function Oportunidades({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex rounded-control border border-line-strong p-0.5" role="tablist" aria-label="Visão">
-          {VISOES.map((v) => (
-            <button
-              key={v.id}
-              role="tab"
-              aria-selected={visao === v.id}
-              onClick={() => onRota({ visao: v.id, ...base })}
-              className={cn(
-                'h-8 rounded-[6px] px-3.5 text-[13px] font-medium transition-colors',
-                visao === v.id ? 'bg-accent-soft text-accent-ink' : 'text-muted hover:text-ink',
-              )}
-            >
-              {v.nome}
-            </button>
-          ))}
-        </div>
-        <Button onClick={() => setRegistrarAberto(true)}>Registrar oportunidade</Button>
-      </div>
-
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1.5">
+      <div className="flex flex-wrap items-end gap-2.5">
+        <div className="flex flex-col gap-1">
           <Label htmlFor="hub-busca">Busca</Label>
           <Input
             id="hub-busca"
-            className="w-56"
+            className="w-48"
             value={busca}
             onChange={(e) => aplicar({ busca: e.target.value })}
             placeholder="Título ou empresa"
           />
         </div>
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1">
           <Label htmlFor="hub-estado">Estado</Label>
           <NativeSelect
             id="hub-estado"
-            className="w-40"
+            className="w-32"
             value={estado}
             onChange={(e) => aplicar({ estado: e.target.value })}
           >
@@ -169,11 +197,39 @@ export function Oportunidades({
             ))}
           </NativeSelect>
         </div>
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="hub-categoria">Categoria</Label>
+          <NativeSelect
+            id="hub-categoria"
+            className="w-36"
+            value={categoria}
+            onChange={(e) => aplicar({ categoria: e.target.value })}
+          >
+            <option value="">Todas</option>
+            {taxonomia.categorias.map((valor) => (
+              <option key={valor} value={valor}>{rotuloTaxonomia(valor)}</option>
+            ))}
+          </NativeSelect>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="hub-nivel">Nível</Label>
+          <NativeSelect
+            id="hub-nivel"
+            className="w-32"
+            value={nivel}
+            onChange={(e) => aplicar({ nivel: e.target.value })}
+          >
+            <option value="">Todos</option>
+            {taxonomia.niveis.map((valor) => (
+              <option key={valor} value={valor}>{rotuloTaxonomia(valor)}</option>
+            ))}
+          </NativeSelect>
+        </div>
+        <div className="flex flex-col gap-1">
           <Label htmlFor="hub-prioridade">Prioridade</Label>
           <NativeSelect
             id="hub-prioridade"
-            className="w-36"
+            className="w-32"
             value={prioridade}
             onChange={(e) => aplicar({ prioridade: e.target.value })}
           >
@@ -184,11 +240,11 @@ export function Oportunidades({
           </NativeSelect>
         </div>
         {visao === 'lista' && (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1">
             <Label htmlFor="hub-ordenar">Ordenar por</Label>
             <NativeSelect
               id="hub-ordenar"
-              className="w-56"
+              className="w-48"
               value={ordenarPor}
               onChange={(e) => aplicar({ ordenarPor: e.target.value })}
             >
@@ -198,6 +254,15 @@ export function Oportunidades({
             </NativeSelect>
           </div>
         )}
+        <SegmentoIcones
+          opcoes={VISOES}
+          valor={visao}
+          onValor={(valor) => onRota({ visao: valor, ...base })}
+          aria="Visão das oportunidades"
+        />
+        <Button className="ml-auto" onClick={() => setRegistrarAberto(true)}>
+          Registrar oportunidade
+        </Button>
       </div>
 
       {visao === 'lista' && (
@@ -212,12 +277,21 @@ export function Oportunidades({
 
       {visao === 'lista' && (
         <ListaOportunidades
-          itens={itens}
+          itens={pagina?.itens ?? null}
           busca={busca}
           selecionadaId={selecionada?.id ?? null}
           onSelecionar={(item) => setSelecionada(selecaoDe(item))}
           onAtivar={(id) => void ativar(id)}
           onAbrir={onAbrir}
+        />
+      )}
+
+      {visao === 'lista' && pagina && pagina.total > 0 && (
+        <Paginacao
+          total={pagina.total}
+          limit={LIMITE_LISTA}
+          offset={pagina.offset}
+          onOffset={setOffset}
         />
       )}
 
@@ -385,8 +459,8 @@ function ListaOportunidades({
                 <div className="text-[13px] text-faint">{item.empresa}</div>
               </td>
               <td className="px-3 py-3 text-ink-2">
-                {item.categoria ?? '--'}
-                {item.nivel ? ` · ${item.nivel}` : ''}
+                {item.categoria ? rotuloTaxonomia(item.categoria) : '--'}
+                {item.nivel ? ` · ${rotuloTaxonomia(item.nivel)}` : ''}
               </td>
               <td className="px-3 py-3 text-ink-2">
                 {item.prioridade ? ROTULO_PRIORIDADE[item.prioridade] : '--'}

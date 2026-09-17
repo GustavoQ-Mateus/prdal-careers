@@ -206,6 +206,8 @@ export function App() {
                   visao={rota.visao}
                   busca={rota.busca ?? ''}
                   estado={rota.estado ?? 'ativas'}
+                  categoria={rota.categoria ?? ''}
+                  nivel={rota.nivel ?? ''}
                   ordenarPor={rota.ordenarPor ?? 'atividade'}
                   prioridade={rota.prioridade ?? ''}
                   onRota={(prox) => ir({ tela: 'oportunidades', ...prox })}
@@ -224,6 +226,13 @@ export function App() {
               {rota.tela === 'copiloto' && <Copiloto oportunidadeId={rota.oportunidadeId} />}
               {rota.tela === 'curriculos' && (
                 <Curriculos
+                  modo={rota.modo ?? 'lista'}
+                  categoria={rota.categoria ?? ''}
+                  nivel={rota.nivel ?? ''}
+                  vinculado={rota.vinculado ?? ''}
+                  scoreMinimo={rota.scoreMinimo ?? ''}
+                  ordenarPor={rota.ordenarPor ?? 'geracao'}
+                  onRota={(filtros) => ir({ tela: 'curriculos', ...filtros })}
                   onAbrir={(oportunidadeId, curriculoId) =>
                     ir({ tela: 'curriculo', oportunidadeId, curriculoId })
                   }
