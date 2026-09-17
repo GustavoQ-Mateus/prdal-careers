@@ -21,8 +21,22 @@ import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 
 type EstadoAcao = 'concluida' | 'cancelada';
 
+const CONFIG_VOLUME = {
+  oportunidadesCriadas: { label: 'Oportunidades criadas', color: 'var(--accent)' },
+  acoesConcluidas: { label: 'Ações concluídas', color: 'var(--ink-2)' },
+  curriculosGerados: { label: 'Currículos gerados', color: 'var(--score-warn)' },
+};
+
+const CONFIG_SCORE = {
+  scoreMedio: { label: 'Score médio', color: 'var(--accent)' },
+};
+
 function rotuloTipo(tipo: string): string {
   return ROTULO_ACAO[tipo as TipoAcaoOportunidade] ?? tipo;
+}
+
+function rotuloData(data: string) {
+  return data.slice(5).replace('-', '/');
 }
 
 function GrupoTitulo({ titulo, contagem }: { titulo: string; contagem?: number }) {
@@ -36,39 +50,49 @@ function GrupoTitulo({ titulo, contagem }: { titulo: string; contagem?: number }
   );
 }
 
-const CONFIG_VOLUME = {
-  oportunidadesCriadas: { label: 'Oportunidades criadas', color: 'var(--accent)' },
-  acoesConcluidas: { label: 'Ações concluídas', color: 'var(--ink-2)' },
-  curriculosGerados: { label: 'Currículos gerados', color: 'var(--score-warn)' },
-};
-
-const CONFIG_SCORE = {
-  scoreMedio: { label: 'Score médio', color: 'var(--accent)' },
-};
-
-function rotuloData(data: string) {
-  return data.slice(5).replace('-', '/');
+function Legenda({ config }: { config: typeof CONFIG_VOLUME | typeof CONFIG_SCORE }) {
+  return (
+    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted" aria-label="Legenda do gráfico">
+      {Object.entries(config).map(([key, item]) => (
+        <span key={key} className="flex items-center gap-1.5">
+          <span className="size-2 rounded-full" style={{ backgroundColor: item.color }} aria-hidden />
+          {item.label}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 function DashboardTemporal({
   serie,
+  resumoAts,
   periodo,
+  atrasadas,
+  paraHoje,
+  proximoMovimento,
   onPeriodo,
 }: {
   serie: HojeResposta['serieTemporal'];
+  resumoAts: HojeResposta['resumoAts'];
   periodo: 7 | 30 | 90;
+  atrasadas: number;
+  paraHoje: number;
+  proximoMovimento: string;
   onPeriodo: (periodo: 7 | 30 | 90) => void;
 }) {
   const temVolume = serie.pontos.some(
     (ponto) => ponto.oportunidadesCriadas || ponto.acoesConcluidas || ponto.curriculosGerados,
   );
   const temScore = serie.pontos.some((ponto) => ponto.scoreMedio !== null);
+
   return (
     <section className="border-y border-line py-6" aria-labelledby="dashboard-hoje">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 id="dashboard-hoje" className="text-section text-ink">Movimento do período</h2>
-          <p className="mt-1 text-[13px] text-muted">Dados reais de {serie.inicio} a {serie.fim}, no fuso do seu perfil.</p>
+          <h2 id="dashboard-hoje" className="text-section text-ink">Evolução da candidatura</h2>
+          <p className="mt-1 text-[13px] text-muted">
+            Dados reais de {serie.inicio} a {serie.fim}, no fuso do seu perfil.
+          </p>
         </div>
         <NativeSelect
           aria-label="Período do dashboard"
@@ -82,14 +106,38 @@ function DashboardTemporal({
         </NativeSelect>
       </div>
 
+      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-y border-line py-3 text-[13px] text-muted" aria-label="Leitura de decisão">
+        <span>
+          <strong className={cn('font-mono tabular-nums', atrasadas ? 'text-score-bad' : 'text-ink')}>
+            {atrasadas}
+          </strong>{' '}
+          atrasada{atrasadas === 1 ? '' : 's'}
+        </span>
+        <span>
+          <strong className="font-mono tabular-nums text-ink">{paraHoje}</strong> para hoje
+        </span>
+        <span className="min-w-0">
+          Próximo movimento: <strong className="font-medium text-ink-2">{proximoMovimento}</strong>
+        </span>
+        <span className="hidden h-3.5 w-px bg-line lg:block" aria-hidden />
+        <span>
+          <strong className="font-mono tabular-nums text-ink">{resumoAts.curriculos}</strong> currículos
+        </span>
+        <span className="flex items-center gap-1.5">
+          Score médio <ScoreNum valor={resumoAts.media} />
+        </span>
+      </div>
+
       {!temVolume && !temScore ? (
-        <p className="mt-5 text-[14px] text-muted">
-          Ainda não há movimentação registrada neste período. A série será preenchida conforme você organizar vagas,
-          concluir ações ou gerar currículos.
-        </p>
+        <div className="py-8">
+          <p className="text-[14px] font-medium text-ink-2">Ainda não há movimento neste período.</p>
+          <p className="mt-1 max-w-xl text-[14px] text-muted">
+            Registre uma oportunidade, conclua uma ação ou gere um currículo para acompanhar a evolução aqui.
+          </p>
+        </div>
       ) : (
         <>
-          <div className="mt-5 grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+          <div className="mt-5 grid gap-7 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
             <div>
               <div className="mb-2 flex items-center justify-between gap-3">
                 <h3 className="text-[13px] font-medium text-ink-2">Volume de trabalho</h3>
@@ -108,11 +156,7 @@ function DashboardTemporal({
                   </BarChart>
                 </ChartContainer>
               </div>
-              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted" aria-label="Legenda do gráfico de volume">
-                {Object.entries(CONFIG_VOLUME).map(([key, item]) => (
-                  <span key={key} className="flex items-center gap-1.5"><span className="size-2 rounded-full" style={{ backgroundColor: item.color }} aria-hidden />{item.label}</span>
-                ))}
-              </div>
+              <Legenda config={CONFIG_VOLUME} />
             </div>
 
             <div>
@@ -133,8 +177,11 @@ function DashboardTemporal({
                   </ChartContainer>
                 </div>
               ) : (
-                <p className="py-10 text-[14px] text-muted">Nenhum currículo com score foi gerado no período.</p>
+                <div className="flex h-[260px] items-center border-y border-line px-1">
+                  <p className="max-w-xs text-[14px] text-muted">Nenhum currículo com score foi gerado no período.</p>
+                </div>
               )}
+              {temScore && <Legenda config={CONFIG_SCORE} />}
             </div>
           </div>
 
@@ -142,8 +189,26 @@ function DashboardTemporal({
             <summary className="cursor-pointer text-[13px] font-medium text-accent-ink">Ver dados do período</summary>
             <div className="mt-3 overflow-x-auto">
               <table className="w-full min-w-[560px] border-collapse text-[12px]" aria-label="Dados temporais de Hoje">
-                <thead><tr className="border-b border-line text-left text-label uppercase text-muted"><th className="px-2 py-2">Data</th><th className="px-2 py-2 text-right">Oportunidades</th><th className="px-2 py-2 text-right">Ações</th><th className="px-2 py-2 text-right">Currículos</th><th className="px-2 py-2 text-right">Score médio</th></tr></thead>
-                <tbody>{serie.pontos.map((ponto) => <tr key={ponto.data} className="border-b border-line last:border-0"><td className="px-2 py-2 font-mono tabular-nums text-ink-2">{ponto.data}</td><td className="px-2 py-2 text-right font-mono tabular-nums text-ink-2">{ponto.oportunidadesCriadas}</td><td className="px-2 py-2 text-right font-mono tabular-nums text-ink-2">{ponto.acoesConcluidas}</td><td className="px-2 py-2 text-right font-mono tabular-nums text-ink-2">{ponto.curriculosGerados}</td><td className="px-2 py-2 text-right font-mono tabular-nums text-ink-2">{ponto.scoreMedio ?? '--'}</td></tr>)}</tbody>
+                <thead>
+                  <tr className="border-b border-line text-left text-label uppercase text-muted">
+                    <th className="px-2 py-2">Data</th>
+                    <th className="px-2 py-2 text-right">Oportunidades</th>
+                    <th className="px-2 py-2 text-right">Ações</th>
+                    <th className="px-2 py-2 text-right">Currículos</th>
+                    <th className="px-2 py-2 text-right">Score médio</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {serie.pontos.map((ponto) => (
+                    <tr key={ponto.data} className="border-b border-line last:border-0">
+                      <td className="px-2 py-2 font-mono tabular-nums text-ink-2">{ponto.data}</td>
+                      <td className="px-2 py-2 text-right font-mono tabular-nums text-ink-2">{ponto.oportunidadesCriadas}</td>
+                      <td className="px-2 py-2 text-right font-mono tabular-nums text-ink-2">{ponto.acoesConcluidas}</td>
+                      <td className="px-2 py-2 text-right font-mono tabular-nums text-ink-2">{ponto.curriculosGerados}</td>
+                      <td className="px-2 py-2 text-right font-mono tabular-nums text-ink-2">{ponto.scoreMedio ?? '--'}</td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
           </details>
@@ -165,6 +230,7 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
   const [passosDefinidos, setPassosDefinidos] = useState<Record<string, string>>({});
 
   function carregar() {
+    setErro(null);
     getHoje(undefined, undefined, periodo)
       .then(setDados)
       .catch((err) => setErro((err as Error).message));
@@ -198,14 +264,14 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
     setErro(null);
     try {
       await patchAcao(id, { venceEm: iso });
-      setDados((d) => {
-        if (!d) return d;
-        const aplicar = (arr: HojeAcao[]) => arr.map((a) => (a.id === id ? { ...a, venceEm: iso } : a));
+      setDados((atual) => {
+        if (!atual) return atual;
+        const aplicar = (itens: HojeAcao[]) => itens.map((item) => (item.id === id ? { ...item, venceEm: iso } : item));
         return {
-          ...d,
-          atrasadas: aplicar(d.atrasadas),
-          hoje: aplicar(d.hoje),
-          proximosDias: aplicar(d.proximosDias),
+          ...atual,
+          atrasadas: aplicar(atual.atrasadas),
+          hoje: aplicar(atual.hoje),
+          proximosDias: aplicar(atual.proximosDias),
         };
       });
       setReagendandoId(null);
@@ -220,11 +286,7 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
     if (passoId !== vagaId || !titulo) return;
     setErro(null);
     try {
-      await criarAcao(vagaId, {
-        titulo,
-        tipo: 'OUTRO' as TipoAcaoOportunidade,
-        principal: true,
-      });
+      await criarAcao(vagaId, { titulo, tipo: 'OUTRO' as TipoAcaoOportunidade, principal: true });
       setPassosDefinidos((prev) => ({ ...prev, [vagaId]: titulo }));
       setPassoId(null);
       setPassoTitulo('');
@@ -233,16 +295,30 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
     }
   }
 
-  if (!dados && !erro) return <p className="py-10 text-[14px] text-muted">Carregando agenda...</p>;
+  if (!dados && !erro) return <p className="py-10 text-[14px] text-muted">Carregando painel de decisão...</p>;
 
-  const semPasso = dados?.semProximoPasso ?? [];
-  const atividade = dados?.atividadeRecente ?? [];
-  const vazio =
-    !!dados &&
-    dados.atrasadas.length === 0 &&
-    dados.hoje.length === 0 &&
-    dados.proximosDias.length === 0 &&
-    semPasso.length === 0;
+  if (!dados) {
+    return (
+      <section className="border-y border-line py-8" aria-labelledby="falha-hoje">
+        <h2 id="falha-hoje" className="text-section text-ink">Não foi possível atualizar Hoje</h2>
+        <p className="mt-2 max-w-xl text-[14px] text-muted">{erro}</p>
+        <Button className="mt-4" variant="secondary" onClick={carregar}>Tentar novamente</Button>
+      </section>
+    );
+  }
+
+  const semPasso = dados.semProximoPasso ?? [];
+  const atividade = dados.atividadeRecente ?? [];
+  const prioridades = [...dados.atrasadas, ...dados.hoje];
+  const proximaAcao = dados.proximosDias[0];
+  const proximoMovimento = semPasso[0]
+    ? `definir um próximo passo para ${semPasso[0].titulo}`
+    : proximaAcao
+      ? `${proximaAcao.titulo} em ${fmtData(proximaAcao.venceEm)}`
+      : prioridades[0]
+        ? `${prioridades[0].titulo} em ${fmtData(prioridades[0].venceEm)}`
+        : 'registrar a próxima oportunidade';
+  const totalAgenda = dados.atrasadas.length + dados.hoje.length + dados.proximosDias.length + semPasso.length + atividade.length;
 
   function renderAcao(item: HojeAcao, atraso?: boolean) {
     const estado = estados[item.id];
@@ -251,10 +327,7 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
     return (
       <li key={item.id} className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 py-3.5">
         <div className={cn('min-w-0', finalizada && 'opacity-55')}>
-          <button
-            onClick={() => onAbrir(item.vagaId)}
-            className="rounded-control text-left text-[15px] font-medium text-ink transition-colors hover:text-accent focus-visible:text-accent focus-visible:outline-none"
-          >
+          <button onClick={() => onAbrir(item.vagaId)} className="rounded-control text-left text-[15px] font-medium text-ink transition-colors hover:text-accent focus-visible:text-accent focus-visible:outline-none">
             {item.oportunidade?.titulo ?? 'Oportunidade'}
           </button>
           <p className="text-[14px] text-ink-2">{item.titulo}</p>
@@ -264,14 +337,9 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
             <span>{item.oportunidade?.empresa ?? 'Empresa não informada'}</span>
             <span aria-hidden>·</span>
             <span className="font-mono tabular-nums">{fmtData(item.venceEm)}</span>
-            {atraso && !finalizada && (
-              <span className="ml-1 text-[11px] font-semibold uppercase tracking-wide text-score-bad">
-                Atrasada
-              </span>
-            )}
+            {atraso && !finalizada && <span className="ml-1 text-[11px] font-semibold uppercase tracking-wide text-score-bad">Atrasada</span>}
           </p>
         </div>
-
         <div className="shrink-0">
           {estado === 'concluida' ? (
             <span className="text-[13px] text-muted">Concluída</span>
@@ -279,45 +347,15 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
             <span className="text-[13px] text-muted">Cancelada</span>
           ) : emReagendamento ? (
             <div className="flex flex-wrap items-center gap-2">
-              <Input
-                type="datetime-local"
-                aria-label="Novo prazo"
-                className="h-8 w-auto"
-                value={quando}
-                onChange={(e) => setQuando(e.target.value)}
-              />
-              <Button size="sm" onClick={() => void reagendar(item.id)}>
-                Salvar prazo
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setReagendandoId(null);
-                  setQuando('');
-                }}
-              >
-                Voltar
-              </Button>
+              <Input type="datetime-local" aria-label="Novo prazo" className="h-8 w-auto" value={quando} onChange={(event) => setQuando(event.target.value)} />
+              <Button size="sm" onClick={() => void reagendar(item.id)}>Salvar prazo</Button>
+              <Button size="sm" variant="ghost" onClick={() => { setReagendandoId(null); setQuando(''); }}>Voltar</Button>
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" variant="secondary" onClick={() => void concluir(item.id)}>
-                Concluir
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setReagendandoId(item.id);
-                  setQuando('');
-                }}
-              >
-                Reagendar
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => void cancelar(item.id)}>
-                Cancelar
-              </Button>
+              <Button size="sm" variant="secondary" onClick={() => void concluir(item.id)}>Concluir</Button>
+              <Button size="sm" variant="ghost" onClick={() => { setReagendandoId(item.id); setQuando(''); }}>Reagendar</Button>
+              <Button size="sm" variant="ghost" onClick={() => void cancelar(item.id)}>Cancelar</Button>
             </div>
           )}
         </div>
@@ -332,172 +370,128 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
         {itens.length === 0 ? (
           <p className="border-t border-line py-3.5 text-[14px] text-muted">{vazioTexto}</p>
         ) : (
-          <ul className="divide-y divide-line border-t border-line">
-            {itens.map((item) => renderAcao(item, atraso))}
-          </ul>
+          <ul className="divide-y divide-line border-t border-line">{itens.map((item) => renderAcao(item, atraso))}</ul>
         )}
       </section>
     );
   }
 
-  return (
-    <div className="flex flex-col gap-10">
-      {dados && (
-        <div
-          className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-muted"
-          aria-label="Resumo ATS"
-        >
-          <span>
-            <span className="font-mono tabular-nums text-ink">{dados.resumoAts.curriculos}</span>{' '}
-            currículos
-          </span>
-          <span aria-hidden className="h-3.5 w-px bg-line" />
-          <span>
-            <span className="font-mono tabular-nums text-ink">{dados.resumoAts.comScore}</span> com
-            score
-          </span>
-          <span aria-hidden className="h-3.5 w-px bg-line" />
-          <span className="flex items-center gap-1.5">
-            Score médio <ScoreNum valor={dados.resumoAts.media} />
-          </span>
+  function renderSemPasso(item: (typeof semPasso)[number]) {
+    const definido = passosDefinidos[item.id];
+    const editando = passoId === item.id;
+    return (
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 py-3.5">
+        <div className="min-w-0">
+          <button onClick={() => onAbrir(item.id)} className="rounded-control text-left text-[15px] font-medium text-ink transition-colors hover:text-accent focus-visible:text-accent focus-visible:outline-none">
+            {item.titulo}
+          </button>
+          <p className="text-[13px] text-faint">{item.empresa}</p>
         </div>
-      )}
+        <div className="shrink-0">
+          {definido ? (
+            <span className="text-[13px] text-muted">Próximo passo definido</span>
+          ) : editando ? (
+            <form className="flex flex-wrap items-center gap-2" onSubmit={(event) => { event.preventDefault(); void definirPasso(item.id); }}>
+              <Input aria-label="Próximo passo" className="h-8 w-56" placeholder="Ex.: revisar vaga e gerar currículo" value={passoTitulo} onChange={(event) => setPassoTitulo(event.target.value)} autoFocus required />
+              <Button size="sm" type="submit">Definir</Button>
+              <Button size="sm" variant="ghost" type="button" onClick={() => { setPassoId(null); setPassoTitulo(''); }}>Voltar</Button>
+            </form>
+          ) : (
+            <Button size="sm" variant="secondary" onClick={() => { setPassoId(item.id); setPassoTitulo(''); }}>Definir próximo passo</Button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
+  return (
+    <div className="flex flex-col gap-8">
       {erro && (
-        <div
-          className="rounded-control border border-score-bad/40 bg-ground px-3 py-2 text-[13px] text-score-bad"
-          role="alert"
-        >
+        <div className="rounded-control border border-score-bad/40 bg-ground px-3 py-2 text-[13px] text-score-bad" role="alert">
           {erro}
         </div>
       )}
 
-      {dados?.serieTemporal && <DashboardTemporal serie={dados.serieTemporal} periodo={periodo} onPeriodo={setPeriodo} />}
+      <DashboardTemporal serie={dados.serieTemporal} resumoAts={dados.resumoAts} periodo={periodo} atrasadas={dados.atrasadas.length} paraHoje={dados.hoje.length} proximoMovimento={proximoMovimento} onPeriodo={setPeriodo} />
 
-      {vazio ? (
-        <div className="py-6">
-          <h2 className="text-section text-ink">Sem pendências na agenda</h2>
-          <p className="mt-2 max-w-md text-[14px] text-muted">
-            Nada com prazo por aqui. Abra Oportunidades para registrar uma vaga ou defina o próximo
-            passo de uma candidatura ativa.
-          </p>
+      <section className="grid gap-8 border-b border-line pb-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]" aria-labelledby="atencao-agora">
+        <div>
+          <GrupoTitulo titulo="Atenção agora" contagem={prioridades.length} />
+          {prioridades.length === 0 ? (
+            <p className="border-t border-line py-3.5 text-[14px] text-muted">Nenhuma ação atrasada ou prevista para hoje.</p>
+          ) : (
+            <ul className="divide-y divide-line border-t border-line">
+              {prioridades.slice(0, 3).map((item) => renderAcao(item, dados.atrasadas.some((atrasada) => atrasada.id === item.id)))}
+            </ul>
+          )}
+          {prioridades.length > 3 && <p className="mt-2 text-[13px] text-muted">Mais {prioridades.length - 3} item{prioridades.length - 3 === 1 ? '' : 's'} na agenda completa.</p>}
         </div>
-      ) : (
-        dados && (
-          <div className="flex flex-col gap-8">
-            {dados.atrasadas.length > 0 && renderGrupo('Atrasados', dados.atrasadas, '', true)}
-            {renderGrupo('Hoje', dados.hoje, 'Nada com prazo para hoje.')}
-            {renderGrupo(
-              'Próximos sete dias',
-              dados.proximosDias,
-              'Nenhum prazo nos próximos sete dias.',
-            )}
-
-            {semPasso.length > 0 && (
-              <section>
-                <GrupoTitulo titulo="Sem próximo passo" contagem={semPasso.length} />
-                <ul className="divide-y divide-line border-t border-line">
-                  {semPasso.map((item) => {
-                    const definido = passosDefinidos[item.id];
-                    const editando = passoId === item.id;
-                    return (
-                      <li
-                        key={item.id}
-                        className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 py-3.5"
-                      >
-                        <div className="min-w-0">
-                          <button
-                            onClick={() => onAbrir(item.id)}
-                            className="rounded-control text-left text-[15px] font-medium text-ink transition-colors hover:text-accent focus-visible:text-accent focus-visible:outline-none"
-                          >
-                            {item.titulo}
-                          </button>
-                          <p className="text-[13px] text-faint">{item.empresa}</p>
-                        </div>
-                        <div className="shrink-0">
-                          {definido ? (
-                            <span className="text-[13px] text-muted">Próximo passo definido</span>
-                          ) : editando ? (
-                            <form
-                              className="flex flex-wrap items-center gap-2"
-                              onSubmit={(e) => {
-                                e.preventDefault();
-                                void definirPasso(item.id);
-                              }}
-                            >
-                              <Input
-                                aria-label="Próximo passo"
-                                className="h-8 w-56"
-                                placeholder="Ex: revisar vaga e gerar currículo"
-                                value={passoTitulo}
-                                onChange={(e) => setPassoTitulo(e.target.value)}
-                                autoFocus
-                                required
-                              />
-                              <Button size="sm" type="submit">
-                                Definir
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                type="button"
-                                onClick={() => {
-                                  setPassoId(null);
-                                  setPassoTitulo('');
-                                }}
-                              >
-                                Voltar
-                              </Button>
-                            </form>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => {
-                                setPassoId(item.id);
-                                setPassoTitulo('');
-                              }}
-                            >
-                              Definir próximo passo
-                            </Button>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
+        <div>
+          <GrupoTitulo titulo="Próximo movimento" />
+          <div className="border-t border-line">
+            {semPasso[0] ? renderSemPasso(semPasso[0]) : proximaAcao ? (
+              <div className="py-3.5">
+                <button onClick={() => onAbrir(proximaAcao.vagaId)} className="rounded-control text-left text-[15px] font-medium text-ink transition-colors hover:text-accent focus-visible:text-accent focus-visible:outline-none">
+                  {proximaAcao.oportunidade?.titulo ?? 'Oportunidade'}
+                </button>
+                <p className="text-[14px] text-ink-2">{proximaAcao.titulo}</p>
+                <p className="mt-0.5 text-[13px] text-faint">{fmtData(proximaAcao.venceEm)}</p>
+              </div>
+            ) : (
+              <p className="py-3.5 text-[14px] text-muted">Sem próximo prazo. Registre uma oportunidade para continuar o fluxo.</p>
             )}
           </div>
-        )
-      )}
-
-      <section>
-        <GrupoTitulo titulo="Atividade recente" />
-        {atividade.length === 0 ? (
-          <p className="border-t border-line py-3.5 text-[14px] text-muted">
-            Ainda não há histórico. As ações que você concluir aparecem aqui.
-          </p>
-        ) : (
-          <ul className="divide-y divide-line border-t border-line">
-            {atividade.map((e) => (
-              <li key={e.id} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 py-3">
-                <button
-                  onClick={() => onAbrir(e.vagaId)}
-                  className="rounded-control text-left text-[14px] font-medium text-ink transition-colors hover:text-accent focus-visible:text-accent focus-visible:outline-none"
-                >
-                  {e.titulo}
-                </button>
-                <span className="text-[13px] text-faint">
-                  {e.descricao}
-                  {' · '}
-                  <span className="font-mono tabular-nums">{fmtData(e.ocorridoEm)}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        </div>
       </section>
+
+      <section className="grid gap-5 border-b border-line pb-6 md:grid-cols-3" aria-label="Contexto operacional">
+        <div>
+          <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted">Próximos dias</p>
+          {proximaAcao ? (
+            <button onClick={() => onAbrir(proximaAcao.vagaId)} className="mt-1 rounded-control text-left text-[14px] font-medium text-ink hover:text-accent focus-visible:text-accent focus-visible:outline-none">{proximaAcao.titulo}</button>
+          ) : <p className="mt-1 text-[14px] text-muted">Nenhum prazo nos próximos sete dias.</p>}
+        </div>
+        <div>
+          <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted">Sem próximo passo</p>
+          <p className="mt-1 text-[14px] text-muted"><span className="font-mono tabular-nums text-ink">{semPasso.length}</span> oportunidade{semPasso.length === 1 ? '' : 's'} a organizar</p>
+        </div>
+        <div>
+          <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted">Atividade recente</p>
+          {atividade[0] ? (
+            <button onClick={() => onAbrir(atividade[0].vagaId)} className="mt-1 rounded-control text-left text-[14px] text-ink-2 hover:text-accent focus-visible:text-accent focus-visible:outline-none">{atividade[0].descricao}</button>
+          ) : <p className="mt-1 text-[14px] text-muted">Sem histórico recente.</p>}
+        </div>
+      </section>
+
+      <details className="border-b border-line pb-6">
+        <summary className="cursor-pointer text-[14px] font-medium text-accent-ink">Ver agenda completa{totalAgenda ? ` (${totalAgenda})` : ''}</summary>
+        <div className="mt-6 flex flex-col gap-8">
+          {renderGrupo('Atrasados', dados.atrasadas, 'Nenhuma ação atrasada.', true)}
+          {renderGrupo('Hoje', dados.hoje, 'Nada com prazo para hoje.')}
+          {renderGrupo('Próximos sete dias', dados.proximosDias, 'Nenhum prazo nos próximos sete dias.')}
+          <section>
+            <GrupoTitulo titulo="Sem próximo passo" contagem={semPasso.length} />
+            {semPasso.length === 0 ? (
+              <p className="border-t border-line py-3.5 text-[14px] text-muted">Todas as oportunidades ativas têm um próximo passo.</p>
+            ) : <div className="divide-y divide-line border-t border-line">{semPasso.map(renderSemPasso)}</div>}
+          </section>
+          <section>
+            <GrupoTitulo titulo="Atividade recente" />
+            {atividade.length === 0 ? (
+              <p className="border-t border-line py-3.5 text-[14px] text-muted">Ainda não há histórico.</p>
+            ) : (
+              <ul className="divide-y divide-line border-t border-line">
+                {atividade.map((evento) => (
+                  <li key={evento.id} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 py-3">
+                    <button onClick={() => onAbrir(evento.vagaId)} className="rounded-control text-left text-[14px] font-medium text-ink hover:text-accent focus-visible:text-accent focus-visible:outline-none">{evento.titulo}</button>
+                    <span className="text-[13px] text-faint">{evento.descricao} · <span className="font-mono tabular-nums">{fmtData(evento.ocorridoEm)}</span></span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+      </details>
     </div>
   );
 }
