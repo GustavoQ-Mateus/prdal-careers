@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import {
   cancelarAcao,
   concluirAcao,
@@ -14,7 +15,9 @@ import { fmtData } from './ui';
 import { ScoreNum } from './components/Score';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { cn } from '@/lib/utils';
+import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 
 type EstadoAcao = 'concluida' | 'cancelada';
 
@@ -33,8 +36,126 @@ function GrupoTitulo({ titulo, contagem }: { titulo: string; contagem?: number }
   );
 }
 
+const CONFIG_VOLUME = {
+  oportunidadesCriadas: { label: 'Oportunidades criadas', color: 'var(--accent)' },
+  acoesConcluidas: { label: 'Ações concluídas', color: 'var(--ink-2)' },
+  curriculosGerados: { label: 'Currículos gerados', color: 'var(--score-warn)' },
+};
+
+const CONFIG_SCORE = {
+  scoreMedio: { label: 'Score médio', color: 'var(--accent)' },
+};
+
+function rotuloData(data: string) {
+  return data.slice(5).replace('-', '/');
+}
+
+function DashboardTemporal({
+  serie,
+  periodo,
+  onPeriodo,
+}: {
+  serie: HojeResposta['serieTemporal'];
+  periodo: 7 | 30 | 90;
+  onPeriodo: (periodo: 7 | 30 | 90) => void;
+}) {
+  const temVolume = serie.pontos.some(
+    (ponto) => ponto.oportunidadesCriadas || ponto.acoesConcluidas || ponto.curriculosGerados,
+  );
+  const temScore = serie.pontos.some((ponto) => ponto.scoreMedio !== null);
+  return (
+    <section className="border-y border-line py-6" aria-labelledby="dashboard-hoje">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 id="dashboard-hoje" className="text-section text-ink">Movimento do período</h2>
+          <p className="mt-1 text-[13px] text-muted">Dados reais de {serie.inicio} a {serie.fim}, no fuso do seu perfil.</p>
+        </div>
+        <NativeSelect
+          aria-label="Período do dashboard"
+          className="w-28"
+          value={periodo}
+          onChange={(event) => onPeriodo(Number(event.target.value) as 7 | 30 | 90)}
+        >
+          <option value="7">7 dias</option>
+          <option value="30">30 dias</option>
+          <option value="90">90 dias</option>
+        </NativeSelect>
+      </div>
+
+      {!temVolume && !temScore ? (
+        <p className="mt-5 text-[14px] text-muted">
+          Ainda não há movimentação registrada neste período. A série será preenchida conforme você organizar vagas,
+          concluir ações ou gerar currículos.
+        </p>
+      ) : (
+        <>
+          <div className="mt-5 grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+            <div>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <h3 className="text-[13px] font-medium text-ink-2">Volume de trabalho</h3>
+                <span className="text-[12px] text-faint">por dia</span>
+              </div>
+              <div role="img" aria-label="Gráfico de oportunidades, ações e currículos por dia">
+                <ChartContainer config={CONFIG_VOLUME}>
+                  <BarChart data={serie.pontos} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                    <CartesianGrid vertical={false} stroke="var(--line)" strokeDasharray="2 3" />
+                    <XAxis dataKey="data" tickFormatter={rotuloData} tickLine={false} axisLine={false} minTickGap={24} tick={{ fill: 'var(--muted)', fontSize: 11 }} />
+                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: 'var(--muted)', fontSize: 11 }} />
+                    <ChartTooltip cursor={{ fill: 'var(--canvas)' }} />
+                    <Bar dataKey="oportunidadesCriadas" fill="var(--color-oportunidadesCriadas)" radius={[2, 2, 0, 0]} />
+                    <Bar dataKey="acoesConcluidas" fill="var(--color-acoesConcluidas)" radius={[2, 2, 0, 0]} />
+                    <Bar dataKey="curriculosGerados" fill="var(--color-curriculosGerados)" radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ChartContainer>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted" aria-label="Legenda do gráfico de volume">
+                {Object.entries(CONFIG_VOLUME).map(([key, item]) => (
+                  <span key={key} className="flex items-center gap-1.5"><span className="size-2 rounded-full" style={{ backgroundColor: item.color }} aria-hidden />{item.label}</span>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <h3 className="text-[13px] font-medium text-ink-2">Score médio gerado</h3>
+                <span className="text-[12px] text-faint">de 0 a 100</span>
+              </div>
+              {temScore ? (
+                <div role="img" aria-label="Gráfico de linha do score médio dos currículos gerados por dia">
+                  <ChartContainer config={CONFIG_SCORE}>
+                    <LineChart data={serie.pontos} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                      <CartesianGrid vertical={false} stroke="var(--line)" strokeDasharray="2 3" />
+                      <XAxis dataKey="data" tickFormatter={rotuloData} tickLine={false} axisLine={false} minTickGap={24} tick={{ fill: 'var(--muted)', fontSize: 11 }} />
+                      <YAxis domain={[0, 100]} tickLine={false} axisLine={false} tick={{ fill: 'var(--muted)', fontSize: 11 }} />
+                      <ChartTooltip cursor={{ stroke: 'var(--line-strong)' }} />
+                      <Line type="monotone" dataKey="scoreMedio" connectNulls={false} stroke="var(--color-scoreMedio)" strokeWidth={2} dot={{ r: 3, fill: 'var(--color-scoreMedio)' }} activeDot={{ r: 5 }} />
+                    </LineChart>
+                  </ChartContainer>
+                </div>
+              ) : (
+                <p className="py-10 text-[14px] text-muted">Nenhum currículo com score foi gerado no período.</p>
+              )}
+            </div>
+          </div>
+
+          <details className="mt-5 border-t border-line pt-4">
+            <summary className="cursor-pointer text-[13px] font-medium text-accent-ink">Ver dados do período</summary>
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full min-w-[560px] border-collapse text-[12px]" aria-label="Dados temporais de Hoje">
+                <thead><tr className="border-b border-line text-left text-label uppercase text-muted"><th className="px-2 py-2">Data</th><th className="px-2 py-2 text-right">Oportunidades</th><th className="px-2 py-2 text-right">Ações</th><th className="px-2 py-2 text-right">Currículos</th><th className="px-2 py-2 text-right">Score médio</th></tr></thead>
+                <tbody>{serie.pontos.map((ponto) => <tr key={ponto.data} className="border-b border-line last:border-0"><td className="px-2 py-2 font-mono tabular-nums text-ink-2">{ponto.data}</td><td className="px-2 py-2 text-right font-mono tabular-nums text-ink-2">{ponto.oportunidadesCriadas}</td><td className="px-2 py-2 text-right font-mono tabular-nums text-ink-2">{ponto.acoesConcluidas}</td><td className="px-2 py-2 text-right font-mono tabular-nums text-ink-2">{ponto.curriculosGerados}</td><td className="px-2 py-2 text-right font-mono tabular-nums text-ink-2">{ponto.scoreMedio ?? '--'}</td></tr>)}</tbody>
+              </table>
+            </div>
+          </details>
+        </>
+      )}
+    </section>
+  );
+}
+
 export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
   const [dados, setDados] = useState<HojeResposta | null>(null);
+  const [periodo, setPeriodo] = useState<7 | 30 | 90>(30);
   const [erro, setErro] = useState<string | null>(null);
   const [estados, setEstados] = useState<Record<string, EstadoAcao>>({});
   const [reagendandoId, setReagendandoId] = useState<string | null>(null);
@@ -44,12 +165,12 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
   const [passosDefinidos, setPassosDefinidos] = useState<Record<string, string>>({});
 
   function carregar() {
-    getHoje()
+    getHoje(undefined, undefined, periodo)
       .then(setDados)
       .catch((err) => setErro((err as Error).message));
   }
 
-  useEffect(carregar, []);
+  useEffect(carregar, [periodo]);
 
   async function concluir(id: string) {
     setErro(null);
@@ -250,6 +371,8 @@ export function Hoje({ onAbrir }: { onAbrir: (id: string) => void }) {
           {erro}
         </div>
       )}
+
+      {dados?.serieTemporal && <DashboardTemporal serie={dados.serieTemporal} periodo={periodo} onPeriodo={setPeriodo} />}
 
       {vazio ? (
         <div className="py-6">
