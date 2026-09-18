@@ -1,6 +1,6 @@
 # ADR 0010, SCSS como padrão de estilo do front
 
-- **Status:** Aceita
+- **Status:** Superseded pela ADR 0017
 - **Data:** 2026-09-13
 - **Fase-alvo:** Fase 2 em diante
 - **Contexto:** A ADR 0002 fixou a stack do front em React mais TypeScript mais Vite, sem definir a camada de estilo. A Fase 1 e o início da Fase 2 usaram estilo inline e depois um CSS global escrito à mão. Com o design system definido (ver `docs/design-system.md`) e a necessidade de tokens, nesting e organização, o CSS puro fica limitado. O projeto nunca usou Tailwind; a escolha aqui é entre CSS puro e um pré-processador.

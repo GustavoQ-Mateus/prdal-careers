@@ -46,7 +46,7 @@ Sobe `web`, `api`, `ai-service`, `doc-service`, PostgreSQL e MongoDB. Cada servi
 
 ## Documentação
 
-- **Spec atual:** [`docs/specs/spec-v1.0.0.md`](docs/specs/spec-v1.0.0.md)
+- **Spec atual:** [`docs/specs/spec-v1.7.0.md`](docs/specs/spec-v1.7.0.md)
 - **Decisões de arquitetura (ADRs):**
   - [0001 — Microsserviços poliglota](docs/adr/0001-microsservicos-poliglotas.md)
   - [0002 — Stack liderada por React + Node + TS](docs/adr/0002-stack-alinhada-a-vaga.md)

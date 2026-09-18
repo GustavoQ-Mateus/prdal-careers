@@ -69,7 +69,10 @@ Esse fluxo distribuído é o ouro do vídeo: contrato entre serviços, timeout e
 Toda a inteligência vive no `ai-service`. Detalhes nas ADRs 0003, 0005 e 0006.
 
 ### 5.1 Provedor gratuito e plugável
-Cliente compatível com a API OpenAI apontando por padrão para **Groq free tier**, com **Ollama local** como fallback por `AI_PROVIDER`. Ollama garante demo ao vivo sem depender de rede. Trocar de provedor é configuração, não código. Base: ADR 0003.
+Cliente compatível com a API OpenAI apontando por padrão para **Groq free tier**.
+**Ollama local é fallback opcional**, nunca pré-requisito de desenvolvimento,
+demo ou produção: o ambiente do candidato não deve precisar executar modelo local.
+Trocar de provedor é configuração, não código. Base: ADR 0003.
 
 ### 5.2 Onde o LLM gera texto
 - **Extração de keywords** da vaga, `POST /keywords`.
