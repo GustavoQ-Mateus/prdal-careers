@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Layers3, List } from 'lucide-react';
+import { Download, Layers3, List } from 'lucide-react';
 import {
   baixarArquivo,
   listarCurriculosGlobal,
@@ -64,29 +64,17 @@ function agrupar(itens: CurriculoGlobal[]): Grupo[] {
 }
 
 function Arquivos({ curriculo }: { curriculo: CurriculoGlobal }) {
-  if (!curriculo.downloadDocxUrl && !curriculo.downloadPdfUrl) {
-    return <span className="text-[13px] text-faint">--</span>;
-  }
   return (
     <span className="flex items-center justify-end gap-1.5">
-      {curriculo.downloadDocxUrl && (
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => void baixarArquivo(curriculo.downloadDocxUrl!, `${curriculo.rotulo}.docx`)}
-        >
-          DOCX
-        </Button>
-      )}
-      {curriculo.downloadPdfUrl && (
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => void baixarArquivo(curriculo.downloadPdfUrl!, `${curriculo.rotulo}.pdf`)}
-        >
-          PDF
-        </Button>
-      )}
+      <Button
+        size="icon"
+        variant="ghost"
+        aria-label={`Baixar pacote de ${curriculo.rotulo}`}
+        title="Baixar pacote (.md, .docx e .pdf)"
+        onClick={() => void baixarArquivo(`/curriculos/${curriculo.id}/pacote`, `${curriculo.rotulo}.zip`)}
+      >
+        <Download />
+      </Button>
     </span>
   );
 }
