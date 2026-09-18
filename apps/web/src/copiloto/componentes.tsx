@@ -196,7 +196,9 @@ export function PassoTrilha({ item, ligado }: { item: Extract<Item, { tipo: 'pas
 
       {scores && (
         <div className="mt-3 max-w-md rounded-control border border-line bg-canvas p-3">
-          <p className="mb-2 text-label uppercase text-muted">Comparação de score ATS</p>
+          <p className="mb-2 text-label uppercase text-muted">
+            {scores.length === 1 ? 'Score ATS · Etapa 1' : 'Comparação de score ATS · Etapas 1 e 3'}
+          </p>
           <ChartContainer
             className="h-40"
             config={{ score: { label: 'Score ATS', color: 'var(--accent)' } }}
@@ -241,10 +243,13 @@ export function PassoTrilha({ item, ligado }: { item: Extract<Item, { tipo: 'pas
 function scoresAts(resultado: unknown): { etapa: string; score: number }[] | null {
   if (!resultado || typeof resultado !== 'object') return null;
   const valor = resultado as Record<string, unknown>;
-  const inicial = valor.analiseInicial as Record<string, unknown> | null;
+  const etapas = valor.etapas as Record<string, unknown> | null;
+  const inicial = (valor.analiseInicial ?? etapas?.analiseInicial) as Record<string, unknown> | null;
   const final = valor.analiseFinal as Record<string, unknown> | null;
-  if (typeof inicial?.score !== 'number' || typeof final?.score !== 'number') return null;
-  return [{ etapa: 'Base', score: inicial.score }, { etapa: 'Gerado', score: final.score }];
+  if (typeof inicial?.score !== 'number') return null;
+  const dados = [{ etapa: 'Base', score: inicial.score }];
+  if (typeof final?.score === 'number') dados.push({ etapa: 'Gerado', score: final.score });
+  return dados;
 }
 
 function argsEditaveis(args: Record<string, unknown>): [string, string][] {
