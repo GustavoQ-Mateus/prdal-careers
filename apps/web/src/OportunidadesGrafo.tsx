@@ -97,12 +97,20 @@ function EventosGrafo({ onSelecionar, onArrastar }: { onSelecionar: (sel: Seleca
         const rotulo = sigma.getGraph().getNodeAttribute(node, 'label') as string;
         onSelecionar({ id: node.slice('oportunidade:'.length), titulo: rotulo });
       },
-      downNode({ node }) {
+      downNode({ node, event }) {
+        event.preventSigmaDefault();
         arrastando = node;
         onArrastar();
       },
       moveBody({ event }) {
         if (!arrastando) return;
+        const evento = event as unknown as {
+          preventSigmaDefault?: () => void;
+          original?: { preventDefault?: () => void; stopPropagation?: () => void };
+        };
+        evento.preventSigmaDefault?.();
+        evento.original?.preventDefault?.();
+        evento.original?.stopPropagation?.();
         const posicao = sigma.viewportToGraph(event);
         sigma.getGraph().setNodeAttribute(arrastando, 'x', posicao.x);
         sigma.getGraph().setNodeAttribute(arrastando, 'y', posicao.y);
