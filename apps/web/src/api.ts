@@ -105,6 +105,8 @@ export interface PerfilMestre {
   resumo: string;
   experiencias: ExperienciaPerfil[];
   formacao: string[];
+  certificacoes: string[];
+  idiomas: string[];
   skills: string[];
 }
 
@@ -822,8 +824,6 @@ export interface CopilotoChatBody {
   confirmacao?: ConfirmacaoCopiloto;
 }
 
-export type EfeitoTool = 'leitura' | 'escrita';
-
 export interface MensagemCopilotoPersistida {
   papel: 'user' | 'assistant' | 'tool';
   conteudo: string;
@@ -860,6 +860,8 @@ export function listarConversasCopiloto(oportunidadeId?: string) {
 export function buscarConversaCopiloto(id: string) {
   return request<ConversaCopilotoDetalhe>(`/copiloto/conversas/${id}`);
 }
+
+export type EfeitoTool = 'leitura' | 'escrita';
 
 export type CopilotoEvento =
   | { evento: 'token'; data: { delta: string } }

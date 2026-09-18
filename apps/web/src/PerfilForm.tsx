@@ -30,6 +30,8 @@ const VAZIO: PerfilMestre = {
   resumo: '',
   experiencias: [],
   formacao: [],
+  certificacoes: [],
+  idiomas: [],
   skills: [],
 };
 
@@ -43,7 +45,7 @@ const TIPOS_CONTATO: Array<{ valor: TipoContatoPerfil; rotulo: string }> = [
   { valor: 'outro', rotulo: 'Outro' },
 ];
 
-type Secao = 'identidade' | 'resumo' | 'formacao' | 'skills' | 'fuso';
+type Secao = 'identidade' | 'resumo' | 'formacao' | 'certificacoes' | 'idiomas' | 'skills' | 'fuso';
 type Edicao = Secao | 'contato' | 'experiencia' | null;
 
 function novaChave(prefixo: string) {
@@ -84,6 +86,8 @@ function Regiao({
 export function PerfilForm() {
   const [perfil, setPerfil] = useState<PerfilMestre>(VAZIO);
   const [formacaoTexto, setFormacaoTexto] = useState('');
+  const [certificacoesTexto, setCertificacoesTexto] = useState('');
+  const [idiomasTexto, setIdiomasTexto] = useState('');
   const [skillsTexto, setSkillsTexto] = useState('');
   const [fuso, setFuso] = useState('');
   const [editando, setEditando] = useState<Edicao>(null);
@@ -95,11 +99,13 @@ export function PerfilForm() {
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [desatualizado, setDesatualizado] = useState(false);
   const [reindexando, setReindexando] = useState(false);
-  const [snapshot, setSnapshot] = useState<{ perfil: PerfilMestre; formacao: string; skills: string; fuso: string } | null>(null);
+  const [snapshot, setSnapshot] = useState<{ perfil: PerfilMestre; formacao: string; certificacoes: string; idiomas: string; skills: string; fuso: string } | null>(null);
 
   function aplicarPerfil(novoPerfil: PerfilMestre) {
     setPerfil({ ...VAZIO, ...novoPerfil, contato: novoPerfil.contato ?? [], experiencias: novoPerfil.experiencias ?? [] });
     setFormacaoTexto((novoPerfil.formacao ?? []).join('\n'));
+    setCertificacoesTexto((novoPerfil.certificacoes ?? []).join('\n'));
+    setIdiomasTexto((novoPerfil.idiomas ?? []).join('\n'));
     setSkillsTexto((novoPerfil.skills ?? []).join(', '));
   }
 
@@ -115,7 +121,7 @@ export function PerfilForm() {
   }, []);
 
   function abrir(secao: Secao) {
-    setSnapshot({ perfil, formacao: formacaoTexto, skills: skillsTexto, fuso });
+    setSnapshot({ perfil, formacao: formacaoTexto, certificacoes: certificacoesTexto, idiomas: idiomasTexto, skills: skillsTexto, fuso });
     setErro(null);
     setEditando(secao);
   }
@@ -140,6 +146,8 @@ export function PerfilForm() {
     if (snapshot) {
       setPerfil(snapshot.perfil);
       setFormacaoTexto(snapshot.formacao);
+      setCertificacoesTexto(snapshot.certificacoes);
+      setIdiomasTexto(snapshot.idiomas);
       setSkillsTexto(snapshot.skills);
       setFuso(snapshot.fuso);
     }
@@ -173,6 +181,8 @@ export function PerfilForm() {
     const proximo: PerfilMestre = {
       ...perfil,
       formacao: formacaoTexto.split('\n').map((linha) => linha.trim()).filter(Boolean),
+      certificacoes: certificacoesTexto.split('\n').map((linha) => linha.trim()).filter(Boolean),
+      idiomas: idiomasTexto.split('\n').map((linha) => linha.trim()).filter(Boolean),
       skills: skillsTexto.split(',').map((skill) => skill.trim()).filter(Boolean),
     };
     await persistir(proximo, 'Perfil atualizado.');
@@ -275,7 +285,11 @@ export function PerfilForm() {
             ? 'Editar resumo'
             : editando === 'formacao'
               ? 'Editar formação'
-              : 'Editar skills';
+              : editando === 'certificacoes'
+                ? 'Editar certificações'
+                : editando === 'idiomas'
+                  ? 'Editar idiomas'
+                  : 'Editar skills';
 
   return (
     <div className="flex flex-col gap-6">
@@ -344,6 +358,14 @@ export function PerfilForm() {
           <ul className="flex max-w-2xl flex-col gap-1.5 text-[14px] text-ink-2">{perfil.formacao.map((item) => <li key={item}>{item}</li>)}</ul>
         </Regiao>
 
+        <Regiao titulo="Certificações" acao={<Button size="sm" variant="ghost" onClick={() => abrir('certificacoes')}>Editar</Button>} vazia={perfil.certificacoes.length ? undefined : 'Nenhuma certificação registrada.'}>
+          <ul className="flex max-w-2xl flex-col gap-1.5 text-[14px] text-ink-2">{perfil.certificacoes.map((item) => <li key={item}>{item}</li>)}</ul>
+        </Regiao>
+
+        <Regiao titulo="Idiomas" acao={<Button size="sm" variant="ghost" onClick={() => abrir('idiomas')}>Editar</Button>} vazia={perfil.idiomas.length ? undefined : 'Nenhum idioma registrado.'}>
+          <ul className="flex max-w-2xl flex-col gap-1.5 text-[14px] text-ink-2">{perfil.idiomas.map((item) => <li key={item}>{item}</li>)}</ul>
+        </Regiao>
+
         <Regiao titulo="Skills" acao={<Button size="sm" variant="ghost" onClick={() => abrir('skills')}>Editar</Button>} vazia={perfil.skills.length ? undefined : 'Inclua competências usadas para relacionar seu perfil às vagas.'}>
           <div className="flex flex-wrap gap-1.5">{perfil.skills.map((skill) => <Badge key={skill} variant="neutral">{skill}</Badge>)}</div>
         </Regiao>
@@ -364,6 +386,8 @@ export function PerfilForm() {
             {editando === 'identidade' && <Campo texto="Nome" htmlFor="p-nome"><Input id="p-nome" value={perfil.nome} onChange={(evento) => setPerfil({ ...perfil, nome: evento.target.value })} autoFocus /></Campo>}
             {editando === 'resumo' && <Campo texto="Resumo" htmlFor="p-resumo"><Textarea id="p-resumo" value={perfil.resumo} onChange={(evento) => setPerfil({ ...perfil, resumo: evento.target.value })} rows={6} autoFocus /></Campo>}
             {editando === 'formacao' && <Campo texto="Formação" htmlFor="p-formacao"><Textarea id="p-formacao" value={formacaoTexto} onChange={(evento) => setFormacaoTexto(evento.target.value)} rows={6} autoFocus /><p className="text-[12px] text-faint">Uma formação por linha.</p></Campo>}
+            {editando === 'certificacoes' && <Campo texto="Certificações" htmlFor="p-certificacoes"><Textarea id="p-certificacoes" value={certificacoesTexto} onChange={(evento) => setCertificacoesTexto(evento.target.value)} rows={6} autoFocus /><p className="text-[12px] text-faint">Uma certificação por linha.</p></Campo>}
+            {editando === 'idiomas' && <Campo texto="Idiomas" htmlFor="p-idiomas"><Textarea id="p-idiomas" value={idiomasTexto} onChange={(evento) => setIdiomasTexto(evento.target.value)} rows={4} autoFocus /><p className="text-[12px] text-faint">Um idioma e nível por linha.</p></Campo>}
             {editando === 'skills' && <Campo texto="Skills" htmlFor="p-skills"><Input id="p-skills" value={skillsTexto} onChange={(evento) => setSkillsTexto(evento.target.value)} autoFocus /><p className="text-[12px] text-faint">Separe por vírgula.</p></Campo>}
             {editando === 'fuso' && <Campo texto="Fuso horário IANA" htmlFor="p-fuso"><Input id="p-fuso" value={fuso} onChange={(evento) => setFuso(evento.target.value)} placeholder="America/Sao_Paulo" autoFocus /></Campo>}
 
