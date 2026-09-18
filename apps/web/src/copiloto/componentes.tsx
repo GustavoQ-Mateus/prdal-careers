@@ -22,7 +22,6 @@ import {
   AreaChart,
   CartesianGrid,
   Label,
-  PolarGrid,
   PolarRadiusAxis,
   RadialBar,
   RadialBarChart,
@@ -39,6 +38,7 @@ import {
   type EstadoCopiloto,
   type Item,
 } from './tipos';
+import type { ScoreAts } from './visualizacao';
 
 export function ModoToggle({
   modo,
@@ -113,13 +113,22 @@ export function MensagemUsuario({ texto }: { texto: string }) {
   );
 }
 
-export function MensagemAgente({ texto, vivo }: { texto: string; vivo: boolean }) {
+export function MensagemAgente({
+  texto,
+  vivo,
+  scoresAts,
+}: {
+  texto: string;
+  vivo: boolean;
+  scoresAts?: ScoreAts[];
+}) {
   return (
     <div className="max-w-[92%] text-[15px] leading-relaxed text-ink-2">
       <span className="whitespace-pre-wrap">{texto}</span>
       {vivo && (
         <span className="ml-0.5 inline-block h-[1.05em] w-[2px] translate-y-[2px] bg-accent motion-safe:animate-pulse" />
       )}
+      {scoresAts && <GraficoScoreAts scores={scoresAts} />}
     </div>
   );
 }
@@ -148,7 +157,6 @@ export function PassoTrilha({ item, ligado }: { item: Extract<Item, { tipo: 'pas
   const executando = item.status === 'executando';
   const falhou = item.status === 'erro';
   const degradacao = item.status === 'ok' ? degradacaoResultado(item.resultado) : null;
-  const scores = scoresAts(item.resultado);
   const statusGeracao = item.tool === 'status_geracao' && item.resultado && typeof item.resultado === 'object'
     ? String((item.resultado as Record<string, unknown>).status ?? '')
     : '';
@@ -205,36 +213,6 @@ export function PassoTrilha({ item, ligado }: { item: Extract<Item, { tipo: 'pas
         </div>
       )}
 
-      {scores && (
-        <div className="mt-3 max-w-md rounded-control border border-line bg-canvas p-3">
-          <p className="mb-2 text-label uppercase text-muted">
-            {scores.length === 1 ? 'Score ATS · Etapa 1' : 'Comparação de score ATS · Etapas 1 e 3'}
-          </p>
-          <ChartContainer
-            className={scores.length === 1 ? 'mx-auto aspect-square h-48 max-h-[250px]' : 'h-40'}
-            config={{ score: { label: 'Score ATS', color: 'var(--accent)' } }}
-          >
-            {scores.length === 1 ? (
-              <ScoreInicialRadial score={scores[0].score} />
-            ) : (
-              <AreaChart data={scores} margin={{ left: -20, right: 4, top: 4, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="score-ats" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-score)" stopOpacity={0.45} />
-                    <stop offset="95%" stopColor="var(--color-score)" stopOpacity={0.05} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} stroke="var(--line)" />
-                <XAxis dataKey="etapa" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis domain={[0, 100]} tickLine={false} axisLine={false} width={28} />
-                <ChartTooltip />
-                <Area dataKey="score" type="monotone" stroke="var(--color-score)" fill="url(#score-ats)" strokeWidth={2} />
-              </AreaChart>
-            )}
-          </ChartContainer>
-        </div>
-      )}
-
       {item.status === 'ok' && item.resultado != null && (
         <div className="mt-1">
           <button
@@ -255,16 +233,36 @@ export function PassoTrilha({ item, ligado }: { item: Extract<Item, { tipo: 'pas
   );
 }
 
-function scoresAts(resultado: unknown): { etapa: string; score: number }[] | null {
-  if (!resultado || typeof resultado !== 'object') return null;
-  const valor = resultado as Record<string, unknown>;
-  const etapas = valor.etapas as Record<string, unknown> | null;
-  const inicial = (valor.analiseInicial ?? etapas?.analiseInicial) as Record<string, unknown> | null;
-  const final = valor.analiseFinal as Record<string, unknown> | null;
-  if (typeof inicial?.score !== 'number') return null;
-  const dados = [{ etapa: 'Base', score: inicial.score }];
-  if (typeof final?.score === 'number') dados.push({ etapa: 'Gerado', score: final.score });
-  return dados;
+function GraficoScoreAts({ scores }: { scores: ScoreAts[] }) {
+  return (
+    <div className="mt-3 max-w-md rounded-control border border-line bg-canvas p-3">
+      <p className="mb-2 text-label uppercase text-muted">
+        {scores.length === 1 ? 'Score ATS · Etapa 1' : 'Comparação de score ATS · Etapas 1 e 3'}
+      </p>
+      <ChartContainer
+        className={scores.length === 1 ? 'mx-auto aspect-square h-48 max-h-[250px]' : 'h-40'}
+        config={{ score: { label: 'Score ATS', color: 'var(--accent)' } }}
+      >
+        {scores.length === 1 ? (
+          <ScoreInicialRadial score={scores[0].score} />
+        ) : (
+          <AreaChart data={scores} margin={{ left: -20, right: 4, top: 4, bottom: 0 }}>
+            <defs>
+              <linearGradient id="score-ats" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-score)" stopOpacity={0.45} />
+                <stop offset="95%" stopColor="var(--color-score)" stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} stroke="var(--line)" />
+            <XAxis dataKey="etapa" tickLine={false} axisLine={false} tickMargin={8} />
+            <YAxis domain={[0, 100]} tickLine={false} axisLine={false} width={28} />
+            <ChartTooltip />
+            <Area dataKey="score" type="monotone" stroke="var(--color-score)" fill="url(#score-ats)" strokeWidth={2} />
+          </AreaChart>
+        )}
+      </ChartContainer>
+    </div>
+  );
 }
 
 function ScoreInicialRadial({ score }: { score: number }) {
@@ -279,14 +277,7 @@ function ScoreInicialRadial({ score }: { score: number }) {
       innerRadius={65}
       outerRadius={95}
     >
-      <PolarGrid
-        gridType="circle"
-        radialLines={false}
-        stroke="none"
-        className="first:fill-muted last:fill-background"
-        polarRadius={[86, 74]}
-      />
-      <RadialBar dataKey="score" background />
+      <RadialBar dataKey="score" />
       <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
         <Label
           content={({ viewBox }: { viewBox?: { cx?: number; cy?: number } }) => {

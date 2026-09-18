@@ -7,6 +7,13 @@ import {
   type ModoCopiloto,
 } from '../api';
 import type { EstadoCopiloto, Item } from './tipos';
+import {
+  MARCADOR_NARRACAO_ATS_ETAPA_3,
+  consolidarStatusGeracao,
+  dividirNarracaoAts,
+  localizarStatusGeracao,
+  scoresNarracaoAts,
+} from './visualizacao';
 
 interface Estado {
   itens: Item[];
@@ -42,20 +49,26 @@ function aplicarEvento(estado: Estado, ev: CopilotoEvento): Estado {
     case 'token': {
       const ultimo = itens[itens.length - 1];
       const proximoEstado: EstadoCopiloto = autopiloto ? 'autopiloto_em_curso' : 'pensando';
+      if (ev.data.delta.trim() === MARCADOR_NARRACAO_ATS_ETAPA_3) {
+        return { ...estado, estado: proximoEstado, itens: encerrarVivos(itens) };
+      }
       if (ultimo && ultimo.tipo === 'agente' && ultimo.vivo) {
-        const atualizado: Item = { ...ultimo, texto: ultimo.texto + ev.data.delta };
+        const texto = ultimo.texto + ev.data.delta;
+        const atualizado: Item = { ...ultimo, texto, scoresAts: scoresNarracaoAts(itens, texto) };
         return { ...estado, estado: proximoEstado, itens: [...itens.slice(0, -1), atualizado] };
       }
-      const novo: Item = { tipo: 'agente', id: novoId(), texto: ev.data.delta, vivo: true };
+      const novo: Item = {
+        tipo: 'agente',
+        id: novoId(),
+        texto: ev.data.delta,
+        vivo: true,
+        scoresAts: scoresNarracaoAts(itens, ev.data.delta),
+      };
       return { ...estado, estado: proximoEstado, itens: [...encerrarVivos(itens), novo] };
     }
     case 'tool_call': {
       if (ev.data.tool === 'status_geracao') {
-        const indice = itens.findLastIndex((item) =>
-          item.tipo === 'passo'
-          && item.tool === 'status_geracao'
-          && item.args.jobId === ev.data.args.jobId,
-        );
+        const indice = localizarStatusGeracao(itens, ev.data.args.jobId);
         if (indice >= 0) {
           const anterior = itens[indice] as Extract<Item, { tipo: 'passo' }>;
           const atualizados = [...itens];
@@ -172,13 +185,17 @@ function itemToolHistorico(indice: number, tool: string | null | undefined, cont
       resultado = conteudo;
     }
   }
+  const args =
+    tool === 'status_geracao' && resultado && typeof resultado === 'object' && 'id' in resultado
+      ? { jobId: String((resultado as Record<string, unknown>).id) }
+      : {};
   return {
     tipo: 'passo',
     id: `h${indice}`,
     callId: `historico-${indice}`,
     tool: tool ?? 'tool',
     efeito: 'leitura',
-    args: {},
+    args,
     status: falha ? 'erro' : 'ok',
     resultado: falha ? null : resultado,
     erro: falha ? conteudo.replace(/^falha:\s*/, '') : undefined,
@@ -186,15 +203,22 @@ function itemToolHistorico(indice: number, tool: string | null | undefined, cont
 }
 
 function itensDeHistorico(conversa: ConversaCopilotoDetalhe): Item[] {
-  return conversa.mensagens.map((mensagem, indice): Item => {
+  const itens = conversa.mensagens.flatMap((mensagem, indice): Item[] => {
     if (mensagem.papel === 'user') {
-      return { tipo: 'usuario', id: `h${indice}`, texto: mensagem.conteudo };
+      return [{ tipo: 'usuario', id: `h${indice}`, texto: mensagem.conteudo }];
     }
     if (mensagem.papel === 'assistant') {
-      return { tipo: 'agente', id: `h${indice}`, texto: mensagem.conteudo, vivo: false };
+      return dividirNarracaoAts(mensagem.conteudo).map((texto, parte) => ({
+        tipo: 'agente', id: `h${indice}-${parte}`, texto, vivo: false,
+      }));
     }
-    return itemToolHistorico(indice, mensagem.tool, mensagem.conteudo);
+    return [itemToolHistorico(indice, mensagem.tool, mensagem.conteudo)];
   });
+  return consolidarStatusGeracao(itens).map((item, indice, todos) =>
+    item.tipo === 'agente'
+      ? { ...item, scoresAts: scoresNarracaoAts(todos.slice(0, indice), item.texto) }
+      : item,
+  );
 }
 
 function reducer(estado: Estado, acao: Acao): Estado {

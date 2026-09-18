@@ -1,4 +1,5 @@
 import type { EfeitoTool } from '../api';
+import type { ScoreAts } from './visualizacao';
 
 export type EstadoCopiloto =
   | 'ocioso'
@@ -13,7 +14,7 @@ export type EstadoCopiloto =
 
 export type Item =
   | { tipo: 'usuario'; id: string; texto: string }
-  | { tipo: 'agente'; id: string; texto: string; vivo: boolean }
+  | { tipo: 'agente'; id: string; texto: string; vivo: boolean; scoresAts?: ScoreAts[] }
   | {
       tipo: 'passo';
       id: string;

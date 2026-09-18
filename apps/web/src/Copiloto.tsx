@@ -210,7 +210,7 @@ function ItemRender({
     case 'usuario':
       return <MensagemUsuario texto={item.texto} />;
     case 'agente':
-      return <MensagemAgente texto={item.texto} vivo={item.vivo} />;
+      return <MensagemAgente texto={item.texto} vivo={item.vivo} scoresAts={item.scoresAts} />;
     case 'passo':
       return (
         <PassoTrilha item={item} ligado={anterior?.tipo === 'passo' || proximo?.tipo === 'passo'} />
