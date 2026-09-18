@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import type { ModoCopiloto } from '../api';
 import {
   ESTADO_META,
@@ -135,6 +137,7 @@ export function PassoTrilha({ item, ligado }: { item: Extract<Item, { tipo: 'pas
   const executando = item.status === 'executando';
   const falhou = item.status === 'erro';
   const degradacao = item.status === 'ok' ? degradacaoResultado(item.resultado) : null;
+  const scores = scoresAts(item.resultado);
 
   return (
     <div className="relative pl-9 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1">
@@ -185,6 +188,30 @@ export function PassoTrilha({ item, ligado }: { item: Extract<Item, { tipo: 'pas
         </div>
       )}
 
+      {scores && (
+        <div className="mt-3 max-w-md rounded-control border border-line bg-canvas p-3">
+          <p className="mb-2 text-label uppercase text-muted">Comparação de score ATS</p>
+          <ChartContainer
+            className="h-40"
+            config={{ score: { label: 'Score ATS', color: 'var(--accent)' } }}
+          >
+            <AreaChart data={scores} margin={{ left: -20, right: 4, top: 4, bottom: 0 }}>
+              <defs>
+                <linearGradient id="score-ats" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="5%" stopColor="var(--color-score)" stopOpacity={0.45} />
+                  <stop offset="95%" stopColor="var(--color-score)" stopOpacity={0.05} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} stroke="var(--line)" />
+              <XAxis dataKey="etapa" tickLine={false} axisLine={false} tickMargin={8} />
+              <YAxis domain={[0, 100]} tickLine={false} axisLine={false} width={28} />
+              <ChartTooltip />
+              <Area dataKey="score" type="monotone" stroke="var(--color-score)" fill="url(#score-ats)" strokeWidth={2} />
+            </AreaChart>
+          </ChartContainer>
+        </div>
+      )}
+
       {item.status === 'ok' && item.resultado != null && (
         <div className="mt-1">
           <button
@@ -203,6 +230,15 @@ export function PassoTrilha({ item, ligado }: { item: Extract<Item, { tipo: 'pas
       )}
     </div>
   );
+}
+
+function scoresAts(resultado: unknown): { etapa: string; score: number }[] | null {
+  if (!resultado || typeof resultado !== 'object') return null;
+  const valor = resultado as Record<string, unknown>;
+  const inicial = valor.analiseInicial as Record<string, unknown> | null;
+  const final = valor.analiseFinal as Record<string, unknown> | null;
+  if (typeof inicial?.score !== 'number' || typeof final?.score !== 'number') return null;
+  return [{ etapa: 'Base', score: inicial.score }, { etapa: 'Gerado', score: final.score }];
 }
 
 function argsEditaveis(args: Record<string, unknown>): [string, string][] {
