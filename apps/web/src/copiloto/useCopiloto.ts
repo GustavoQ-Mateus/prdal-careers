@@ -50,6 +50,24 @@ function aplicarEvento(estado: Estado, ev: CopilotoEvento): Estado {
       return { ...estado, estado: proximoEstado, itens: [...encerrarVivos(itens), novo] };
     }
     case 'tool_call': {
+      if (ev.data.tool === 'status_geracao') {
+        const indice = itens.findLastIndex((item) =>
+          item.tipo === 'passo'
+          && item.tool === 'status_geracao'
+          && item.args.jobId === ev.data.args.jobId,
+        );
+        if (indice >= 0) {
+          const anterior = itens[indice] as Extract<Item, { tipo: 'passo' }>;
+          const atualizados = [...itens];
+          atualizados[indice] = {
+            ...anterior,
+            callId: ev.data.callId,
+            args: ev.data.args,
+            status: 'executando',
+          };
+          return { ...estado, estado: 'executando_leitura', itens: atualizados };
+        }
+      }
       const passo: Item = {
         tipo: 'passo',
         id: novoId(),
@@ -82,7 +100,7 @@ function aplicarEvento(estado: Estado, ev: CopilotoEvento): Estado {
         it.tipo === 'passo' && it.callId === ev.data.callId
           ? {
               ...it,
-              status: ev.data.ok ? 'ok' : 'erro',
+              status: statusPasso(it.tool, ev.data.ok, ev.data.resultado),
               resultado: ev.data.resultado,
               erro: ev.data.erro?.mensagem,
             }
@@ -131,6 +149,13 @@ function aplicarEvento(estado: Estado, ev: CopilotoEvento): Estado {
       };
     }
   }
+}
+
+function statusPasso(tool: string, ok: boolean, resultado: unknown): 'executando' | 'ok' | 'erro' {
+  if (!ok) return 'erro';
+  if (tool !== 'status_geracao' || !resultado || typeof resultado !== 'object') return 'ok';
+  const status = String((resultado as Record<string, unknown>).status ?? '');
+  return status === 'CONCLUIDA' || status === 'ERRO' ? 'ok' : 'executando';
 }
 
 function encerrarVivos(itens: Item[]): Item[] {

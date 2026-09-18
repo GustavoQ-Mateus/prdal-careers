@@ -138,6 +138,9 @@ export function PassoTrilha({ item, ligado }: { item: Extract<Item, { tipo: 'pas
   const falhou = item.status === 'erro';
   const degradacao = item.status === 'ok' ? degradacaoResultado(item.resultado) : null;
   const scores = scoresAts(item.resultado);
+  const statusGeracao = item.tool === 'status_geracao' && item.resultado && typeof item.resultado === 'object'
+    ? String((item.resultado as Record<string, unknown>).status ?? '')
+    : '';
 
   return (
     <div className="relative pl-9 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1">
@@ -172,6 +175,9 @@ export function PassoTrilha({ item, ligado }: { item: Extract<Item, { tipo: 'pas
             <Check className="size-3.5 text-score-good" />
             {resumirResultado(item.tool, item.resultado)}
           </span>
+        )}
+        {executando && statusGeracao && (
+          <span className="text-[13px] text-muted">Status {statusGeracao}</span>
         )}
         {falhou && (
           <span className="inline-flex items-center gap-1 text-[13px] text-score-bad">
