@@ -14,14 +14,18 @@ function cor(nome: string, fallback: string) {
   return valor || fallback;
 }
 
-function CarregarGrafo({ dados, layoutAtivo }: { dados: GrafoResposta; layoutAtivo: boolean }) {
+const PALETA_TIPO = ['#2563eb', '#0f766e', '#9333ea', '#c2410c', '#b45309', '#be185d'];
+
+function corTipo(tipo: string, tipos: string[]) {
+  return PALETA_TIPO[Math.max(0, tipos.indexOf(tipo)) % PALETA_TIPO.length];
+}
+
+function CarregarGrafo({ dados, layoutAtivo, tipos }: { dados: GrafoResposta; layoutAtivo: boolean; tipos: string[] }) {
   const loadGraph = useLoadGraph();
   const sigma = useSigma();
   const layout = useRef<FA2Layout | null>(null);
 
   useEffect(() => {
-    const corOportunidade = cor('--accent', '#2563eb');
-    const corEntidade = cor('--faint', '#949b97');
     const graph = new Graph({ type: 'undirected', multi: false });
     for (const node of dados.nodes) {
       if (!graph.hasNode(node.id)) {
@@ -32,7 +36,7 @@ function CarregarGrafo({ dados, layoutAtivo }: { dados: GrafoResposta; layoutAti
           size: oportunidade ? 9 : 5,
           x: Math.random() * 100,
           y: Math.random() * 100,
-          color: oportunidade ? corOportunidade : corEntidade,
+          color: corTipo(node.tipo, tipos),
         });
       }
     }
@@ -50,7 +54,7 @@ function CarregarGrafo({ dados, layoutAtivo }: { dados: GrafoResposta; layoutAti
       layout.current?.kill();
       layout.current = null;
     };
-  }, [dados, loadGraph]);
+  }, [dados, loadGraph, tipos]);
 
   useEffect(() => {
     const graph = sigma.getGraph();
@@ -67,18 +71,47 @@ function CarregarGrafo({ dados, layoutAtivo }: { dados: GrafoResposta; layoutAti
   return null;
 }
 
-function EventosGrafo({ onSelecionar }: { onSelecionar: (sel: Selecao) => void }) {
+function TemaSigma({ versao, tipos }: { versao: number; tipos: string[] }) {
+  const sigma = useSigma();
+  useEffect(() => {
+    sigma.setSetting('labelColor', { color: cor('--ink', '#0f1512') });
+    sigma.setSetting('defaultEdgeColor', cor('--line-strong', '#d6dbd8'));
+    for (const node of sigma.getGraph().nodes()) {
+      const tipo = sigma.getGraph().getNodeAttribute(node, 'tipo') as string;
+      sigma.getGraph().setNodeAttribute(node, 'color', corTipo(tipo, tipos));
+    }
+    sigma.refresh();
+  }, [sigma, versao, tipos]);
+  return null;
+}
+
+function EventosGrafo({ onSelecionar, onArrastar }: { onSelecionar: (sel: Selecao) => void; onArrastar: () => void }) {
   const register = useRegisterEvents();
   const sigma = useSigma();
   useEffect(() => {
+    let arrastando: string | null = null;
     register({
       clickNode({ node }) {
+        if (arrastando) return;
         if (!node.startsWith('oportunidade:')) return;
         const rotulo = sigma.getGraph().getNodeAttribute(node, 'label') as string;
         onSelecionar({ id: node.slice('oportunidade:'.length), titulo: rotulo });
       },
-    });
-  }, [register, sigma, onSelecionar]);
+      downNode({ node }) {
+        arrastando = node;
+        onArrastar();
+      },
+      moveBody({ event }) {
+        if (!arrastando) return;
+        const posicao = sigma.viewportToGraph(event);
+        sigma.getGraph().setNodeAttribute(arrastando, 'x', posicao.x);
+        sigma.getGraph().setNodeAttribute(arrastando, 'y', posicao.y);
+        sigma.refresh();
+      },
+      upNode() { arrastando = null; },
+      upStage() { arrastando = null; },
+    } as never);
+  }, [register, sigma, onSelecionar, onArrastar]);
   return null;
 }
 
@@ -96,6 +129,13 @@ export function OportunidadesGrafo({
     () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
   const [busca, setBusca] = useState('');
+  const [temaVersao, setTemaVersao] = useState(0);
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => setTemaVersao((versao) => versao + 1));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     getPipelineGrafo(filtros)
@@ -108,6 +148,7 @@ export function OportunidadesGrafo({
     const q = busca.toLowerCase();
     return dados.nodes.filter((n) => n.rotulo.toLowerCase().includes(q));
   }, [dados, busca]);
+  const tipos = useMemo(() => dados ? [...new Set(dados.nodes.map((node) => node.tipo))] : [], [dados]);
 
   if (!dados) return <p className="py-8 text-[14px] text-muted">Carregando grafo...</p>;
 
@@ -129,15 +170,11 @@ export function OportunidadesGrafo({
             {layoutAtivo ? 'Pausar layout' : 'Retomar layout'}
           </Button>
         </div>
-        <dl className="flex items-center gap-4 text-[13px]">
-          <div className="flex items-center gap-2">
-            <span className="size-3 rounded-full bg-accent" aria-hidden />
-            <dt className="text-muted">Oportunidade</dt>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="size-2.5 rounded-full bg-faint" aria-hidden />
-            <dt className="text-muted">Entidade relacionada</dt>
-          </div>
+        <dl className="flex flex-wrap items-center gap-4 text-[13px]">
+          {tipos.map((tipo) => <div key={tipo} className="flex items-center gap-2">
+            <span className="size-3 rounded-full" style={{ backgroundColor: corTipo(tipo, tipos) }} aria-hidden />
+            <dt className="text-muted">{tipo}</dt>
+          </div>)}
         </dl>
       </div>
 
@@ -154,8 +191,9 @@ export function OportunidadesGrafo({
             defaultEdgeColor: cor('--line-strong', '#d6dbd8'),
           }}
         >
-          <CarregarGrafo dados={dados} layoutAtivo={layoutAtivo} />
-          <EventosGrafo onSelecionar={onSelecionar} />
+          <CarregarGrafo dados={dados} layoutAtivo={layoutAtivo} tipos={tipos} />
+          <TemaSigma versao={temaVersao} tipos={tipos} />
+          <EventosGrafo onSelecionar={onSelecionar} onArrastar={() => setLayoutAtivo(false)} />
         </SigmaContainer>
       </div>
 
@@ -165,7 +203,8 @@ export function OportunidadesGrafo({
           {filtrados.map((n) => (
             <li key={n.id} className="flex items-center gap-3 px-4 py-2.5 text-[14px]">
               <span
-                className={n.tipo === 'oportunidade' ? 'size-2.5 rounded-full bg-accent' : 'size-2 rounded-full bg-faint'}
+                className="size-2.5 rounded-full"
+                style={{ backgroundColor: corTipo(n.tipo, tipos) }}
                 aria-hidden
               />
               <span className="text-faint">{n.tipo}</span>
