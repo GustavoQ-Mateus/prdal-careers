@@ -17,7 +17,18 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Label,
+  PolarGrid,
+  PolarRadiusAxis,
+  RadialBar,
+  RadialBarChart,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import type { ModoCopiloto } from '../api';
 import {
   ESTADO_META,
@@ -200,22 +211,26 @@ export function PassoTrilha({ item, ligado }: { item: Extract<Item, { tipo: 'pas
             {scores.length === 1 ? 'Score ATS · Etapa 1' : 'Comparação de score ATS · Etapas 1 e 3'}
           </p>
           <ChartContainer
-            className="h-40"
+            className={scores.length === 1 ? 'mx-auto aspect-square h-48 max-h-[250px]' : 'h-40'}
             config={{ score: { label: 'Score ATS', color: 'var(--accent)' } }}
           >
-            <AreaChart data={scores} margin={{ left: -20, right: 4, top: 4, bottom: 0 }}>
-              <defs>
-                <linearGradient id="score-ats" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-score)" stopOpacity={0.45} />
-                  <stop offset="95%" stopColor="var(--color-score)" stopOpacity={0.05} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid vertical={false} stroke="var(--line)" />
-              <XAxis dataKey="etapa" tickLine={false} axisLine={false} tickMargin={8} />
-              <YAxis domain={[0, 100]} tickLine={false} axisLine={false} width={28} />
-              <ChartTooltip />
-              <Area dataKey="score" type="monotone" stroke="var(--color-score)" fill="url(#score-ats)" strokeWidth={2} />
-            </AreaChart>
+            {scores.length === 1 ? (
+              <ScoreInicialRadial score={scores[0].score} />
+            ) : (
+              <AreaChart data={scores} margin={{ left: -20, right: 4, top: 4, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="score-ats" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-score)" stopOpacity={0.45} />
+                    <stop offset="95%" stopColor="var(--color-score)" stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} stroke="var(--line)" />
+                <XAxis dataKey="etapa" tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis domain={[0, 100]} tickLine={false} axisLine={false} width={28} />
+                <ChartTooltip />
+                <Area dataKey="score" type="monotone" stroke="var(--color-score)" fill="url(#score-ats)" strokeWidth={2} />
+              </AreaChart>
+            )}
           </ChartContainer>
         </div>
       )}
@@ -250,6 +265,47 @@ function scoresAts(resultado: unknown): { etapa: string; score: number }[] | nul
   const dados = [{ etapa: 'Base', score: inicial.score }];
   if (typeof final?.score === 'number') dados.push({ etapa: 'Gerado', score: final.score });
   return dados;
+}
+
+function ScoreInicialRadial({ score }: { score: number }) {
+  const valor = Math.max(0, Math.min(100, score));
+  const dados = [{ score: valor, fill: 'var(--color-score)' }];
+
+  return (
+    <RadialBarChart
+      data={dados}
+      startAngle={90}
+      endAngle={90 - valor * 3.6}
+      innerRadius={65}
+      outerRadius={95}
+    >
+      <PolarGrid
+        gridType="circle"
+        radialLines={false}
+        stroke="none"
+        className="first:fill-muted last:fill-background"
+        polarRadius={[86, 74]}
+      />
+      <RadialBar dataKey="score" background />
+      <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+        <Label
+          content={({ viewBox }: { viewBox?: { cx?: number; cy?: number } }) => {
+            if (!viewBox || !('cx' in viewBox) || !('cy' in viewBox)) return null;
+            return (
+              <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
+                <tspan x={viewBox.cx} y={viewBox.cy} className="fill-foreground text-4xl font-bold">
+                  {valor}
+                </tspan>
+                <tspan x={viewBox.cx} y={(viewBox.cy ?? 0) + 24} className="fill-muted-foreground">
+                  Score ATS inicial
+                </tspan>
+              </text>
+            );
+          }}
+        />
+      </PolarRadiusAxis>
+    </RadialBarChart>
+  );
 }
 
 function argsEditaveis(args: Record<string, unknown>): [string, string][] {
