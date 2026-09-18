@@ -3,6 +3,7 @@ import {
   streamCopiloto,
   type CopilotoChatBody,
   type CopilotoEvento,
+  type ConversaCopilotoDetalhe,
   type ModoCopiloto,
 } from '../api';
 import type { EstadoCopiloto, Item } from './tipos';
@@ -23,6 +24,7 @@ type Acao =
   | { t: 'evento'; ev: CopilotoEvento }
   | { t: 'abortado' }
   | { t: 'modo'; modo: ModoCopiloto }
+  | { t: 'abrirHistorico'; conversa: ConversaCopilotoDetalhe }
   | { t: 'nova' };
 
 let contador = 0;
@@ -135,6 +137,41 @@ function encerrarVivos(itens: Item[]): Item[] {
   return itens.map((it) => (it.tipo === 'agente' && it.vivo ? { ...it, vivo: false } : it));
 }
 
+function itemToolHistorico(indice: number, tool: string | null | undefined, conteudo: string): Item {
+  const falha = conteudo.startsWith('falha:');
+  let resultado: unknown = conteudo;
+  if (!falha) {
+    try {
+      resultado = JSON.parse(conteudo);
+    } catch {
+      resultado = conteudo;
+    }
+  }
+  return {
+    tipo: 'passo',
+    id: `h${indice}`,
+    callId: `historico-${indice}`,
+    tool: tool ?? 'tool',
+    efeito: 'leitura',
+    args: {},
+    status: falha ? 'erro' : 'ok',
+    resultado: falha ? null : resultado,
+    erro: falha ? conteudo.replace(/^falha:\s*/, '') : undefined,
+  };
+}
+
+function itensDeHistorico(conversa: ConversaCopilotoDetalhe): Item[] {
+  return conversa.mensagens.map((mensagem, indice): Item => {
+    if (mensagem.papel === 'user') {
+      return { tipo: 'usuario', id: `h${indice}`, texto: mensagem.conteudo };
+    }
+    if (mensagem.papel === 'assistant') {
+      return { tipo: 'agente', id: `h${indice}`, texto: mensagem.conteudo, vivo: false };
+    }
+    return itemToolHistorico(indice, mensagem.tool, mensagem.conteudo);
+  });
+}
+
 function reducer(estado: Estado, acao: Acao): Estado {
   switch (acao.t) {
     case 'restaurar':
@@ -167,6 +204,17 @@ function reducer(estado: Estado, acao: Acao): Estado {
       return { ...estado, streaming: false, estado: 'ocioso', itens: encerrarVivos(estado.itens) };
     case 'modo':
       return { ...estado, modo: acao.modo };
+    case 'abrirHistorico':
+      return {
+        ...estado,
+        itens: itensDeHistorico(acao.conversa),
+        conversaId: acao.conversa.id,
+        modo: acao.conversa.modo,
+        oportunidadeId: acao.conversa.oportunidadeId ?? undefined,
+        estado: 'ocioso',
+        streaming: false,
+        ultimoEnvio: undefined,
+      };
     case 'nova':
       return {
         ...estado,
@@ -289,6 +337,10 @@ export function useCopiloto(oportunidadeId?: string) {
     },
     parar: () => abortRef.current?.abort(),
     trocarModo: (modo: ModoCopiloto) => dispatch({ t: 'modo', modo }),
+    abrirHistorico: (conversa: ConversaCopilotoDetalhe) => {
+      abortRef.current?.abort();
+      dispatch({ t: 'abrirHistorico', conversa });
+    },
     novaConversa: () => {
       abortRef.current?.abort();
       dispatch({ t: 'nova' });

@@ -824,6 +824,43 @@ export interface CopilotoChatBody {
 
 export type EfeitoTool = 'leitura' | 'escrita';
 
+export interface MensagemCopilotoPersistida {
+  papel: 'user' | 'assistant' | 'tool';
+  conteudo: string;
+  tool?: string | null;
+}
+
+export interface ConversaCopilotoResumo {
+  id: string;
+  modo: ModoCopiloto;
+  oportunidadeId: string | null;
+  titulo: string;
+  ultimaMensagem: string;
+  totalMensagens: number;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export interface ConversaCopilotoDetalhe {
+  id: string;
+  modo: ModoCopiloto;
+  oportunidadeId: string | null;
+  mensagens: MensagemCopilotoPersistida[];
+  pendencia: unknown | null;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export function listarConversasCopiloto(oportunidadeId?: string) {
+  return request<ConversaCopilotoResumo[]>(
+    `/copiloto/conversas${query({ oportunidadeId })}`,
+  );
+}
+
+export function buscarConversaCopiloto(id: string) {
+  return request<ConversaCopilotoDetalhe>(`/copiloto/conversas/${id}`);
+}
+
 export type CopilotoEvento =
   | { evento: 'token'; data: { delta: string } }
   | {

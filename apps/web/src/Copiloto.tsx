@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Compass, ExternalLink, Plus } from 'lucide-react';
-import { getWorkspace } from './api';
+import { Compass, ExternalLink, History, Plus } from 'lucide-react';
+import {
+  buscarConversaCopiloto,
+  getWorkspace,
+  listarConversasCopiloto,
+  type ConversaCopilotoResumo,
+} from './api';
 import { Button } from '@/components/ui/button';
 import { useCopiloto } from './copiloto/useCopiloto';
 import {
@@ -54,6 +59,8 @@ export function Copiloto({ oportunidadeId }: { oportunidadeId?: string }) {
   const c = useCopiloto(oportunidadeId);
   const bloqueado = c.streaming || c.estado === 'aguardando_confirmacao';
   const [ancora, setAncora] = useState<{ titulo: string; empresa: string } | null>(null);
+  const [historicoAberto, setHistoricoAberto] = useState(false);
+  const [conversas, setConversas] = useState<ConversaCopilotoResumo[]>([]);
 
   useEffect(() => {
     setAncora(null);
@@ -68,6 +75,22 @@ export function Copiloto({ oportunidadeId }: { oportunidadeId?: string }) {
       ativo = false;
     };
   }, [oportunidadeId]);
+
+  useEffect(() => {
+    let ativo = true;
+    listarConversasCopiloto(oportunidadeId)
+      .then((itens) => ativo && setConversas(itens))
+      .catch(() => ativo && setConversas([]));
+    return () => {
+      ativo = false;
+    };
+  }, [oportunidadeId, c.conversaId, c.streaming]);
+
+  async function abrirConversa(id: string) {
+    const conversa = await buscarConversaCopiloto(id);
+    c.abrirHistorico(conversa);
+    setHistoricoAberto(false);
+  }
 
   const vazio = c.itens.length === 0;
   const esperandoPrimeiroToken =
@@ -91,10 +114,44 @@ export function Copiloto({ oportunidadeId }: { oportunidadeId?: string }) {
             </span>
           )}
         </div>
-        <Button variant="ghost" size="sm" onClick={c.novaConversa} disabled={vazio && !c.streaming}>
-          <Plus />
-          Nova conversa
-        </Button>
+        <div className="relative flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setHistoricoAberto((aberto) => !aberto)}
+            disabled={c.streaming}
+          >
+            <History />
+            Conversas
+          </Button>
+          <Button variant="ghost" size="sm" onClick={c.novaConversa} disabled={vazio && !c.streaming}>
+            <Plus />
+            Nova conversa
+          </Button>
+          {historicoAberto && (
+            <div className="absolute right-0 top-10 z-20 w-[min(22rem,calc(100vw-2rem))] rounded-card border border-line bg-ground p-2 shadow-float">
+              {conversas.length === 0 ? (
+                <p className="px-3 py-4 text-[13px] text-muted">Nenhuma conversa antiga encontrada.</p>
+              ) : (
+                <div className="max-h-80 overflow-y-auto">
+                  {conversas.map((conversa) => (
+                    <button
+                      key={conversa.id}
+                      type="button"
+                      onClick={() => void abrirConversa(conversa.id)}
+                      className="w-full rounded-control px-3 py-2 text-left text-[13px] hover:bg-accent-soft"
+                    >
+                      <span className="block truncate font-medium text-ink">{conversa.titulo}</span>
+                      <span className="mt-0.5 block truncate text-[12px] text-muted">
+                        {new Date(conversa.atualizadoEm).toLocaleString()} · {conversa.totalMensagens} mensagens
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-4 py-6">
