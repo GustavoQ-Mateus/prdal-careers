@@ -1,17 +1,18 @@
 import { useEffect, useReducer, useRef } from 'react';
 import {
+  getCurriculo,
+  getGeracao,
   streamCopiloto,
   type CopilotoChatBody,
   type CopilotoEvento,
   type ConversaCopilotoDetalhe,
+  type GeracaoCurriculo,
   type ModoCopiloto,
 } from '../api';
 import type { EstadoCopiloto, Item } from './tipos';
 import {
   MARCADOR_NARRACAO_ATS_ETAPA_3,
-  consolidarStatusGeracao,
   dividirNarracaoAts,
-  localizarStatusGeracao,
   scoresNarracaoAts,
 } from './visualizacao';
 
@@ -29,6 +30,8 @@ type Acao =
   | { t: 'restaurar'; payload: Partial<Estado> }
   | { t: 'inicioTurno'; envio: CopilotoChatBody }
   | { t: 'evento'; ev: CopilotoEvento }
+  | { t: 'atualizarGeracao'; jobId: string; geracao: GeracaoCurriculo }
+  | { t: 'previewCurriculo'; curriculo: { id: string; rotulo: string; score: number | null } }
   | { t: 'abortado' }
   | { t: 'modo'; modo: ModoCopiloto }
   | { t: 'abrirHistorico'; conversa: ConversaCopilotoDetalhe }
@@ -39,6 +42,30 @@ const novoId = () => `i${Date.now().toString(36)}${(contador++).toString(36)}`;
 
 function estadoInicialTurno(modo: ModoCopiloto): EstadoCopiloto {
   return modo === 'autopiloto' ? 'autopiloto_em_curso' : 'pensando';
+}
+
+function passoDoEvento(ev: Extract<CopilotoEvento, { evento: 'tool_call' }>): import('./tipos').PassoOperacao {
+  return {
+    callId: ev.data.callId,
+    tool: ev.data.tool,
+    efeito: ev.data.efeito,
+    args: ev.data.args,
+    status: 'executando',
+  };
+}
+
+function operacaoAtual(itens: Item[]): number {
+  return itens.findLastIndex(
+    (item) =>
+      item.tipo === 'operacao' &&
+      item.etapa !== 'erro' &&
+      (item.etapa !== 'concluida' || item.aguardandoCurriculo),
+  );
+}
+
+function proximoEstadoTool(autopiloto: boolean, efeito: 'leitura' | 'escrita'): EstadoCopiloto {
+  if (autopiloto) return 'autopiloto_em_curso';
+  return efeito === 'escrita' ? 'executando_escrita' : 'executando_leitura';
 }
 
 function aplicarEvento(estado: Estado, ev: CopilotoEvento): Estado {
@@ -67,35 +94,39 @@ function aplicarEvento(estado: Estado, ev: CopilotoEvento): Estado {
       return { ...estado, estado: proximoEstado, itens: [...encerrarVivos(itens), novo] };
     }
     case 'tool_call': {
-      if (ev.data.tool === 'status_geracao') {
-        const indice = localizarStatusGeracao(itens, ev.data.args.jobId);
-        if (indice >= 0) {
-          const anterior = itens[indice] as Extract<Item, { tipo: 'passo' }>;
-          const atualizados = [...itens];
-          atualizados[indice] = {
-            ...anterior,
-            callId: ev.data.callId,
-            args: ev.data.args,
-            status: 'executando',
-          };
-          return { ...estado, estado: 'executando_leitura', itens: atualizados };
+      const passo = passoDoEvento(ev);
+      const indiceOperacao = operacaoAtual(itens);
+      const deveConsolidar =
+        ev.data.tool === 'registrar_oportunidade' ||
+        (indiceOperacao >= 0 &&
+          ['gerar_curriculo', 'status_geracao', 'buscar_curriculo'].includes(ev.data.tool));
+
+      if (deveConsolidar) {
+        const operacao = ev.data.tool === 'registrar_oportunidade' || indiceOperacao < 0
+          ? null
+          : itens[indiceOperacao] as Extract<Item, { tipo: 'operacao' }>;
+        const proximaEtapa = ev.data.tool === 'registrar_oportunidade'
+          ? 'registrando'
+          : ev.data.tool === 'gerar_curriculo'
+            ? 'gerando'
+            : ev.data.tool === 'status_geracao'
+              ? 'acompanhando'
+              : operacao?.etapa ?? 'concluida';
+        const atualizados = [...encerrarVivos(itens)];
+        if (operacao) {
+          atualizados[indiceOperacao] = { ...operacao, etapa: proximaEtapa, passos: [...operacao.passos, passo] };
+        } else {
+          atualizados.push({ tipo: 'operacao', id: novoId(), etapa: proximaEtapa, passos: [passo] });
         }
+        return { ...estado, estado: proximoEstadoTool(autopiloto, ev.data.efeito), itens: atualizados };
       }
-      const passo: Item = {
-        tipo: 'passo',
-        id: novoId(),
-        callId: ev.data.callId,
-        tool: ev.data.tool,
-        efeito: ev.data.efeito,
-        args: ev.data.args,
-        status: 'executando',
+
+      const item: Item = { tipo: 'passo', id: novoId(), ...passo };
+      return {
+        ...estado,
+        estado: proximoEstadoTool(autopiloto, ev.data.efeito),
+        itens: [...encerrarVivos(itens), item],
       };
-      const proximoEstado: EstadoCopiloto = autopiloto
-        ? 'autopiloto_em_curso'
-        : ev.data.efeito === 'escrita'
-          ? 'executando_escrita'
-          : 'executando_leitura';
-      return { ...estado, estado: proximoEstado, itens: [...encerrarVivos(itens), passo] };
     }
     case 'confirmacao': {
       const cartao: Item = {
@@ -109,16 +140,29 @@ function aplicarEvento(estado: Estado, ev: CopilotoEvento): Estado {
       return { ...estado, itens: [...encerrarVivos(itens), cartao] };
     }
     case 'tool_resultado': {
-      const atualizados = itens.map((it): Item =>
-        it.tipo === 'passo' && it.callId === ev.data.callId
-          ? {
-              ...it,
-              status: statusPasso(it.tool, ev.data.ok, ev.data.resultado),
-              resultado: ev.data.resultado,
-              erro: ev.data.erro?.mensagem,
-            }
-          : it,
-      );
+      const atualizados = itens.map((it): Item => {
+        if (it.tipo === 'passo' && it.callId === ev.data.callId) {
+          return { ...it, status: statusPasso(it.tool, ev.data.ok, ev.data.resultado), resultado: ev.data.resultado, erro: ev.data.erro?.mensagem };
+        }
+        if (it.tipo !== 'operacao') return it;
+        const passo = it.passos.find((candidato) => candidato.callId === ev.data.callId);
+        if (!passo) return it;
+        const passos = it.passos.map((candidato) =>
+          candidato.callId === ev.data.callId
+            ? { ...candidato, status: statusPasso(candidato.tool, ev.data.ok, ev.data.resultado), resultado: ev.data.resultado, erro: ev.data.erro?.mensagem }
+            : candidato,
+        );
+        const resultado = ev.data.resultado as Record<string, unknown> | null;
+        const status = String(resultado?.status ?? '');
+        if (passo.tool === 'gerar_curriculo' && ev.data.ok && typeof resultado?.jobId === 'string') {
+          return { ...it, passos, jobId: resultado.jobId, etapa: status === 'CONCLUIDA' ? 'concluida' : status === 'ERRO' ? 'erro' : 'acompanhando' };
+        }
+        if (passo.tool === 'status_geracao') {
+          return { ...it, passos, etapa: status === 'ERRO' ? 'erro' : status === 'CONCLUIDA' ? 'concluida' : 'acompanhando', aguardandoCurriculo: status === 'CONCLUIDA' };
+        }
+        if (passo.tool === 'buscar_curriculo') return { ...it, passos, etapa: ev.data.ok ? 'concluida' : 'erro', aguardandoCurriculo: false };
+        return { ...it, passos, etapa: ev.data.ok ? it.etapa : 'erro' };
+      });
       return { ...estado, itens: atualizados };
     }
     case 'entrega_externa': {
@@ -214,7 +258,7 @@ function itensDeHistorico(conversa: ConversaCopilotoDetalhe): Item[] {
     }
     return [itemToolHistorico(indice, mensagem.tool, mensagem.conteudo)];
   });
-  return consolidarStatusGeracao(itens).map((item, indice, todos) =>
+  return itens.map((item, indice, todos) =>
     item.tipo === 'agente'
       ? { ...item, scoresAts: scoresNarracaoAts(todos.slice(0, indice), item.texto) }
       : item,
@@ -249,6 +293,44 @@ function reducer(estado: Estado, acao: Acao): Estado {
     }
     case 'evento':
       return aplicarEvento(estado, acao.ev);
+    case 'atualizarGeracao': {
+      const terminal = acao.geracao.status === 'CONCLUIDA' || acao.geracao.status === 'ERRO';
+      return {
+        ...estado,
+        itens: estado.itens.map((item): Item => {
+          if (item.tipo !== 'operacao' || item.jobId !== acao.jobId) return item;
+          const indiceStatus = item.passos.findLastIndex((passo) => passo.tool === 'status_geracao');
+          const status: import('./tipos').PassoOperacao = {
+            callId: `geracao-${acao.jobId}`,
+            tool: 'status_geracao',
+            efeito: 'leitura',
+            args: { jobId: acao.jobId },
+            status: terminal ? 'ok' : 'executando',
+            resultado: acao.geracao,
+            erro: acao.geracao.erro ?? undefined,
+          };
+          const passos = indiceStatus >= 0
+            ? item.passos.map((passo, indice) => indice === indiceStatus ? status : passo)
+            : [...item.passos, status];
+          return {
+            ...item,
+            passos,
+            etapa: acao.geracao.status === 'ERRO' ? 'erro' : terminal ? 'concluida' : 'acompanhando',
+            aguardandoCurriculo: acao.geracao.status === 'CONCLUIDA',
+          };
+        }),
+      };
+    }
+    case 'previewCurriculo':
+      return estado.itens.some((item) => item.tipo === 'preview_curriculo' && item.curriculoId === acao.curriculo.id)
+        ? estado
+        : {
+            ...estado,
+            itens: [
+              ...estado.itens,
+              { tipo: 'preview_curriculo', id: novoId(), curriculoId: acao.curriculo.id, rotulo: acao.curriculo.rotulo, score: acao.curriculo.score },
+            ],
+          };
     case 'abortado':
       return { ...estado, streaming: false, estado: 'ocioso', itens: encerrarVivos(estado.itens) };
     case 'modo':
@@ -314,6 +396,7 @@ export function useCopiloto(oportunidadeId?: string) {
   const refEstado = useRef(estado);
   refEstado.current = estado;
   const abortRef = useRef<AbortController | null>(null);
+  const retomadas = useRef(new Set<string>());
 
   useEffect(() => {
     dispatch({
@@ -365,6 +448,45 @@ export function useCopiloto(oportunidadeId?: string) {
       abortRef.current = null;
     }
   }
+
+  useEffect(() => {
+    const jobIds = estado.itens
+      .filter((item): item is Extract<Item, { tipo: 'operacao' }> => item.tipo === 'operacao' && item.etapa === 'acompanhando' && Boolean(item.jobId))
+      .map((item) => item.jobId as string);
+    if (jobIds.length === 0) return;
+
+    let ativo = true;
+    async function consultar() {
+      for (const jobId of jobIds) {
+        try {
+          const geracao = await getGeracao(jobId);
+          if (!ativo) return;
+          dispatch({ t: 'atualizarGeracao', jobId, geracao });
+          if ((geracao.status === 'CONCLUIDA' || geracao.status === 'ERRO') && !retomadas.current.has(jobId)) {
+            retomadas.current.add(jobId);
+            if (geracao.status === 'CONCLUIDA' && geracao.curriculoId) {
+              try {
+                const curriculo = await getCurriculo(geracao.curriculoId);
+                if (ativo) dispatch({ t: 'previewCurriculo', curriculo });
+              } catch {
+                /* o próximo carregamento da conversa mantém a operação concluída */
+              }
+            }
+            if (ativo && !refEstado.current.streaming) void correr({});
+          }
+        } catch {
+          /* indisponibilidade transitória: tenta novamente no próximo intervalo */
+        }
+      }
+    }
+
+    void consultar();
+    const intervalo = window.setInterval(() => void consultar(), 1_500);
+    return () => {
+      ativo = false;
+      window.clearInterval(intervalo);
+    };
+  }, [estado.itens]);
 
   return {
     ...estado,

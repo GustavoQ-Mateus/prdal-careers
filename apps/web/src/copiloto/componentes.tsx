@@ -5,6 +5,7 @@ import {
   ChevronDown,
   Copy,
   CopyCheck,
+  Download,
   Eye,
   Loader2,
   PenLine,
@@ -28,7 +29,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { ModoCopiloto } from '../api';
+import { baixarArquivo, type ModoCopiloto } from '../api';
 import {
   ESTADO_META,
   degradacaoResultado,
@@ -229,6 +230,93 @@ export function PassoTrilha({ item, ligado }: { item: Extract<Item, { tipo: 'pas
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+const ROTULO_OPERACAO: Record<Extract<Item, { tipo: 'operacao' }>['etapa'], string> = {
+  registrando: 'Registrando oportunidade',
+  gerando: 'Gerando currículo',
+  acompanhando: 'Aguardando geração',
+  concluida: 'Currículo pronto',
+  erro: 'Não foi possível gerar o currículo',
+};
+
+export function OperacaoCorrente({ item }: { item: Extract<Item, { tipo: 'operacao' }> }) {
+  const [aberto, setAberto] = useState(false);
+  const ativa = !['concluida', 'erro'].includes(item.etapa);
+  const falhou = item.etapa === 'erro';
+  const ultimo = item.passos[item.passos.length - 1];
+
+  return (
+    <div className="rounded-card border border-line-strong bg-ground p-4 shadow-rest motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1" role="status" aria-live="polite">
+      <div className="flex items-center gap-2">
+        <span className={cn('flex size-7 items-center justify-center rounded-full border', falhou ? 'border-score-bad text-score-bad' : ativa ? 'border-accent text-accent' : 'border-line-strong text-score-good')}>
+          {ativa ? <Loader2 className="size-4 animate-spin" /> : falhou ? <TriangleAlert className="size-4" /> : <Check className="size-4" />}
+        </span>
+        <div className="min-w-0">
+          <p className="text-[14px] font-medium text-ink">{ROTULO_OPERACAO[item.etapa]}</p>
+          <p className="text-[12px] text-muted">
+            {ultimo ? rotuloTool(ultimo.tool) : 'Preparando operação'}
+            {item.jobId && <span className="text-faint"> · acompanhamento por job</span>}
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => setAberto((valor) => !valor)}
+        className="mt-3 inline-flex items-center gap-1 text-[12px] text-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        <ChevronDown className={cn('size-3.5 transition-transform', aberto && 'rotate-180')} />
+        {aberto ? 'Ocultar retorno técnico' : 'Ver retorno técnico'}
+      </button>
+      {aberto && (
+        <div className="mt-2 space-y-2">
+          {item.passos.map((passo) => (
+            <div key={passo.callId} className="rounded-control border border-line bg-canvas px-3 py-2 text-[12px] text-muted">
+              <span className="font-medium text-ink-2">{rotuloTool(passo.tool)}</span>
+              <span> · {passo.status === 'erro' ? passo.erro ?? 'falha' : resumirResultado(passo.tool, passo.resultado)}</span>
+              {passo.resultado != null && (
+                <pre className="mt-2 max-h-40 overflow-auto font-mono text-[11px] leading-relaxed text-ink-2">{JSON.stringify(passo.resultado, null, 2)}</pre>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function CartaoPreviewCurriculo({ item }: { item: Extract<Item, { tipo: 'preview_curriculo' }> }) {
+  const [baixando, setBaixando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function baixarPacote() {
+    setBaixando(true);
+    setErro(null);
+    try {
+      await baixarArquivo(`/curriculos/${item.curriculoId}/pacote`, `${item.rotulo}.zip`);
+    } catch (causa) {
+      setErro((causa as Error).message);
+    } finally {
+      setBaixando(false);
+    }
+  }
+
+  return (
+    <div className="rounded-card border border-line-strong bg-ground p-4 shadow-rest motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <span className="text-label uppercase text-accent-ink">Currículo pronto</span>
+          <p className="mt-0.5 truncate text-[15px] font-medium text-ink">{item.rotulo}</p>
+          <p className="text-[13px] text-muted">{item.score == null ? 'Score ATS indisponível' : `Score ATS final: ${item.score}`}</p>
+        </div>
+        <Button variant="secondary" size="sm" onClick={() => void baixarPacote()} disabled={baixando}>
+          {baixando ? <Loader2 className="animate-spin" /> : <Download />}
+          {baixando ? 'Baixando' : 'Baixar pacote'}
+        </Button>
+      </div>
+      {erro && <p className="mt-3 text-[12px] text-score-bad">Não foi possível baixar o pacote: {erro}</p>}
     </div>
   );
 }

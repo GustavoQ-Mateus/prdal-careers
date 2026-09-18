@@ -12,19 +12,37 @@ export type EstadoCopiloto =
   | 'autopiloto_parado_externo'
   | 'erro_turno';
 
+export type PassoOperacao = {
+  callId: string;
+  tool: string;
+  efeito: EfeitoTool;
+  args: Record<string, unknown>;
+  status: 'executando' | 'ok' | 'erro';
+  resultado?: unknown;
+  erro?: string;
+};
+
 export type Item =
   | { tipo: 'usuario'; id: string; texto: string }
   | { tipo: 'agente'; id: string; texto: string; vivo: boolean; scoresAts?: ScoreAts[] }
-  | {
+  | ({
       tipo: 'passo';
       id: string;
-      callId: string;
-      tool: string;
-      efeito: EfeitoTool;
-      args: Record<string, unknown>;
-      status: 'executando' | 'ok' | 'erro';
-      resultado?: unknown;
-      erro?: string;
+    } & PassoOperacao)
+  | {
+      tipo: 'operacao';
+      id: string;
+      passos: PassoOperacao[];
+      etapa: 'registrando' | 'gerando' | 'acompanhando' | 'concluida' | 'erro';
+      jobId?: string;
+      aguardandoCurriculo?: boolean;
+    }
+  | {
+      tipo: 'preview_curriculo';
+      id: string;
+      curriculoId: string;
+      rotulo: string;
+      score: number | null;
     }
   | {
       tipo: 'confirmacao';

@@ -13,10 +13,12 @@ import {
   CartaoConfirmacao,
   CartaoEntrega,
   CartaoErro,
+  CartaoPreviewCurriculo,
   Composer,
   MensagemAgente,
   MensagemUsuario,
   ModoToggle,
+  OperacaoCorrente,
   PensandoIndicador,
   PassoTrilha,
 } from './copiloto/componentes';
@@ -215,6 +217,10 @@ function ItemRender({
       return (
         <PassoTrilha item={item} ligado={anterior?.tipo === 'passo' || proximo?.tipo === 'passo'} />
       );
+    case 'operacao':
+      return <OperacaoCorrente item={item} />;
+    case 'preview_curriculo':
+      return <CartaoPreviewCurriculo item={item} />;
     case 'confirmacao':
       return (
         <CartaoConfirmacao

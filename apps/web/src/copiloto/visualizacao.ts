@@ -39,10 +39,8 @@ export function scoresNarracaoAts(itens: Item[], texto: string): ScoreAts[] | un
   if (!etapa) return undefined;
   const curriculo = [...itens]
     .reverse()
-    .find(
-      (item): item is Extract<Item, { tipo: 'passo' }> =>
-        item.tipo === 'passo' && item.tool === 'buscar_curriculo' && item.status === 'ok',
-    );
+    .flatMap((item) => item.tipo === 'operacao' ? item.passos : item.tipo === 'passo' ? [item] : [])
+    .find((item) => item.tool === 'buscar_curriculo' && item.status === 'ok');
   const scores = curriculo ? scoresAts(curriculo.tool, curriculo.resultado) : null;
   if (!scores) return undefined;
   return etapa === 'inicial' ? scores.slice(0, 1) : scores;
