@@ -7,6 +7,17 @@ import { App } from './App';
 import { applyTheme, initialTheme } from './lib/theme';
 import './index.css';
 
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  const chave = 'prdal:chunk-reload';
+  if (!sessionStorage.getItem(chave)) {
+    sessionStorage.setItem(chave, '1');
+    window.location.reload();
+  } else {
+    sessionStorage.removeItem(chave);
+  }
+});
+
 applyTheme(initialTheme());
 
 const queryClient = new QueryClient();
