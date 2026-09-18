@@ -47,10 +47,10 @@ export function AuthForm({ onAuth }: { onAuth: () => void }) {
   return (
     <div className="w-full">
       <span className="text-label uppercase text-muted">{login_ ? 'Acesso' : 'Nova conta'}</span>
-      <h1 className="mt-2 text-[24px] font-bold leading-tight text-ink">
+      <h1 className="mt-2 text-[30px] font-bold leading-tight text-ink">
         {login_ ? 'Bem-vindo de volta.' : 'Crie sua conta.'}
       </h1>
-      <p className="mt-2 text-[14px] text-muted">
+      <p className="mt-2 text-[16px] text-muted">
         {login_
           ? 'Entre para gerar e analisar seus currículos por vaga.'
           : 'Comece a gerar currículos tailored e medir o score ATS.'}
@@ -59,7 +59,7 @@ export function AuthForm({ onAuth }: { onAuth: () => void }) {
       <form onSubmit={enviar} className="mt-7 flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="auth-email">E-mail de acesso</Label>
-          <Input
+          <Input className="h-12 text-[16px]"
             id="auth-email"
             type="email"
             autoComplete="email"
@@ -70,7 +70,7 @@ export function AuthForm({ onAuth }: { onAuth: () => void }) {
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="auth-senha">Senha</Label>
-          <Input
+          <Input className="h-12 text-[16px]"
             id="auth-senha"
             type="password"
             autoComplete={login_ ? 'current-password' : 'new-password'}
@@ -90,7 +90,7 @@ export function AuthForm({ onAuth }: { onAuth: () => void }) {
           </div>
         )}
 
-        <Button type="submit" className="mt-1 w-full" disabled={enviando}>
+        <Button variant="accent" type="submit" className="mt-1 h-12 w-full text-[16px]" disabled={enviando}>
           {enviando ? 'Aguarde...' : login_ ? 'Acessar' : 'Criar conta'}
         </Button>
         <button

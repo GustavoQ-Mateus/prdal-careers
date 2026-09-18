@@ -260,7 +260,7 @@ export function Oportunidades({
           onValor={(valor) => onRota({ visao: valor, ...base })}
           aria="Visão das oportunidades"
         />
-        <Button className="ml-auto" onClick={() => setRegistrarAberto(true)}>
+        <Button variant="accent" className="ml-auto" onClick={() => setRegistrarAberto(true)}>
           Registrar oportunidade
         </Button>
       </div>

@@ -60,9 +60,9 @@ export function App() {
 
   if (!autenticado) {
     return (
-      <div className="grid min-h-screen bg-ground font-sans text-ink lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+      <div className="grid min-h-screen bg-ground font-sans text-ink lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
         <div className="relative flex items-center justify-center px-6 py-20 sm:px-10">
-          <div className="w-full max-w-sm">
+          <div className="w-full max-w-md">
             <div className="mb-8 flex justify-center">
               <Marca variante="lockup" fundo="claro" className="h-7 w-auto dark:hidden" />
               <Marca variante="lockup" fundo="escuro" className="hidden h-7 w-auto dark:block" />
