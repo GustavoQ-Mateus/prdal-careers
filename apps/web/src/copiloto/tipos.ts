@@ -88,6 +88,17 @@ function contagem(valor: unknown): number | null {
   return Array.isArray(valor) ? valor.length : null;
 }
 
+export function degradacaoResultado(resultado: unknown): string | null {
+  if (resultado === null || typeof resultado !== 'object') return null;
+  const o = resultado as Record<string, unknown>;
+  const direta = typeof o.degradacao === 'string' ? o.degradacao : '';
+  const etapas = o.etapas && typeof o.etapas === 'object'
+    ? (o.etapas as Record<string, unknown>)
+    : null;
+  const porEtapa = typeof etapas?.degradacao === 'string' ? etapas.degradacao : '';
+  return direta || porEtapa || null;
+}
+
 export function resumirResultado(tool: string, resultado: unknown): string {
   if (resultado == null) return 'Sem retorno';
   const n = contagem(resultado);
@@ -101,6 +112,10 @@ export function resumirResultado(tool: string, resultado: unknown): string {
   }
   if (typeof resultado === 'object') {
     const o = resultado as Record<string, unknown>;
+    const degradacao = degradacaoResultado(resultado);
+    if (degradacao && (tool === 'buscar_curriculo' || tool === 'status_geracao')) {
+      return 'Concluído com degradação';
+    }
     if (tool === 'gerar_curriculo' && o.status === 'CONCLUIDA') return 'Geração concluída';
     if (tool === 'gerar_curriculo' && o.status === 'ERRO') return 'Geração com erro recuperável';
     if (tool === 'registrar_oportunidade' && o.id) return 'Oportunidade registrada';

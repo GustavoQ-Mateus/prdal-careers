@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import type { ModoCopiloto } from '../api';
 import {
   ESTADO_META,
+  degradacaoResultado,
   rotuloEntrega,
   rotuloTool,
   resumirResultado,
@@ -133,6 +134,7 @@ export function PassoTrilha({ item, ligado }: { item: Extract<Item, { tipo: 'pas
   const [aberto, setAberto] = useState(false);
   const executando = item.status === 'executando';
   const falhou = item.status === 'erro';
+  const degradacao = item.status === 'ok' ? degradacaoResultado(item.resultado) : null;
 
   return (
     <div className="relative pl-9 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1">
@@ -175,6 +177,13 @@ export function PassoTrilha({ item, ligado }: { item: Extract<Item, { tipo: 'pas
           </span>
         )}
       </div>
+
+      {degradacao && (
+        <div className="mt-2 flex items-start gap-1.5 rounded-control border border-score-warn/40 bg-ground px-2.5 py-2 text-[12px] leading-relaxed text-score-warn">
+          <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
+          <span>{degradacao}</span>
+        </div>
+      )}
 
       {item.status === 'ok' && item.resultado != null && (
         <div className="mt-1">
