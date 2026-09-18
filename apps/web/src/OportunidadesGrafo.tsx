@@ -91,18 +91,18 @@ function EventosGrafo({ onSelecionar, onArrastar }: { onSelecionar: (sel: Seleca
   useEffect(() => {
     let arrastando: string | null = null;
     register({
-      clickNode({ node }) {
+      clickNode({ node }: { node: string }) {
         if (arrastando) return;
         if (!node.startsWith('oportunidade:')) return;
         const rotulo = sigma.getGraph().getNodeAttribute(node, 'label') as string;
         onSelecionar({ id: node.slice('oportunidade:'.length), titulo: rotulo });
       },
-      downNode({ node, event }) {
+      downNode({ node, event }: { node: string; event: { preventSigmaDefault: () => void } }) {
         event.preventSigmaDefault();
         arrastando = node;
         onArrastar();
       },
-      moveBody({ event }) {
+      moveBody({ event }: { event: unknown }) {
         if (!arrastando) return;
         const evento = event as unknown as {
           preventSigmaDefault?: () => void;
@@ -111,7 +111,7 @@ function EventosGrafo({ onSelecionar, onArrastar }: { onSelecionar: (sel: Seleca
         evento.preventSigmaDefault?.();
         evento.original?.preventDefault?.();
         evento.original?.stopPropagation?.();
-        const posicao = sigma.viewportToGraph(event);
+        const posicao = sigma.viewportToGraph(event as never);
         sigma.getGraph().setNodeAttribute(arrastando, 'x', posicao.x);
         sigma.getGraph().setNodeAttribute(arrastando, 'y', posicao.y);
         sigma.refresh();
