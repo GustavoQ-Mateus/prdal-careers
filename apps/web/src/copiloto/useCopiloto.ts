@@ -2,6 +2,7 @@ import { useEffect, useReducer, useRef } from 'react';
 import {
   getCurriculo,
   getGeracao,
+  buscarConversaCopiloto,
   streamCopiloto,
   type CopilotoChatBody,
   type CopilotoEvento,
@@ -660,13 +661,18 @@ export function useCopiloto(oportunidadeId?: string) {
                 /* o próximo carregamento da conversa mantém a operação concluída */
               }
             }
-            if (ativo && !refEstado.current.streaming && !retomadas.current.has(jobId)) {
-              const temNarracao = refEstado.current.itens.some(
-                (item) => item.tipo === 'agente' && /etapa\s*[13]/i.test(item.texto),
-              );
-              if (!temNarracao) {
-                retomadas.current.add(jobId);
-                void correr({});
+            if (ativo && !refEstado.current.streaming && !retomadas.current.has(jobId) && refEstado.current.conversaId) {
+              try {
+                const conversa = await buscarConversaCopiloto(refEstado.current.conversaId);
+                const temNarracao = conversa.mensagens.some(
+                  (mensagem) => mensagem.papel === 'assistant' && /etapa\s*[13]/i.test(mensagem.conteudo),
+                );
+                if (temNarracao && ativo) {
+                  retomadas.current.add(jobId);
+                  dispatch({ t: 'abrirHistorico', conversa });
+                }
+              } catch {
+                /* a persistência assíncrona pode terminar no próximo intervalo */
               }
             }
           }
