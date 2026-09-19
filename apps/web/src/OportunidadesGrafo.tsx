@@ -85,7 +85,7 @@ function TemaSigma({ versao, tipos }: { versao: number; tipos: string[] }) {
   return null;
 }
 
-function EventosGrafo({ onSelecionar, onArrastar }: { onSelecionar: (sel: Selecao) => void; onArrastar: () => void }) {
+function EventosGrafo({ onSelecionar }: { onSelecionar: (sel: Selecao) => void }) {
   const register = useRegisterEvents();
   const sigma = useSigma();
   useEffect(() => {
@@ -100,7 +100,7 @@ function EventosGrafo({ onSelecionar, onArrastar }: { onSelecionar: (sel: Seleca
       downNode({ node, event }: { node: string; event: { preventSigmaDefault: () => void } }) {
         event.preventSigmaDefault();
         arrastando = node;
-        onArrastar();
+        sigma.getGraph().setNodeAttribute(node, 'fixed', true);
       },
       moveBody({ event }: { event: unknown }) {
         if (!arrastando) return;
@@ -119,7 +119,7 @@ function EventosGrafo({ onSelecionar, onArrastar }: { onSelecionar: (sel: Seleca
       upNode() { arrastando = null; },
       upStage() { arrastando = null; },
     } as never);
-  }, [register, sigma, onSelecionar, onArrastar]);
+  }, [register, sigma, onSelecionar]);
   return null;
 }
 
@@ -201,7 +201,7 @@ export function OportunidadesGrafo({
         >
           <CarregarGrafo dados={dados} layoutAtivo={layoutAtivo} tipos={tipos} />
           <TemaSigma versao={temaVersao} tipos={tipos} />
-          <EventosGrafo onSelecionar={onSelecionar} onArrastar={() => setLayoutAtivo(false)} />
+          <EventosGrafo onSelecionar={onSelecionar} />
         </SigmaContainer>
       </div>
 

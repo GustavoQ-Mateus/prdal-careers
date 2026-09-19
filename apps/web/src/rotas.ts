@@ -12,6 +12,7 @@ export type FiltrosHub = {
   categoria?: string;
   nivel?: string;
   ordenarPor?: string;
+  ordenarDirecao?: 'asc' | 'desc';
   prioridade?: string;
 };
 
@@ -62,6 +63,7 @@ export function parseRota(
       categoria: q.get('categoria') ?? undefined,
       nivel: q.get('nivel') ?? undefined,
       ordenarPor: q.get('ordenarPor') ?? undefined,
+      ordenarDirecao: q.get('ordenarDirecao') === 'asc' ? 'asc' : q.get('ordenarDirecao') === 'desc' ? 'desc' : undefined,
       prioridade: q.get('prioridade') ?? undefined,
     };
   }
@@ -112,6 +114,7 @@ export function hrefRota(rota: Rota): string {
       if (rota.categoria) q.set('categoria', rota.categoria);
       if (rota.nivel) q.set('nivel', rota.nivel);
       if (rota.ordenarPor) q.set('ordenarPor', rota.ordenarPor);
+      if (rota.ordenarDirecao) q.set('ordenarDirecao', rota.ordenarDirecao);
       if (rota.prioridade) q.set('prioridade', rota.prioridade);
       return `/oportunidades?${q.toString()}`;
     }

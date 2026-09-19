@@ -54,6 +54,11 @@ const ORDENACOES = [
   { id: 'prazo', nome: 'Prazo do próximo passo' },
 ];
 
+const DIRECOES = [
+  { id: 'desc', nome: 'Maior / mais recente' },
+  { id: 'asc', nome: 'Menor / mais antigo' },
+];
+
 function selecaoDe(item: OportunidadeItem): Selecao {
   return {
     id: item.id,
@@ -75,6 +80,7 @@ export function Oportunidades({
   categoria,
   nivel,
   ordenarPor,
+  ordenarDirecao,
   prioridade,
   onRota,
   onAbrir,
@@ -85,6 +91,7 @@ export function Oportunidades({
   categoria: string;
   nivel: string;
   ordenarPor: string;
+  ordenarDirecao: 'asc' | 'desc';
   prioridade: string;
   onRota: (prox: FiltrosHub) => void;
   onAbrir: (id: string) => void;
@@ -98,7 +105,7 @@ export function Oportunidades({
   const [editarAberto, setEditarAberto] = useState(false);
   const taxonomia = useTaxonomia();
 
-  const base = { busca, estado, categoria, nivel, ordenarPor, prioridade };
+  const base = { busca, estado, categoria, nivel, ordenarPor, ordenarDirecao, prioridade };
   function aplicar(patch: Partial<FiltrosHub>) {
     setOffset(0);
     onRota({ visao, ...base, ...patch });
@@ -109,6 +116,8 @@ export function Oportunidades({
     categoria: categoria || undefined,
     nivel: nivel || undefined,
     prioridade: prioridade || undefined,
+    ordenarPor,
+    ordenarDirecao,
     apresentacao: estado === 'ativas' ? 'ATIVA' : estado === 'encerradas' ? 'ENCERRADA' : undefined,
   };
 
@@ -121,6 +130,7 @@ export function Oportunidades({
       categoria: categoria || undefined,
       nivel: nivel || undefined,
       ordenarPor,
+      ordenarDirecao,
       prioridade: prioridade || undefined,
       limit: LIMITE_LISTA,
       offset,
@@ -140,6 +150,7 @@ export function Oportunidades({
       categoria: categoria || undefined,
       nivel: nivel || undefined,
       ordenarPor,
+      ordenarDirecao,
       prioridade: prioridade || undefined,
       limit: LIMITE_LISTA,
       offset,
@@ -153,7 +164,7 @@ export function Oportunidades({
     return () => {
       ativo = false;
     };
-  }, [visao, estado, busca, categoria, nivel, ordenarPor, prioridade, offset]);
+  }, [visao, estado, busca, categoria, nivel, ordenarPor, ordenarDirecao, prioridade, offset]);
 
   async function ativar(id: string) {
     setErro(null);
@@ -239,21 +250,32 @@ export function Oportunidades({
             <option value="BAIXA">Baixa</option>
           </NativeSelect>
         </div>
-        {visao === 'lista' && (
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="hub-ordenar">Ordenar por</Label>
-            <NativeSelect
-              id="hub-ordenar"
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="hub-ordenar">Ordenar por</Label>
+          <NativeSelect
+            id="hub-ordenar"
             className="w-40"
-              value={ordenarPor}
-              onChange={(e) => aplicar({ ordenarPor: e.target.value })}
-            >
-              {ORDENACOES.map((o) => (
-                <option key={o.id} value={o.id}>{o.nome}</option>
-              ))}
-            </NativeSelect>
-          </div>
-        )}
+            value={ordenarPor}
+            onChange={(e) => aplicar({ ordenarPor: e.target.value })}
+          >
+            {ORDENACOES.map((o) => (
+              <option key={o.id} value={o.id}>{o.nome}</option>
+            ))}
+          </NativeSelect>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="hub-ordenar-direcao">Direção</Label>
+          <NativeSelect
+            id="hub-ordenar-direcao"
+            className="w-40"
+            value={ordenarDirecao}
+            onChange={(e) => aplicar({ ordenarDirecao: e.target.value as 'asc' | 'desc' })}
+          >
+            {DIRECOES.map((d) => (
+              <option key={d.id} value={d.id}>{d.nome}</option>
+            ))}
+          </NativeSelect>
+        </div>
         <SegmentoIcones
           opcoes={VISOES}
           valor={visao}
@@ -265,9 +287,9 @@ export function Oportunidades({
         </Button>
       </div>
 
-      {visao === 'lista' && (
-        <p className="text-[13px] text-faint">Critério de ordenação: {criterio}. Não há ranking universal.</p>
-      )}
+      <p className="text-[13px] text-faint">
+        Critério de ordenação: {criterio} · {ordenarDirecao === 'asc' ? 'crescente' : 'decrescente'}. Não há ranking universal.
+      </p>
       {erro && (
         <div className="rounded-control border border-score-bad/40 bg-ground px-3 py-2 text-[13px] text-score-bad" role="alert">
           {erro}

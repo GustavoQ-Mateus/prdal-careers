@@ -210,6 +210,7 @@ export function App() {
                   categoria={rota.categoria ?? ''}
                   nivel={rota.nivel ?? ''}
                   ordenarPor={rota.ordenarPor ?? 'atividade'}
+                  ordenarDirecao={rota.ordenarDirecao ?? 'desc'}
                   prioridade={rota.prioridade ?? ''}
                   onRota={(prox) => ir({ tela: 'oportunidades', ...prox })}
                   onAbrir={(id) => ir({ tela: 'workspace', id })}
