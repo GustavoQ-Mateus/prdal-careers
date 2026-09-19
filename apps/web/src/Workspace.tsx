@@ -194,7 +194,7 @@ export function Workspace({
             <Button variant="secondary" onClick={() => setEditarAberto(true)}>
               Editar
             </Button>
-            <Button onClick={() => acaoDominante.run()}>{acaoDominante.rotulo}</Button>
+            <Button variant="accent" onClick={() => acaoDominante.run()}>{acaoDominante.rotulo}</Button>
           </div>
         </div>
       </header>

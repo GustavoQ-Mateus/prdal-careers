@@ -5,7 +5,7 @@ const KEY = 'prdal-theme';
 export function initialTheme(): Theme {
   const salvo = localStorage.getItem(KEY);
   if (salvo === 'light' || salvo === 'dark') return salvo;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'light';
 }
 
 export function applyTheme(theme: Theme) {
