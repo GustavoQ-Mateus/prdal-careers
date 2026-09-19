@@ -7,6 +7,7 @@ import {
   type CopilotoChatBody,
   type CopilotoEvento,
   type ConversaCopilotoDetalhe,
+  type Curriculo,
   type GeracaoCurriculo,
   type ModoCopiloto,
 } from '../api';
@@ -33,7 +34,7 @@ type Acao =
   | { t: 'inicioTurno'; envio: CopilotoChatBody }
   | { t: 'evento'; ev: CopilotoEvento }
   | { t: 'atualizarGeracao'; jobId: string; geracao: GeracaoCurriculo }
-  | { t: 'previewCurriculo'; curriculo: { id: string; rotulo: string; score: number | null } }
+  | { t: 'previewCurriculo'; jobId: string; curriculo: Curriculo }
   | { t: 'abortado' }
   | { t: 'modo'; modo: ModoCopiloto }
   | { t: 'abrirHistorico'; conversa: ConversaCopilotoDetalhe }
@@ -502,18 +503,30 @@ function reducer(estado: Estado, acao: Acao): Estado {
         }),
       };
     }
-    case 'previewCurriculo':
-      return estado.itens.some((item) => item.tipo === 'preview_curriculo' && item.curriculoId === acao.curriculo.id)
-        ? estado
+    case 'previewCurriculo': {
+      const passo: import('./tipos').PassoOperacao = {
+        callId: `curriculo-${acao.curriculo.id}`,
+        tool: 'buscar_curriculo',
+        efeito: 'leitura',
+        args: { curriculoId: acao.curriculo.id },
+        status: 'ok',
+        resultado: acao.curriculo,
+      };
+      const itens = estado.itens.map((item): Item => {
+        if (item.tipo !== 'operacao' || item.jobId !== acao.jobId) return item;
+        if (item.passos.some((candidato) => candidato.callId === passo.callId)) return item;
+        return { ...item, passos: [...item.passos, passo], aguardandoCurriculo: false };
+      });
+      return itens.some((item) => item.tipo === 'preview_curriculo' && item.curriculoId === acao.curriculo.id)
+        ? { ...estado, itens }
         : {
             ...estado,
             itens: [
-              ...estado.itens.map((item) => item.tipo === 'operacao' && item.aguardandoCurriculo
-                ? { ...item, aguardandoCurriculo: false }
-                : item),
+              ...itens,
               { tipo: 'preview_curriculo', id: novoId(), curriculoId: acao.curriculo.id, rotulo: acao.curriculo.rotulo, score: acao.curriculo.score },
             ],
           };
+    }
     case 'abortado':
       return { ...estado, streaming: false, estado: 'ocioso', itens: encerrarVivos(estado.itens) };
     case 'modo':
@@ -656,7 +669,7 @@ export function useCopiloto(oportunidadeId?: string) {
             if (geracao.status === 'CONCLUIDA' && geracao.curriculoId) {
               try {
                 const curriculo = await getCurriculo(geracao.curriculoId);
-                if (ativo) dispatch({ t: 'previewCurriculo', curriculo });
+                if (ativo) dispatch({ t: 'previewCurriculo', jobId, curriculo });
               } catch {
                 /* o próximo carregamento da conversa mantém a operação concluída */
               }
