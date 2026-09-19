@@ -37,7 +37,7 @@ function EstadoVazio({ autopiloto }: { autopiloto: boolean }) {
       </p>
       {autopiloto && (
         <p className="mt-3 max-w-md text-[13px] text-muted">
-          Em autopiloto ele encadeia o loop e para antes de qualquer ação externa, com o conteúdo
+          O copiloto encadeia o loop e para antes de qualquer ação externa, com o conteúdo
           pronto a usar.
         </p>
       )}
@@ -105,7 +105,7 @@ export function Copiloto({ oportunidadeId }: { oportunidadeId?: string }) {
     <div className="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-[840px] flex-col">
       <div className="sticky top-0 z-10 -mx-2 flex flex-wrap items-center justify-between gap-3 bg-canvas/90 px-2 py-2 backdrop-blur-sm">
         <div className="flex items-center gap-2">
-          <ModoToggle modo={c.modo} onModo={c.trocarModo} disabled={c.streaming} />
+          <ModoToggle modo={c.modo} />
           {ancora && (
             <span className="hidden items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-[12px] text-muted sm:inline-flex">
               <Compass className="size-3.5 text-accent" />

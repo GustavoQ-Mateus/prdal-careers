@@ -385,7 +385,7 @@ function adicionarPreview(itens: Item[]): Item[] {
       tipo: 'preview_curriculo',
       id: `preview-${curriculoId}`,
       curriculoId,
-      rotulo: typeof resultado.rotulo === 'string' ? resultado.rotulo : 'Versao 1',
+      rotulo: typeof resultado.rotulo === 'string' ? resultado.rotulo : 'Currículo pronto',
       score: typeof resultado.score === 'number' ? resultado.score : null,
     });
   }
@@ -527,7 +527,7 @@ function reducer(estado: Estado, acao: Acao): Estado {
         ...estado,
         itens,
         conversaId: acao.conversa.id,
-        modo: acao.conversa.modo,
+        modo: 'autopiloto',
         oportunidadeId: acao.conversa.oportunidadeId ?? undefined,
         estado: temPendencia ? 'aguardando_confirmacao' : temErro ? 'erro_turno' : temEntrega ? 'entrega_externa' : 'ocioso',
         streaming: false,
@@ -556,7 +556,7 @@ function carregar(oportunidadeId?: string): Partial<Estado> {
     return {
       itens: normalizarSnapshot((p.itens ?? []).map((it) => (it.tipo === 'agente' ? { ...it, vivo: false } : it))),
       conversaId: p.conversaId,
-      modo: p.modo ?? 'assistido',
+      modo: 'autopiloto',
       oportunidadeId: p.oportunidadeId ?? oportunidadeId,
       estado: p.estado === 'erro_turno' ? 'erro_turno' : reidratarEstado(p),
     };
@@ -576,7 +576,7 @@ export function useCopiloto(oportunidadeId?: string) {
   const [estado, dispatch] = useReducer(reducer, undefined, (): Estado => ({
     itens: [],
     estado: 'ocioso',
-    modo: 'assistido',
+    modo: 'autopiloto',
     streaming: false,
     oportunidadeId,
     ...carregar(oportunidadeId),

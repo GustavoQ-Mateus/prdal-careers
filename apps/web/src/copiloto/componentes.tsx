@@ -43,41 +43,16 @@ import type { ScoreAts } from './visualizacao';
 
 export function ModoToggle({
   modo,
-  onModo,
-  disabled,
 }: {
   modo: ModoCopiloto;
-  onModo: (m: ModoCopiloto) => void;
-  disabled?: boolean;
 }) {
-  const opcoes: { valor: ModoCopiloto; nome: string }[] = [
-    { valor: 'assistido', nome: 'Assistido' },
-    { valor: 'autopiloto', nome: 'Autopiloto' },
-  ];
   return (
     <div
-      role="radiogroup"
       aria-label="Modo do copiloto"
-      className="inline-flex rounded-control border border-line-strong bg-ground p-0.5"
+      className="inline-flex items-center gap-2 rounded-control border border-line-strong bg-ground px-3 py-1.5"
     >
-      {opcoes.map((o) => {
-        const ativo = modo === o.valor;
-        return (
-          <button
-            key={o.valor}
-            role="radio"
-            aria-checked={ativo}
-            disabled={disabled}
-            onClick={() => onModo(o.valor)}
-            className={cn(
-              'h-7 rounded-[6px] px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50',
-              ativo ? 'bg-accent-soft text-accent-ink' : 'text-muted hover:text-ink',
-            )}
-          >
-            {o.nome}
-          </button>
-        );
-      })}
+      <span className="size-1.5 rounded-full bg-accent motion-safe:animate-pulse" aria-hidden />
+      <span className="text-[13px] font-medium text-ink">Copiloto</span>
     </div>
   );
 }
@@ -242,6 +217,20 @@ const ROTULO_OPERACAO: Record<Extract<Item, { tipo: 'operacao' }>['etapa'], stri
   erro: 'Não foi possível gerar o currículo',
 };
 
+const ETAPAS_OPERACAO = [
+  { chave: 'registrando', titulo: 'Oportunidade' },
+  { chave: 'gerando', titulo: 'Geração' },
+  { chave: 'acompanhando', titulo: 'Validação ATS' },
+] as const;
+
+const INDICE_ETAPA: Record<Extract<Item, { tipo: 'operacao' }>['etapa'], number> = {
+  registrando: 0,
+  gerando: 1,
+  acompanhando: 2,
+  concluida: 3,
+  erro: 0,
+};
+
 export function OperacaoCorrente({ item }: { item: Extract<Item, { tipo: 'operacao' }> }) {
   const [aberto, setAberto] = useState(false);
   const ativa = !['concluida', 'erro'].includes(item.etapa);
@@ -262,6 +251,28 @@ export function OperacaoCorrente({ item }: { item: Extract<Item, { tipo: 'operac
           </p>
         </div>
       </div>
+      <ol className="mt-4 grid gap-2 sm:grid-cols-3" aria-label="Progresso da geração">
+        {ETAPAS_OPERACAO.map((passo, indice) => {
+          const concluida = item.etapa === 'concluida' || INDICE_ETAPA[item.etapa] > indice;
+          const atual = !falhou && INDICE_ETAPA[item.etapa] === indice && !concluida;
+          return (
+            <li
+              key={passo.chave}
+              className={cn(
+                'rounded-control border px-2.5 py-2 text-[12px]',
+                concluida
+                  ? 'border-score-good/40 bg-ground text-ink-2'
+                  : atual
+                    ? 'border-accent bg-accent-soft text-accent-ink'
+                    : 'border-line bg-canvas text-faint',
+              )}
+            >
+              <span className="block text-label uppercase">{String(indice + 1).padStart(2, '0')}</span>
+              <span className="mt-0.5 block font-medium">{passo.titulo}</span>
+            </li>
+          );
+        })}
+      </ol>
       <button
         type="button"
         onClick={() => setAberto((valor) => !valor)}

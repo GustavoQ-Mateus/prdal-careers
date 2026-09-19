@@ -163,7 +163,7 @@ export const ESTADO_META: Record<EstadoCopiloto, { rotulo: string; ajuda: string
   },
   executando_escrita: { rotulo: 'Gravando', ajuda: 'Aplicando a alteração confirmada' },
   entrega_externa: { rotulo: 'Texto pronto', ajuda: 'Revise e use quando quiser' },
-  autopiloto_em_curso: { rotulo: 'Autopiloto em curso', ajuda: 'Encadeando os passos do loop' },
+  autopiloto_em_curso: { rotulo: 'Copiloto em curso', ajuda: 'Encadeando os passos do loop' },
   autopiloto_parado_externo: {
     rotulo: 'Parado para sua ação',
     ajuda: 'O envio é seu, fora do produto',
