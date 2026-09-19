@@ -215,6 +215,11 @@ export function Workspace({
         <div className="flex flex-col gap-8">
           <Regiao id="descricao" titulo="Resumo e descrição">
             <Markdown source={o.descricao ?? ''} className="text-[14px]" />
+            {o.keywordsStatus === 'PENDENTE' && (
+              <p className="mt-4 text-[13px] text-muted">
+                Keywords da vaga pendentes de extração. Tente novamente antes de gerar ou pontuar o currículo.
+              </p>
+            )}
             {o.keywords.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {o.keywords.map((k) => (

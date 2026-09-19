@@ -133,6 +133,9 @@ export function VagasPanel({ onCurriculo }: { onCurriculo: (id: string) => void 
                     </td>
                     <td>
                       <div className="chip-set">
+                        {vaga.keywordsStatus === 'PENDENTE' && (
+                          <span className="text-[12px] text-muted">Extração pendente</span>
+                        )}
                         {vaga.keywords.slice(0, 8).map((k) => (
                           <span key={k.termo} className="chip">{k.termo}</span>
                         ))}

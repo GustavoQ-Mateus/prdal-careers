@@ -10,6 +10,7 @@ export interface Vaga {
   descricao: string;
   fonte: string | null;
   keywords: Keyword[];
+  keywordsStatus: 'VALIDAS' | 'PENDENTE';
   categoria: string | null;
   nivel: string | null;
   criadoEm: string;
@@ -417,6 +418,7 @@ export interface OportunidadeItem {
   ultimaAtividade: string;
   origem: string;
   keywords: Keyword[];
+  keywordsStatus: 'VALIDAS' | 'PENDENTE';
   descricao?: string;
   fonte?: string | null;
   statusCandidatura?: StatusCandidatura | null;
@@ -526,6 +528,7 @@ export interface PipelineItem {
   proximoPasso: ProximoPasso | null;
   ultimaAtividade: string;
   keywords: Keyword[];
+  keywordsStatus: 'VALIDAS' | 'PENDENTE';
 }
 
 export interface PipelineFiltros {
