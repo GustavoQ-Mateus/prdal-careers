@@ -178,6 +178,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (t) headers.Authorization = `Bearer ${t}`;
 
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  if (res.status === 401 && !path.startsWith('/auth/')) {
+    localStorage.removeItem('token');
+    sessionStorage.setItem('prdal-sessao-expirada', '1');
+    window.location.assign('/?sessao=expirada');
+    throw new Error('sessão expirada');
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.message ?? `erro ${res.status}`);
@@ -544,6 +550,7 @@ export interface PipelineFiltros {
   prazo?: string;
   atividadeDesde?: string;
   ordenarPor?: string;
+  ordenarDirecao?: 'asc' | 'desc';
 }
 
 export interface CanvasLayout {
@@ -652,6 +659,7 @@ export function listarOportunidades(params: {
   nivel?: string;
   prioridade?: string;
   ordenarPor?: string;
+  ordenarDirecao?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
 }) {
@@ -817,7 +825,7 @@ export function gerarCvAlias(vagaId: string) {
   return request<{ jobId: string }>(`/vagas/${vagaId}/gerar-cv`, { method: 'POST' });
 }
 
-export type ModoCopiloto = 'assistido' | 'autopiloto';
+export type ModoCopiloto = 'autopiloto';
 
 export interface ConfirmacaoCopiloto {
   callId: string;

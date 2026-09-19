@@ -24,7 +24,11 @@ export function AuthForm({ onAuth }: { onAuth: () => void }) {
   const [modo, setModo] = useState<'login' | 'registro'>('login');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [erro, setErro] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(() => {
+    const expirou = sessionStorage.getItem('prdal-sessao-expirada') === '1';
+    if (expirou) sessionStorage.removeItem('prdal-sessao-expirada');
+    return expirou ? 'Sua sessão expirou. Entre novamente para continuar.' : null;
+  });
   const [enviando, setEnviando] = useState(false);
 
   const login_ = modo === 'login';
@@ -59,7 +63,7 @@ export function AuthForm({ onAuth }: { onAuth: () => void }) {
       <form onSubmit={enviar} className="mt-7 flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="auth-email">E-mail de acesso</Label>
-          <Input className="h-12 text-[16px]"
+          <Input className="h-12 text-[16px] focus-visible:border-line-strong focus-visible:ring-line-strong"
             id="auth-email"
             type="email"
             autoComplete="email"
@@ -70,7 +74,7 @@ export function AuthForm({ onAuth }: { onAuth: () => void }) {
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="auth-senha">Senha</Label>
-          <Input className="h-12 text-[16px]"
+          <Input className="h-12 text-[16px] focus-visible:border-line-strong focus-visible:ring-line-strong"
             id="auth-senha"
             type="password"
             autoComplete={login_ ? 'current-password' : 'new-password'}
