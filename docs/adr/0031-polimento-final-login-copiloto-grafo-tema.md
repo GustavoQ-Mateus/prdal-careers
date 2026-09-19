@@ -85,3 +85,37 @@ O anel de foco azul saturado do padrão de campo de texto usado no formulário d
 - `apps/web/src/*` (detalhe da vaga) e `apps/web/src/components/ui/input.tsx` ou equivalente: trocas de variante/classe, sem mudança de token novo.
 - `apps/api/src/auth/auth.module.ts` e `apps/web/src/api.ts`: expiração de token e tratamento de 401 no cliente.
 - A `spec-v1.9.10` registra CA98 a CA108.
+
+## Addendum (2026-09-19): causa-raiz real de CA98 e correção do mecanismo
+
+A rodada que implementou CA98-109 introduziu `OperacaoCorrente`
+(`apps/web/src/copiloto/componentes.tsx:234-299`), o cartão consolidado com o
+indicador "01 Oportunidade / 02 Geração / 03 Validação ATS" e o JSON técnico atrás
+de "Ver retorno técnico". Esse cartão nunca renderiza `GraficoScoreAts`. O gráfico
+só é produzido por um mecanismo anterior e independente, que já existia antes desta
+ADR: o backend (`persistirConclusaoCopiloto`/`anexarConclusaoGeracao`,
+`curriculos.service.ts` e `mongo.service.ts`) grava no Mongo um texto de narração
+contendo literalmente "Etapa 1"/"Etapa 3"; o front-end faz polling
+(`useCopiloto.ts:642-691`), detecta esse texto por regex
+(`/etapa\s*[13]/i`), recarrega a conversa inteira e só então
+`itensDeHistorico`/`scoresNarracaoAts` (`visualizacao.ts`) transformam esse texto em
+um item `'agente'` separado com `scoresAts`, que dispara `GraficoScoreAts`. Esse
+caminho nunca foi conectado ao cartão novo, e depende de o LLM produzir a frase
+exata esperada por um regex, entregue por uma reidratação assíncrona sujeita a
+condição de corrida (`!refEstado.current.streaming`). É um mecanismo frágil por
+construção, não uma falta de esforço de implementação.
+
+**Correção:** eliminar essa dependência. `OperacaoCorrente` já recebe `item.passos`
+(`PassoOperacao[]`), que inclui o resultado de `buscar_curriculo` com
+`analiseInicial.score`/`analiseFinal.score`. O gráfico passa a ser renderizado
+diretamente dentro de `OperacaoCorrente` quando `item.etapa === 'concluida'`,
+localizando o passo `buscar_curriculo` com `status === 'ok'` e reaproveitando a
+função já existente `scoresAts(passo.tool, passo.resultado)` de `visualizacao.ts`
+(hoje só o tipo `ScoreAts` é importado em `componentes.tsx`, não a função). Sem
+depender de o LLM mencionar "Etapa 1"/"Etapa 3" em texto livre, sem regex sobre
+prosa, sem reidratação assíncrona de conversa. O mecanismo antigo
+(`scoresNarracaoAts`, `etapaNarradaAts`, a narração persistida no Mongo) fica
+obsoleto para este fluxo; pode ser removido ou mantido apenas se outro fluxo do
+copiloto ainda depender dele (verificar antes de apagar). Isso está alinhado com a
+ADR 0005 (score determinístico): a presença do gráfico não pode depender de o
+modelo de linguagem escolher as palavras certas.

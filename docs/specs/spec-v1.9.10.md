@@ -171,6 +171,13 @@ em vez de falhar sem explicacao. Refresh token fica fora de escopo desta versao.
   chamada autenticada apos a expiracao recebe 401, e o cliente web limpa o token e
   redireciona para login com indicacao de sessao expirada, em vez de falhar sem
   explicacao.
+- **CA110** O grafico comparando `analiseInicial.score` e `analiseFinal.score`
+  aparece dentro do proprio cartao `OperacaoCorrente` quando `item.etapa ===
+  'concluida'`, obtido diretamente do passo `buscar_curriculo` em `item.passos` via
+  `scoresAts(...)`. Nao depende de o LLM mencionar "Etapa 1"/"Etapa 3" em texto
+  livre, de regex sobre prosa, nem de recarregar a conversa apos o turno.
+  Verificavel gerando um curriculo real e observando o grafico aparecer no mesmo
+  cartao de progresso, sem esperar por uma segunda mensagem do agente.
 
 ## Changelog
 
@@ -181,3 +188,7 @@ em vez de falhar sem explicacao. Refresh token fica fora de escopo desta versao.
   substitui o rotulo "Versao N", define tema claro como padrao, unifica a cor de
   acento entre temas, fecha paridade de cor de acao primaria, remove o anel de foco
   azul do login e revisa a politica de expiracao de sessao, conforme ADR 0031.
+- **1.9.10-addendum (2026-09-19):** adiciona CA110, causa-raiz real de CA98
+  encontrada apos a primeira tentativa: o cartao `OperacaoCorrente` nunca chamava o
+  mecanismo de grafico, que dependia de o LLM narrar em texto livre. Corrige para
+  renderizacao deterministica direto de `item.passos`.
