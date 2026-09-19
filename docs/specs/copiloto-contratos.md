@@ -143,6 +143,8 @@ Cada tool tem nome, endpoint interno que aciona, entrada, efeito e exigência de
 
 ### Leitura, executa sozinha
 
+`analisar_ats` e uma leitura da Etapa 1 do pipeline: reutiliza a mesma analise deterministica da geracao, sem criar job nem persistir curriculo. Depois do resultado, a transicao para `gerar_curriculo` exige confirmacao explicita inclusive em autopiloto.
+
 | Tool | Endpoint interno | Entrada | Efeito |
 |---|---|---|---|
 | `listar_oportunidades` | `GET /oportunidades` | filtros de visão, busca, categoria, nível, prioridade | leitura |
