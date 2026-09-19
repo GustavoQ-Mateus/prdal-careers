@@ -64,6 +64,21 @@ function agrupar(itens: CurriculoGlobal[]): Grupo[] {
 }
 
 function Arquivos({ curriculo }: { curriculo: CurriculoGlobal }) {
+  const [erro, setErro] = useState<string | null>(null);
+  const [baixando, setBaixando] = useState(false);
+
+  async function baixar() {
+    setErro(null);
+    setBaixando(true);
+    try {
+      await baixarArquivo(`/curriculos/${curriculo.id}/pacote`, `${curriculo.rotulo}.zip`);
+    } catch (err) {
+      setErro((err as Error).message || 'não foi possível baixar o pacote');
+    } finally {
+      setBaixando(false);
+    }
+  }
+
   return (
     <span className="flex items-center justify-end gap-1.5">
       <Button
@@ -71,10 +86,13 @@ function Arquivos({ curriculo }: { curriculo: CurriculoGlobal }) {
         variant="ghost"
         aria-label={`Baixar pacote de ${curriculo.rotulo}`}
         title="Baixar pacote (.md, .docx e .pdf)"
-        onClick={() => void baixarArquivo(`/curriculos/${curriculo.id}/pacote`, `${curriculo.rotulo}.zip`)}
+        aria-busy={baixando}
+        disabled={baixando}
+        onClick={() => void baixar()}
       >
         <Download />
       </Button>
+      {erro && <span role="alert" className="text-[12px] text-score-bad">{erro}</span>}
     </span>
   );
 }
