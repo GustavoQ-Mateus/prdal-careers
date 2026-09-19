@@ -209,7 +209,7 @@ export function PassoTrilha({ item, ligado }: { item: Extract<Item, { tipo: 'pas
   );
 }
 
-const ROTULO_OPERACAO: Record<Extract<Item, { tipo: 'operacao' }>['etapa'], string> = {
+const ROTULO_OPERACAO: Record<string, string> = {
   registrando: 'Registrando oportunidade',
   gerando: 'Gerando currículo',
   acompanhando: 'Aguardando geração',
@@ -217,13 +217,22 @@ const ROTULO_OPERACAO: Record<Extract<Item, { tipo: 'operacao' }>['etapa'], stri
   erro: 'Não foi possível gerar o currículo',
 };
 
-const ETAPAS_OPERACAO = [
+const ROTULOS_ETAPA_ATS: Record<Extract<Item, { tipo: 'operacao' }>['etapa'], string> = {
+  etapa1: 'Etapa 1 - Análise ATS',
+  aguardando_etapa2: 'Etapa 1 concluída',
+  etapa2: 'Etapa 2 - Reescrita otimizada',
+  etapa3: 'Etapa 3 - ATS pós-geração',
+  concluida: 'Etapa 3 - ATS pós-geração',
+  erro: 'Não foi possível concluir o pipeline ATS',
+};
+
+const ETAPAS_LEGADAS = [
   { chave: 'registrando', titulo: 'Oportunidade' },
   { chave: 'gerando', titulo: 'Geração' },
   { chave: 'acompanhando', titulo: 'Validação ATS' },
 ] as const;
 
-const INDICE_ETAPA: Record<Extract<Item, { tipo: 'operacao' }>['etapa'], number> = {
+const INDICE_ETAPA_LEGADA: Record<string, number> = {
   registrando: 0,
   gerando: 1,
   acompanhando: 2,
@@ -231,9 +240,24 @@ const INDICE_ETAPA: Record<Extract<Item, { tipo: 'operacao' }>['etapa'], number>
   erro: 0,
 };
 
+const ETAPAS_OPERACAO = [
+  { chave: 'etapa1', titulo: 'Etapa 1 - Análise ATS' },
+  { chave: 'etapa2', titulo: 'Etapa 2 - Reescrita otimizada' },
+  { chave: 'etapa3', titulo: 'Etapa 3 - ATS pós-geração' },
+] as const;
+
+const INDICE_ETAPA: Record<Extract<Item, { tipo: 'operacao' }>['etapa'], number> = {
+  etapa1: 0,
+  aguardando_etapa2: 1,
+  etapa2: 1,
+  etapa3: 2,
+  concluida: 3,
+  erro: 0,
+};
+
 export function OperacaoCorrente({ item }: { item: Extract<Item, { tipo: 'operacao' }> }) {
   const [aberto, setAberto] = useState(false);
-  const ativa = !['concluida', 'erro'].includes(item.etapa);
+  const ativa = !['aguardando_etapa2', 'concluida', 'erro'].includes(item.etapa);
   const falhou = item.etapa === 'erro';
   const ultimo = item.passos[item.passos.length - 1];
   const scores = item.etapa === 'concluida'
@@ -250,7 +274,7 @@ export function OperacaoCorrente({ item }: { item: Extract<Item, { tipo: 'operac
           {ativa ? <Loader2 className="size-4 animate-spin" /> : falhou ? <TriangleAlert className="size-4" /> : <Check className="size-4" />}
         </span>
         <div className="min-w-0">
-          <p className="text-[14px] font-medium text-ink">{ROTULO_OPERACAO[item.etapa]}</p>
+          <p className="text-[14px] font-medium text-ink">{ROTULOS_ETAPA_ATS[item.etapa]}</p>
           <p className="text-[12px] text-muted">
             {ultimo ? rotuloTool(ultimo.tool) : 'Preparando operação'}
             {item.jobId && <span className="text-faint"> · acompanhamento por job</span>}
@@ -260,7 +284,7 @@ export function OperacaoCorrente({ item }: { item: Extract<Item, { tipo: 'operac
       <ol className="mt-4 grid gap-2 sm:grid-cols-3" aria-label="Progresso da geração">
         {ETAPAS_OPERACAO.map((passo, indice) => {
           const concluida = item.etapa === 'concluida' || INDICE_ETAPA[item.etapa] > indice;
-          const atual = !falhou && INDICE_ETAPA[item.etapa] === indice && !concluida;
+          const atual = !falhou && item.etapa !== 'aguardando_etapa2' && INDICE_ETAPA[item.etapa] === indice && !concluida;
           return (
             <li
               key={passo.chave}
@@ -273,8 +297,7 @@ export function OperacaoCorrente({ item }: { item: Extract<Item, { tipo: 'operac
                     : 'border-line bg-canvas text-faint',
               )}
             >
-              <span className="block text-label uppercase">{String(indice + 1).padStart(2, '0')}</span>
-              <span className="mt-0.5 block font-medium">{passo.titulo}</span>
+              <span className="block font-medium">{passo.titulo}</span>
             </li>
           );
         })}

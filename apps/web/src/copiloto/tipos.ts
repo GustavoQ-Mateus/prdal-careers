@@ -33,7 +33,7 @@ export type Item =
       tipo: 'operacao';
       id: string;
       passos: PassoOperacao[];
-      etapa: 'registrando' | 'gerando' | 'acompanhando' | 'concluida' | 'erro';
+      etapa: 'etapa1' | 'aguardando_etapa2' | 'etapa2' | 'etapa3' | 'concluida' | 'erro';
       jobId?: string;
       aguardandoCurriculo?: boolean;
     }

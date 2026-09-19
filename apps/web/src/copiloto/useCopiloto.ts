@@ -100,21 +100,21 @@ function aplicarEvento(estado: Estado, ev: CopilotoEvento): Estado {
       const passo = passoDoEvento(ev);
       const indiceOperacao = operacaoAtual(itens);
       const deveConsolidar =
-        ev.data.tool === 'registrar_oportunidade' ||
+        ev.data.tool === 'analisar_ats' ||
         (indiceOperacao >= 0 &&
           ['gerar_curriculo', 'status_geracao', 'buscar_curriculo'].includes(ev.data.tool));
 
       if (deveConsolidar) {
-        const operacao = ev.data.tool === 'registrar_oportunidade' || indiceOperacao < 0
+        const operacao = ev.data.tool === 'analisar_ats' || indiceOperacao < 0
           ? null
           : itens[indiceOperacao] as Extract<Item, { tipo: 'operacao' }>;
-        const proximaEtapa = ev.data.tool === 'registrar_oportunidade'
-          ? 'registrando'
+        const proximaEtapa = ev.data.tool === 'analisar_ats'
+          ? 'etapa1'
           : ev.data.tool === 'gerar_curriculo'
-            ? 'gerando'
+            ? 'etapa2'
             : ev.data.tool === 'status_geracao'
-              ? 'acompanhando'
-              : operacao?.etapa ?? 'concluida';
+              ? 'etapa3'
+              : operacao?.etapa ?? 'etapa3';
         const atualizados = [...encerrarVivos(itens)];
         if (operacao) {
           atualizados[indiceOperacao] = { ...operacao, etapa: proximaEtapa, passos: [...operacao.passos, passo] };
@@ -157,11 +157,14 @@ function aplicarEvento(estado: Estado, ev: CopilotoEvento): Estado {
         );
         const resultado = ev.data.resultado as Record<string, unknown> | null;
         const status = String(resultado?.status ?? '');
+        if (passo.tool === 'analisar_ats') {
+          return { ...it, passos, etapa: ev.data.ok ? 'aguardando_etapa2' : 'erro' };
+        }
         if (passo.tool === 'gerar_curriculo' && ev.data.ok && typeof resultado?.jobId === 'string') {
-          return { ...it, passos, jobId: resultado.jobId, etapa: status === 'CONCLUIDA' ? 'concluida' : status === 'ERRO' ? 'erro' : 'acompanhando' };
+          return { ...it, passos, jobId: resultado.jobId, etapa: status === 'ERRO' ? 'erro' : status === 'CONCLUIDA' ? 'etapa3' : 'etapa2' };
         }
         if (passo.tool === 'status_geracao') {
-          return { ...it, passos, etapa: status === 'ERRO' ? 'erro' : status === 'CONCLUIDA' ? 'concluida' : 'acompanhando', aguardandoCurriculo: status === 'CONCLUIDA' };
+          return { ...it, passos, etapa: status === 'ERRO' ? 'erro' : 'etapa3', aguardandoCurriculo: status === 'CONCLUIDA' };
         }
         if (passo.tool === 'buscar_curriculo') return { ...it, passos, etapa: ev.data.ok ? 'concluida' : 'erro', aguardandoCurriculo: false };
         return { ...it, passos, etapa: ev.data.ok ? it.etapa : 'erro' };
@@ -223,7 +226,7 @@ function encerrarVivos(itens: Item[]): Item[] {
 }
 
 const TOOLS_OPERACAO = new Set([
-  'registrar_oportunidade',
+  'analisar_ats',
   'gerar_curriculo',
   'status_geracao',
   'buscar_curriculo',
@@ -327,8 +330,8 @@ function atualizarOperacao(operacao: Operacao, passo: Extract<Item, { tipo: 'pas
   const passos = indiceStatus >= 0
     ? operacao.passos.map((item, indice) => indice === indiceStatus ? passo : item)
     : [...operacao.passos, passo];
-  if (passo.tool === 'registrar_oportunidade') {
-    return { ...operacao, passos, etapa: passo.status === 'erro' ? 'erro' : 'registrando' };
+  if (passo.tool === 'analisar_ats') {
+    return { ...operacao, passos, etapa: passo.status === 'erro' ? 'erro' : 'aguardando_etapa2' };
   }
   if (passo.tool === 'gerar_curriculo') {
     const status = String(resultado?.status ?? '');
@@ -336,7 +339,7 @@ function atualizarOperacao(operacao: Operacao, passo: Extract<Item, { tipo: 'pas
       ...operacao,
       passos,
       jobId: jobId ?? operacao.jobId,
-      etapa: passo.status === 'erro' || status === 'ERRO' ? 'erro' : status === 'CONCLUIDA' ? 'concluida' : 'acompanhando',
+      etapa: passo.status === 'erro' || status === 'ERRO' ? 'erro' : status === 'CONCLUIDA' ? 'etapa3' : 'etapa2',
       aguardandoCurriculo: status === 'CONCLUIDA' || Boolean(resultado?.curriculoId),
     };
   }
@@ -346,7 +349,7 @@ function atualizarOperacao(operacao: Operacao, passo: Extract<Item, { tipo: 'pas
       ...operacao,
       passos,
       jobId: jobId ?? operacao.jobId,
-      etapa: status === 'ERRO' || passo.status === 'erro' ? 'erro' : status === 'CONCLUIDA' ? 'concluida' : 'acompanhando',
+      etapa: status === 'ERRO' || passo.status === 'erro' ? 'erro' : 'etapa3',
       aguardandoCurriculo: status === 'CONCLUIDA',
     };
   }
@@ -361,7 +364,7 @@ function consolidarPasso(itens: Item[], passo: Extract<Item, { tipo: 'passo' }>)
   let indice = operacaoAtiva(itens);
   if (indice < 0) {
     indice = itens.length;
-    itens = [...itens, { tipo: 'operacao', id: `op-${passo.id}`, passos: [], etapa: 'registrando' }];
+    itens = [...itens, { tipo: 'operacao', id: `op-${passo.id}`, passos: [], etapa: 'etapa1' }];
   }
   const operacao = itens[indice] as Operacao;
   const atualizados = [...itens];
@@ -497,7 +500,7 @@ function reducer(estado: Estado, acao: Acao): Estado {
           return {
             ...item,
             passos,
-            etapa: acao.geracao.status === 'ERRO' ? 'erro' : terminal ? 'concluida' : 'acompanhando',
+            etapa: acao.geracao.status === 'ERRO' ? 'erro' : terminal ? 'etapa3' : 'etapa2',
             aguardandoCurriculo: acao.geracao.status === 'CONCLUIDA',
           };
         }),
@@ -654,7 +657,7 @@ export function useCopiloto(oportunidadeId?: string) {
 
   useEffect(() => {
     const jobIds = estado.itens
-      .filter((item): item is Extract<Item, { tipo: 'operacao' }> => item.tipo === 'operacao' && (item.etapa === 'acompanhando' || item.aguardandoCurriculo === true) && Boolean(item.jobId))
+      .filter((item): item is Extract<Item, { tipo: 'operacao' }> => item.tipo === 'operacao' && (item.etapa === 'etapa2' || item.etapa === 'etapa3' || item.aguardandoCurriculo === true) && Boolean(item.jobId))
       .map((item) => item.jobId as string);
     if (jobIds.length === 0) return;
 
