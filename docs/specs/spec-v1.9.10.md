@@ -192,3 +192,6 @@ em vez de falhar sem explicacao. Refresh token fica fora de escopo desta versao.
   encontrada apos a primeira tentativa: o cartao `OperacaoCorrente` nunca chamava o
   mecanismo de grafico, que dependia de o LLM narrar em texto livre. Corrige para
   renderizacao deterministica direto de `item.passos`.
+- **1.9.10-implementacao (2026-09-19):** o mecanismo legado de narracao ATS foi
+  mantido somente para reabrir conversas historicas; o cartao ao vivo usa diretamente
+  os scores do passo `buscar_curriculo`.

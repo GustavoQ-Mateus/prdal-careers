@@ -39,7 +39,7 @@ import {
   type EstadoCopiloto,
   type Item,
 } from './tipos';
-import type { ScoreAts } from './visualizacao';
+import { scoresAts, type ScoreAts } from './visualizacao';
 
 export function ModoToggle({
   modo,
@@ -236,6 +236,12 @@ export function OperacaoCorrente({ item }: { item: Extract<Item, { tipo: 'operac
   const ativa = !['concluida', 'erro'].includes(item.etapa);
   const falhou = item.etapa === 'erro';
   const ultimo = item.passos[item.passos.length - 1];
+  const scores = item.etapa === 'concluida'
+    ? (() => {
+        const passo = item.passos.find((candidato) => candidato.tool === 'buscar_curriculo' && candidato.status === 'ok');
+        return passo ? scoresAts(passo.tool, passo.resultado) : null;
+      })()
+    : null;
 
   return (
     <div className="rounded-card border border-line-strong bg-ground p-4 shadow-rest motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1" role="status" aria-live="polite">
@@ -273,6 +279,7 @@ export function OperacaoCorrente({ item }: { item: Extract<Item, { tipo: 'operac
           );
         })}
       </ol>
+      {scores && <GraficoScoreAts scores={scores} />}
       <button
         type="button"
         onClick={() => setAberto((valor) => !valor)}
