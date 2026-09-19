@@ -91,6 +91,7 @@ export const ROTULO_TOOL: Record<string, string> = {
 };
 
 export function rotuloTool(tool: string): string {
+  if (tool === 'analisar_ats') return 'Etapa 1 - Análise ATS';
   return ROTULO_TOOL[tool] ?? tool.replace(/_/g, ' ');
 }
 
@@ -142,6 +143,7 @@ export function resumirResultado(tool: string, resultado: unknown): string {
     }
     if (tool === 'status_geracao' && o.status) return `Status ${String(o.status)}`;
     if (tool === 'buscar_curriculo' && o.score != null) return `Score ${String(o.score)}`;
+    if (tool === 'analisar_ats' && typeof o.score === 'number') return `Score ${String(o.score)}`;
     if (tool === 'gerar_curriculo' && o.jobId) return 'Geração iniciada';
     if (tool === 'ler_perfil') return o.nome ? `Perfil de ${String(o.nome)}` : 'Perfil carregado';
     if (tool === 'registrar_nota') return 'Nota registrada no histórico';

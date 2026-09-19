@@ -260,7 +260,17 @@ export function OperacaoCorrente({ item }: { item: Extract<Item, { tipo: 'operac
   const ativa = !['aguardando_etapa2', 'concluida', 'erro'].includes(item.etapa);
   const falhou = item.etapa === 'erro';
   const ultimo = item.passos[item.passos.length - 1];
-  const scores = item.etapa === 'concluida'
+  const scoresEtapa1 = (() => {
+    const passo = item.passos.find((candidato) => candidato.tool === 'analisar_ats' && candidato.status === 'ok');
+    return passo ? scoresAts(passo.tool, passo.resultado) : null;
+  })();
+  const analiseEtapa1 = (() => {
+    const passo = item.passos.find((candidato) => candidato.tool === 'analisar_ats' && candidato.status === 'ok');
+    return passo?.resultado && typeof passo.resultado === 'object'
+      ? passo.resultado as Record<string, unknown>
+      : null;
+  })();
+  const scoresFinais = item.etapa === 'concluida'
     ? (() => {
         const passo = item.passos.find((candidato) => candidato.tool === 'buscar_curriculo' && candidato.status === 'ok');
         return passo ? scoresAts(passo.tool, passo.resultado) : null;
@@ -302,7 +312,8 @@ export function OperacaoCorrente({ item }: { item: Extract<Item, { tipo: 'operac
           );
         })}
       </ol>
-      {scores && <GraficoScoreAts scores={scores} />}
+      {analiseEtapa1 && scoresEtapa1 && <ResultadoEtapa1 analise={analiseEtapa1} scores={scoresEtapa1} />}
+      {scoresFinais && <GraficoScoreAts scores={scoresFinais} />}
       <button
         type="button"
         onClick={() => setAberto((valor) => !valor)}
@@ -328,6 +339,32 @@ export function OperacaoCorrente({ item }: { item: Extract<Item, { tipo: 'operac
   );
 }
 
+function listaAnalise(analise: Record<string, unknown>, campo: string): string[] {
+  const valores = analise[campo];
+  return Array.isArray(valores)
+    ? valores.map((valor) => String(valor).trim()).filter(Boolean)
+    : [];
+}
+
+function ResultadoEtapa1({ analise, scores }: { analise: Record<string, unknown>; scores: ScoreAts[] }) {
+  const encontradas = listaAnalise(analise, 'keywordsEncontradas');
+  const ausentes = listaAnalise(analise, 'keywordsCriticasAusentes');
+  const eliminatorios = listaAnalise(analise, 'pontosEliminatorios');
+  return (
+    <section className="mt-3 rounded-control border border-line bg-canvas p-3" aria-label="Resultado da Etapa 1 - Análise ATS">
+      <p className="text-label uppercase text-muted">Etapa 1 - Análise ATS</p>
+      <dl className="mt-2 grid gap-2 text-[13px] text-ink-2">
+        <div><dt className="font-medium text-ink">Score ATS</dt><dd>{scores[0]?.score ?? 'Indisponível'}</dd></div>
+        <div><dt className="font-medium text-ink">Keywords encontradas</dt><dd>{encontradas.length ? encontradas.join(', ') : 'Nenhuma'}</dd></div>
+        <div><dt className="font-medium text-ink">Keywords críticas ausentes</dt><dd>{ausentes.length ? ausentes.join(', ') : 'Nenhuma'}</dd></div>
+        {eliminatorios.length > 0 && <div><dt className="font-medium text-ink">Pontos eliminatórios</dt><dd>{eliminatorios.join(', ')}</dd></div>}
+        <div><dt className="font-medium text-ink">Veredicto</dt><dd>{String(analise.veredicto ?? 'Sem veredicto informado.')}</dd></div>
+      </dl>
+      <GraficoScoreAts scores={scores} />
+    </section>
+  );
+}
+
 export function CartaoPreviewCurriculo({ item }: { item: Extract<Item, { tipo: 'preview_curriculo' }> }) {
   const [baixando, setBaixando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -348,7 +385,8 @@ export function CartaoPreviewCurriculo({ item }: { item: Extract<Item, { tipo: '
     <div className="rounded-card border border-line-strong bg-ground p-4 shadow-rest motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <span className="text-label uppercase text-accent-ink">Currículo pronto</span>
+          <span className="text-label uppercase text-accent-ink">Etapa 3 - ATS pós-geração</span>
+          <p className="text-[13px] text-muted">Currículo pronto</p>
           <p className="mt-0.5 truncate text-[15px] font-medium text-ink">{item.rotulo}</p>
           <p className="text-[13px] text-muted">{item.score == null ? 'Score ATS indisponível' : `Score ATS final: ${item.score}`}</p>
         </div>

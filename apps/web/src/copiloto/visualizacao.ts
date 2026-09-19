@@ -8,6 +8,10 @@ export function scoresAts(tool: string, resultado: unknown): ScoreAts[] | null {
   if (!resultado || typeof resultado !== 'object') return null;
   const valor = resultado as Record<string, unknown>;
 
+  if (tool === 'analisar_ats') {
+    return typeof valor.score === 'number' ? [{ etapa: 'Base', score: valor.score }] : null;
+  }
+
   if (tool === 'status_geracao') {
     const etapas = valor.etapas as Record<string, unknown> | null;
     const inicial = (valor.analiseInicial ?? etapas?.analiseInicial) as Record<string, unknown> | null;

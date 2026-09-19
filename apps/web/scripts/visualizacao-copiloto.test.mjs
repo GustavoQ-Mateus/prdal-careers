@@ -5,6 +5,12 @@ import { consolidarStatusGeracao, localizarStatusGeracao, scoresAts } from '../s
 const inicial = { score: 73, breakdown: {} };
 const final = { score: 82, breakdown: {} };
 
+test('analise ATS avulsa produz o score radial da Etapa 1', () => {
+  assert.deepEqual(scoresAts('analisar_ats', inicial), [
+    { etapa: 'Base', score: 73 },
+  ]);
+});
+
 test('matriz de gráficos por ferramenta', () => {
   assert.deepEqual(scoresAts('status_geracao', { etapas: { analiseInicial: inicial }, analiseFinal: final }), [
     { etapa: 'Base', score: 73 },
