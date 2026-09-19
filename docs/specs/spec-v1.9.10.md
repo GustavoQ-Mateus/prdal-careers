@@ -179,6 +179,82 @@ em vez de falhar sem explicacao. Refresh token fica fora de escopo desta versao.
   Verificavel gerando um curriculo real e observando o grafico aparecer no mesmo
   cartao de progresso, sem esperar por uma segunda mensagem do agente.
 
+## 12. Correcao de modelo: o pipeline ATS tem nome e forma proprios
+
+O cartao de progresso do copiloto (`OperacaoCorrente`) usa hoje rotulos inventados
+("01 Oportunidade / 02 Geracao / 03 Validacao ATS") que nao correspondem a
+metodologia real do produto, definida em `.claude/agents/modo-pipeline-curriculo.md`
+no workspace `geracurriculo` (a mesma metodologia de 3 etapas que da nome ao modo
+pipeline de curriculo, e que o proprio orquestrador ja executa manualmente na
+conversa com o candidato). Essa divergencia de nomenclatura e estrutura, nao falta
+de esforco de implementacao, e a causa de fundo de varias rodadas repetindo o mesmo
+ponto sem fechar.
+
+O metodo real tem exatamente 3 etapas nomeadas, nesta ordem, cada uma com uma saida
+especifica:
+
+- **Etapa 1, Analise ATS:** score estimado, keywords encontradas, keywords criticas
+  ausentes, pontos eliminatorios, veredicto (passa ou eliminado no filtro
+  automatico).
+- **Etapa 2, Reescrita otimizada:** o curriculo completo reescrito e gerado (md,
+  docx, pdf).
+- **Etapa 3, ATS pos-geracao:** score do curriculo gerado, comparado ao da Etapa 1.
+
+Registrar a oportunidade e uma acao de cadastro que PRECEDE o pipeline; nao e uma
+das 3 etapas e nao deve aparecer numerada junto com elas.
+
+## 13. Correcao do cartao de progresso e do fluxo do copiloto
+
+CA98 e CA110 ficam substituidas pelas CA111 a CA114 abaixo, que descrevem o
+comportamento correto com precisao suficiente para nao repetir o erro anterior.
+
+- "Registrar oportunidade" deixa de contar como item numerado do rastreador do
+  pipeline; continua sendo confirmado ao candidato (ex.: mensagem "Oportunidade
+  registrada"), fora da numeracao do pipeline ATS.
+- O rastreador de progresso do pipeline ATS mostra exatamente 3 itens, nesta ordem,
+  com estes rotulos exatos: "Etapa 1 - Analise ATS", "Etapa 2 - Reescrita
+  otimizada", "Etapa 3 - ATS pos-geracao". Nunca usar "Oportunidade", "Geracao" ou
+  "Validacao ATS" como rotulo de etapa do pipeline.
+- Ao concluir a Etapa 1, o copiloto exibe o resultado completo (score, keywords
+  encontradas, keywords criticas ausentes, veredicto) e o grafico radial do score
+  unico, sem esperar a Etapa 3.
+- Entre a Etapa 1 e a Etapa 2, mesmo em modo autopiloto, o copiloto para e pergunta
+  explicitamente ao candidato se pode prosseguir para a etapa 2 (ex.: "Podemos
+  prosseguir para a etapa 2?"), aguardando confirmacao antes de chamar
+  `gerar_curriculo`. Isso e uma excecao deliberada ao comportamento padrao do
+  autopiloto, que hoje encadeia escritas internas sem parar (ADR 0018, secao 3): a
+  transicao Etapa 1 -> Etapa 2 do pipeline ATS sempre para, porque o candidato pode
+  querer ajustar a vaga ou desistir antes de gastar uma geracao completa. Outras
+  escritas internas do autopiloto (ex.: `registrar_oportunidade`) continuam
+  encadeando sem parar; esta excecao vale apenas para esta transicao especifica.
+- Ao concluir a Etapa 2, o copiloto narra "Etapa 2 - Reescrita otimizada" (curriculo
+  gerado); sem grafico nesse ponto, porque ainda nao ha score novo.
+- Ao concluir a Etapa 3, o copiloto exibe o resultado da analise pos-geracao e o
+  grafico comparativo Base/Gerado (`GraficoScoreAts`, ja implementado), rotulado
+  como "Etapa 3 - ATS pos-geracao", junto do cartao de download do pacote.
+- Referencia de comportamento esperado: e o mesmo padrao que o orquestrador (modo
+  pipeline de curriculo) ja executa manualmente com o candidato fora do produto:
+  mostra a Etapa 1 com score/tabela, gera, mostra a Etapa 3 com a comparacao. O
+  produto deve reproduzir esse comportamento de forma automatica; nao inventar um
+  rastreador de progresso generico por conta propria.
+
+## Novos criterios de aceitacao (substituem CA98 e CA110)
+
+- **CA111** O rastreador do pipeline ATS no chat do copiloto mostra exatamente os
+  3 rotulos "Etapa 1 - Analise ATS", "Etapa 2 - Reescrita otimizada", "Etapa 3 -
+  ATS pos-geracao", nesta ordem; "registrar oportunidade" nao aparece como item
+  numerado desse rastreador.
+- **CA112** Ao concluir a Etapa 1, o candidato ve na tela o score, as keywords
+  encontradas, as keywords criticas ausentes, o veredicto e o grafico radial do
+  score, antes de qualquer chamada a `gerar_curriculo`.
+- **CA113** Mesmo em autopiloto, o copiloto pede confirmacao explicita antes de
+  prosseguir da Etapa 1 para a Etapa 2; sem essa confirmacao, `gerar_curriculo` nao
+  e chamado. Verificavel registrando uma vaga em autopiloto e observando o turno
+  parar apos a Etapa 1 aguardando resposta do candidato.
+- **CA114** Ao concluir a Etapa 3, o candidato ve o score pos-geracao, a
+  comparacao com o score da Etapa 1 (grafico Base/Gerado) e o cartao de download
+  do pacote, tudo rotulado "Etapa 3 - ATS pos-geracao".
+
 ## Changelog
 
 - **1.9.10 (2026-09-19):** reabre CA84-93 com exigencia de prova visual, restringe
@@ -195,3 +271,11 @@ em vez de falhar sem explicacao. Refresh token fica fora de escopo desta versao.
 - **1.9.10-implementacao (2026-09-19):** o mecanismo legado de narracao ATS foi
   mantido somente para reabrir conversas historicas; o cartao ao vivo usa diretamente
   os scores do passo `buscar_curriculo`.
+- **1.9.10-correcao-2 (2026-09-19):** CA110 foi implementada no arquivo certo mas
+  nunca renderizou grafico porque o gatilho de progresso nunca chegava ao estado
+  esperado; a causa raiz nao era so o grafico, era o cartao inteiro usar um modelo
+  de etapas inventado em vez da metodologia real de 3 etapas do produto. Adiciona
+  CA111 a CA114, substituindo CA98 e CA110, com o rastreador nomeado corretamente
+  ("Etapa 1/2/3", nao "Oportunidade/Geracao/Validacao ATS"), o registro de
+  oportunidade fora da numeracao do pipeline, e o checkpoint de confirmacao
+  obrigatorio entre a Etapa 1 e a Etapa 2 mesmo em autopiloto.

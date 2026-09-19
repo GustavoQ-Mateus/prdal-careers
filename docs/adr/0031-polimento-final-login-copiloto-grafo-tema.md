@@ -119,3 +119,38 @@ obsoleto para este fluxo; pode ser removido ou mantido apenas se outro fluxo do
 copiloto ainda depender dele (verificar antes de apagar). Isso está alinhado com a
 ADR 0005 (score determinístico): a presença do gráfico não pode depender de o
 modelo de linguagem escolher as palavras certas.
+
+## Addendum 2 (2026-09-19): o cartão de progresso não segue o método real, e é essa a causa de fundo
+
+Depois de conectar o dado ao gráfico (addendum 1), o gráfico ainda não apareceu na
+validação manual. A causa não era mais o código do gráfico; era o modelo de etapas
+do próprio cartão. `OperacaoCorrente` usa três rótulos inventados nesta rodada
+("Oportunidade", "Geração", "Validação ATS") que nunca corresponderam à metodologia
+real do produto: as 3 etapas fixas do modo pipeline de currículo, definidas em
+`.claude/agents/modo-pipeline-curriculo.md` no workspace `geracurriculo` (Etapa 1,
+Análise ATS; Etapa 2, Reescrita otimizada; Etapa 3, ATS pós-geração), a mesma
+metodologia que o orquestrador já executa manualmente na conversa com o candidato
+sempre que roda a pipeline fora do produto. "Registrar oportunidade" nunca foi uma
+dessas etapas; é uma ação de cadastro anterior ao pipeline, e o cartão a tratou como
+"01" da mesma numeração.
+
+Esse é o padrão real do erro, repetido por várias rodadas: o cartão de progresso foi
+desenhado a partir de uma ideia genérica de "acompanhamento de geração", não a partir
+do método real e já nomeado que o produto inteiro herda do modo pipeline de
+currículo. Corrigir o gráfico sem corrigir os rótulos e a estrutura das etapas deixa
+o problema de fundo intacto.
+
+**Correção:** o rastreador de progresso do pipeline ATS no chat do copiloto passa a
+usar exatamente os três rótulos do método ("Etapa 1 - Análise ATS", "Etapa 2 -
+Reescrita otimizada", "Etapa 3 - ATS pós-geração"), nesta ordem, sem "registrar
+oportunidade" contando como uma dessas etapas. Ao concluir a Etapa 1, o candidato vê
+o resultado completo da análise (score, keywords encontradas, keywords críticas
+ausentes, veredicto) e o gráfico radial, antes de qualquer geração. Entre a Etapa 1 e
+a Etapa 2, mesmo em autopiloto, o copiloto para e pergunta explicitamente se pode
+prosseguir, porque o candidato pode querer ajustar a vaga ou desistir antes de gastar
+uma geração completa; isso é uma exceção pontual ao princípio de autopiloto que
+encadeia escritas internas sem parar (seção 3 da ADR 0018), restrita a esta
+transição. Ao concluir a Etapa 3, o candidato vê o score pós-geração, a comparação
+com a Etapa 1 e o cartão de download, rotulados "Etapa 3 - ATS pós-geração".
+
+A `spec-v1.9.10` registra CA111 a CA114, substituindo CA98 e CA110.
