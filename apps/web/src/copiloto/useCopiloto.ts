@@ -13,6 +13,7 @@ import type { EstadoCopiloto, Item } from './tipos';
 import {
   MARCADOR_NARRACAO_ATS_ETAPA_3,
   dividirNarracaoAts,
+  scoresAts,
   scoresNarracaoAts,
 } from './visualizacao';
 
@@ -219,50 +220,229 @@ function encerrarVivos(itens: Item[]): Item[] {
   return itens.map((it) => (it.tipo === 'agente' && it.vivo ? { ...it, vivo: false } : it));
 }
 
-function itemToolHistorico(indice: number, tool: string | null | undefined, conteudo: string): Item {
-  const falha = conteudo.startsWith('falha:');
-  let resultado: unknown = conteudo;
-  if (!falha) {
-    try {
-      resultado = JSON.parse(conteudo);
-    } catch {
-      resultado = conteudo;
-    }
+const TOOLS_OPERACAO = new Set([
+  'registrar_oportunidade',
+  'gerar_curriculo',
+  'status_geracao',
+  'buscar_curriculo',
+]);
+const TOOLS_ESCRITA = new Set([
+  'registrar_oportunidade',
+  'gerar_curriculo',
+  'editar_curriculo',
+  'definir_proximo_passo',
+  'concluir_passo',
+  'mover_estagio',
+  'registrar_candidatura',
+  'atualizar_candidatura',
+  'registrar_nota',
+]);
+
+type Operacao = Extract<Item, { tipo: 'operacao' }>;
+
+function resultadoPersistido(
+  tool: string | null | undefined,
+  conteudo: string,
+  dados?: ConversaCopilotoDetalhe['mensagens'][number]['dados'],
+): { falha: boolean; resultado: unknown; erro?: string } {
+  const falha = dados?.ok === false || conteudo.startsWith('falha:');
+  if (falha) {
+    return {
+      falha: true,
+      resultado: null,
+      erro: dados?.erro ?? conteudo.replace(/^falha:\s*/, ''),
+    };
   }
-  const args =
-    tool === 'status_geracao' && resultado && typeof resultado === 'object' && 'id' in resultado
-      ? { jobId: String((resultado as Record<string, unknown>).id) }
-      : {};
+  if (dados && Object.prototype.hasOwnProperty.call(dados, 'resultado')) {
+    return { falha: false, resultado: dados.resultado };
+  }
+  try {
+    return { falha: false, resultado: JSON.parse(conteudo) };
+  } catch {
+    return { falha: false, resultado: conteudo };
+  }
+}
+
+function itemToolHistorico(
+  indice: number,
+  tool: string | null | undefined,
+  conteudo: string,
+  dados?: ConversaCopilotoDetalhe['mensagens'][number]['dados'],
+): Extract<Item, { tipo: 'passo' }> {
+  const nome = tool ?? 'tool';
+  const retorno = resultadoPersistido(nome, conteudo, dados);
+  const valor = retorno.resultado as Record<string, unknown> | null;
+  const jobId =
+    typeof dados?.args?.jobId === 'string'
+      ? dados.args.jobId
+      : valor && typeof valor === 'object' && typeof (valor.jobId ?? valor.id) === 'string'
+        ? String(valor.jobId ?? valor.id)
+        : undefined;
+  const args = dados?.args ?? (jobId ? { jobId } : {});
+  const efeito = dados?.efeito === 'escrita' || TOOLS_ESCRITA.has(nome) ? 'escrita' : 'leitura';
+  const status =
+    retorno.falha
+      ? 'erro'
+      : nome === 'status_geracao' && valor && !['CONCLUIDA', 'ERRO'].includes(String(valor.status ?? ''))
+        ? 'executando'
+        : 'ok';
   return {
     tipo: 'passo',
     id: `h${indice}`,
-    callId: `historico-${indice}`,
-    tool: tool ?? 'tool',
-    efeito: 'leitura',
+    callId: dados?.callId ?? `historico-${indice}`,
+    tool: nome,
+    efeito,
     args,
-    status: falha ? 'erro' : 'ok',
-    resultado: falha ? null : resultado,
-    erro: falha ? conteudo.replace(/^falha:\s*/, '') : undefined,
+    status,
+    resultado: retorno.falha ? null : retorno.resultado,
+    erro: retorno.erro,
   };
 }
 
+function operacaoAtiva(itens: Item[]): number {
+  return itens.findLastIndex(
+    (item) =>
+      item.tipo === 'operacao' &&
+      item.etapa !== 'erro' &&
+      (item.etapa !== 'concluida' || item.aguardandoCurriculo),
+  );
+}
+
+function atualizarOperacao(operacao: Operacao, passo: Extract<Item, { tipo: 'passo' }>): Operacao {
+  const resultado = passo.resultado as Record<string, unknown> | null;
+  const jobId =
+    typeof passo.args.jobId === 'string'
+      ? passo.args.jobId
+      : resultado && typeof (resultado.jobId ?? resultado.id) === 'string'
+        ? String(resultado.jobId ?? resultado.id)
+        : undefined;
+  const indiceStatus =
+    passo.tool === 'status_geracao' && jobId
+      ? operacao.passos.findLastIndex(
+          (item) => item.tool === 'status_geracao' && item.args.jobId === jobId,
+        )
+      : -1;
+  const passos = indiceStatus >= 0
+    ? operacao.passos.map((item, indice) => indice === indiceStatus ? passo : item)
+    : [...operacao.passos, passo];
+  if (passo.tool === 'registrar_oportunidade') {
+    return { ...operacao, passos, etapa: passo.status === 'erro' ? 'erro' : 'registrando' };
+  }
+  if (passo.tool === 'gerar_curriculo') {
+    const status = String(resultado?.status ?? '');
+    return {
+      ...operacao,
+      passos,
+      jobId: jobId ?? operacao.jobId,
+      etapa: passo.status === 'erro' || status === 'ERRO' ? 'erro' : status === 'CONCLUIDA' ? 'concluida' : 'acompanhando',
+      aguardandoCurriculo: status === 'CONCLUIDA' || Boolean(resultado?.curriculoId),
+    };
+  }
+  if (passo.tool === 'status_geracao') {
+    const status = String(resultado?.status ?? '');
+    return {
+      ...operacao,
+      passos,
+      jobId: jobId ?? operacao.jobId,
+      etapa: status === 'ERRO' || passo.status === 'erro' ? 'erro' : status === 'CONCLUIDA' ? 'concluida' : 'acompanhando',
+      aguardandoCurriculo: status === 'CONCLUIDA',
+    };
+  }
+  if (passo.tool === 'buscar_curriculo') {
+    return { ...operacao, passos, etapa: passo.status === 'erro' ? 'erro' : 'concluida', aguardandoCurriculo: false };
+  }
+  return { ...operacao, passos };
+}
+
+function consolidarPasso(itens: Item[], passo: Extract<Item, { tipo: 'passo' }>): Item[] {
+  if (!TOOLS_OPERACAO.has(passo.tool)) return [...itens, passo];
+  let indice = operacaoAtiva(itens);
+  if (indice < 0) {
+    indice = itens.length;
+    itens = [...itens, { tipo: 'operacao', id: `op-${passo.id}`, passos: [], etapa: 'registrando' }];
+  }
+  const operacao = itens[indice] as Operacao;
+  const atualizados = [...itens];
+  atualizados[indice] = atualizarOperacao(operacao, passo);
+  return atualizados;
+}
+
+function adicionarPreview(itens: Item[]): Item[] {
+  const previews = new Set(
+    itens.filter((item): item is Extract<Item, { tipo: 'preview_curriculo' }> => item.tipo === 'preview_curriculo')
+      .map((item) => item.curriculoId),
+  );
+  const novos = [...itens];
+  for (const item of itens) {
+    if (item.tipo !== 'operacao') continue;
+    const final = [...item.passos].reverse().find((passo) => passo.tool === 'buscar_curriculo' && passo.status === 'ok');
+    const resultado = final?.resultado as Record<string, unknown> | null;
+    const curriculoId = typeof resultado?.id === 'string' ? resultado.id : null;
+    if (!resultado || !curriculoId || previews.has(curriculoId)) continue;
+    previews.add(curriculoId);
+    novos.push({
+      tipo: 'preview_curriculo',
+      id: `preview-${curriculoId}`,
+      curriculoId,
+      rotulo: typeof resultado.rotulo === 'string' ? resultado.rotulo : 'Versao 1',
+      score: typeof resultado.score === 'number' ? resultado.score : null,
+    });
+  }
+  return novos;
+}
+
 function itensDeHistorico(conversa: ConversaCopilotoDetalhe): Item[] {
-  const itens = conversa.mensagens.flatMap((mensagem, indice): Item[] => {
+  let itens: Item[] = [];
+  conversa.mensagens.forEach((mensagem, indice) => {
     if (mensagem.papel === 'user') {
-      return [{ tipo: 'usuario', id: `h${indice}`, texto: mensagem.conteudo }];
+      itens.push({ tipo: 'usuario', id: `h${indice}`, texto: mensagem.conteudo });
+      return;
     }
     if (mensagem.papel === 'assistant') {
-      return dividirNarracaoAts(mensagem.conteudo).map((texto, parte) => ({
-        tipo: 'agente', id: `h${indice}-${parte}`, texto, vivo: false,
-      }));
+      itens.push(...dividirNarracaoAts(mensagem.conteudo).map((texto, parte) => ({
+        tipo: 'agente' as const, id: `h${indice}-${parte}`, texto, vivo: false,
+      })));
+      return;
     }
-    return [itemToolHistorico(indice, mensagem.tool, mensagem.conteudo)];
+    if (mensagem.papel === 'evento' || mensagem.dados?.evento === 'erro') {
+      itens.push({ tipo: 'erro', id: `h${indice}`, escopo: mensagem.dados?.escopo ?? 'interno', mensagem: mensagem.conteudo });
+      return;
+    }
+    if (mensagem.dados?.entrega) {
+      const entrega = mensagem.dados.entrega;
+      itens.push({ tipo: 'entrega', id: `h${indice}-entrega`, kind: entrega.tipo, titulo: entrega.titulo, texto: entrega.texto, destino: entrega.destino });
+      return;
+    }
+    itens = consolidarPasso(
+      itens,
+      itemToolHistorico(indice, mensagem.tool, mensagem.conteudo, mensagem.dados),
+    );
   });
+  itens = adicionarPreview(itens);
+  const pendencia = conversa.pendencia as { callId?: string; tool?: string; args?: Record<string, unknown>; resumo?: string; executando?: boolean } | null;
+  if (pendencia?.callId && pendencia.tool && pendencia.args) {
+    itens.push({
+      tipo: 'confirmacao',
+      id: `pendencia-${pendencia.callId}`,
+      callId: pendencia.callId,
+      tool: pendencia.tool,
+      resumo: pendencia.resumo ?? `Executar ${pendencia.tool}`,
+      args: pendencia.args,
+    });
+  }
   return itens.map((item, indice, todos) =>
     item.tipo === 'agente'
       ? { ...item, scoresAts: scoresNarracaoAts(todos.slice(0, indice), item.texto) }
       : item,
   );
+}
+
+function normalizarSnapshot(itens: Item[]): Item[] {
+  let normalizados: Item[] = [];
+  for (const item of itens) {
+    normalizados = item.tipo === 'passo' ? consolidarPasso(normalizados, item) : [...normalizados, item];
+  }
+  return adicionarPreview(normalizados);
 }
 
 function reducer(estado: Estado, acao: Acao): Estado {
@@ -327,7 +507,9 @@ function reducer(estado: Estado, acao: Acao): Estado {
         : {
             ...estado,
             itens: [
-              ...estado.itens,
+              ...estado.itens.map((item) => item.tipo === 'operacao' && item.aguardandoCurriculo
+                ? { ...item, aguardandoCurriculo: false }
+                : item),
               { tipo: 'preview_curriculo', id: novoId(), curriculoId: acao.curriculo.id, rotulo: acao.curriculo.rotulo, score: acao.curriculo.score },
             ],
           };
@@ -335,17 +517,22 @@ function reducer(estado: Estado, acao: Acao): Estado {
       return { ...estado, streaming: false, estado: 'ocioso', itens: encerrarVivos(estado.itens) };
     case 'modo':
       return { ...estado, modo: acao.modo };
-    case 'abrirHistorico':
+    case 'abrirHistorico': {
+      const itens = itensDeHistorico(acao.conversa);
+      const temPendencia = itens.some((item) => item.tipo === 'confirmacao' && !item.decisao);
+      const temErro = itens.some((item) => item.tipo === 'erro');
+      const temEntrega = itens.some((item) => item.tipo === 'entrega');
       return {
         ...estado,
-        itens: itensDeHistorico(acao.conversa),
+        itens,
         conversaId: acao.conversa.id,
         modo: acao.conversa.modo,
         oportunidadeId: acao.conversa.oportunidadeId ?? undefined,
-        estado: 'ocioso',
+        estado: temPendencia ? 'aguardando_confirmacao' : temErro ? 'erro_turno' : temEntrega ? 'entrega_externa' : 'ocioso',
         streaming: false,
-        ultimoEnvio: undefined,
+        ultimoEnvio: temErro ? {} : undefined,
       };
+    }
     case 'nova':
       return {
         ...estado,
@@ -366,9 +553,10 @@ function carregar(oportunidadeId?: string): Partial<Estado> {
     if (!bruto) return {};
     const p = JSON.parse(bruto) as Partial<Estado>;
     return {
-      itens: (p.itens ?? []).map((it) => (it.tipo === 'agente' ? { ...it, vivo: false } : it)),
+      itens: normalizarSnapshot((p.itens ?? []).map((it) => (it.tipo === 'agente' ? { ...it, vivo: false } : it))),
       conversaId: p.conversaId,
       modo: p.modo ?? 'assistido',
+      oportunidadeId: p.oportunidadeId ?? oportunidadeId,
       estado: p.estado === 'erro_turno' ? 'erro_turno' : reidratarEstado(p),
     };
   } catch {
@@ -411,6 +599,7 @@ export function useCopiloto(oportunidadeId?: string) {
       conversaId: estado.conversaId,
       modo: estado.modo,
       estado: estado.estado,
+      oportunidadeId: estado.oportunidadeId,
     };
     try {
       localStorage.setItem(chave(oportunidadeId), JSON.stringify(payload));
@@ -426,7 +615,7 @@ export function useCopiloto(oportunidadeId?: string) {
     const corpo: CopilotoChatBody = {
       ...envio,
       modo: refEstado.current.modo,
-      oportunidadeId,
+      oportunidadeId: refEstado.current.oportunidadeId ?? oportunidadeId,
       conversaId: refEstado.current.conversaId,
     };
     try {
@@ -451,7 +640,7 @@ export function useCopiloto(oportunidadeId?: string) {
 
   useEffect(() => {
     const jobIds = estado.itens
-      .filter((item): item is Extract<Item, { tipo: 'operacao' }> => item.tipo === 'operacao' && item.etapa === 'acompanhando' && Boolean(item.jobId))
+      .filter((item): item is Extract<Item, { tipo: 'operacao' }> => item.tipo === 'operacao' && (item.etapa === 'acompanhando' || item.aguardandoCurriculo === true) && Boolean(item.jobId))
       .map((item) => item.jobId as string);
     if (jobIds.length === 0) return;
 
@@ -462,8 +651,7 @@ export function useCopiloto(oportunidadeId?: string) {
           const geracao = await getGeracao(jobId);
           if (!ativo) return;
           dispatch({ t: 'atualizarGeracao', jobId, geracao });
-          if ((geracao.status === 'CONCLUIDA' || geracao.status === 'ERRO') && !retomadas.current.has(jobId)) {
-            retomadas.current.add(jobId);
+          if (geracao.status === 'CONCLUIDA' || geracao.status === 'ERRO') {
             if (geracao.status === 'CONCLUIDA' && geracao.curriculoId) {
               try {
                 const curriculo = await getCurriculo(geracao.curriculoId);
@@ -472,7 +660,15 @@ export function useCopiloto(oportunidadeId?: string) {
                 /* o próximo carregamento da conversa mantém a operação concluída */
               }
             }
-            if (ativo && !refEstado.current.streaming) void correr({});
+            if (ativo && !refEstado.current.streaming && !retomadas.current.has(jobId)) {
+              const temNarracao = refEstado.current.itens.some(
+                (item) => item.tipo === 'agente' && /etapa\s*[13]/i.test(item.texto),
+              );
+              if (!temNarracao) {
+                retomadas.current.add(jobId);
+                void correr({});
+              }
+            }
           }
         } catch {
           /* indisponibilidade transitória: tenta novamente no próximo intervalo */
@@ -504,7 +700,9 @@ export function useCopiloto(oportunidadeId?: string) {
     },
     repetir: () => {
       const envio = refEstado.current.ultimoEnvio;
-      if (envio && !refEstado.current.streaming) void correr(envio);
+      if (envio && !refEstado.current.streaming) {
+        void correr(refEstado.current.estado === 'erro_turno' && refEstado.current.conversaId ? {} : envio);
+      }
     },
     parar: () => abortRef.current?.abort(),
     trocarModo: (modo: ModoCopiloto) => dispatch({ t: 'modo', modo }),

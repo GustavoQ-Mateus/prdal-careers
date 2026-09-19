@@ -341,12 +341,18 @@ export async function baixarArquivo(url: string, nomeArquivo: string) {
   });
   if (!res.ok) throw new Error(`erro ${res.status}`);
   const blob = await res.blob();
+  if (blob.size === 0) throw new Error('o arquivo baixado está vazio');
   const objectUrl = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = objectUrl;
   link.download = nomeArquivo;
+  link.style.display = 'none';
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(objectUrl);
+  window.setTimeout(() => {
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+  }, 1000);
 }
 
 export type PrioridadeOportunidade = 'BAIXA' | 'MEDIA' | 'ALTA';
@@ -825,9 +831,20 @@ export interface CopilotoChatBody {
 }
 
 export interface MensagemCopilotoPersistida {
-  papel: 'user' | 'assistant' | 'tool';
+  papel: 'user' | 'assistant' | 'tool' | 'evento';
   conteudo: string;
   tool?: string | null;
+  dados?: {
+    callId?: string;
+    efeito?: 'leitura' | 'escrita' | 'entrega_externa';
+    args?: Record<string, unknown>;
+    ok?: boolean;
+    resultado?: unknown;
+    erro?: string;
+    entrega?: { tipo: string; titulo: string; texto: string; destino?: string };
+    evento?: 'erro';
+    escopo?: string;
+  };
 }
 
 export interface ConversaCopilotoResumo {
