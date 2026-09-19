@@ -518,7 +518,12 @@ function reducer(estado: Estado, acao: Acao): Estado {
       const itens = estado.itens.map((item): Item => {
         if (item.tipo !== 'operacao' || item.jobId !== acao.jobId) return item;
         if (item.passos.some((candidato) => candidato.callId === passo.callId)) return item;
-        return { ...item, passos: [...item.passos, passo], aguardandoCurriculo: false };
+        return {
+          ...item,
+          passos: [...item.passos, passo],
+          etapa: 'concluida',
+          aguardandoCurriculo: false,
+        };
       });
       return itens.some((item) => item.tipo === 'preview_curriculo' && item.curriculoId === acao.curriculo.id)
         ? { ...estado, itens }
@@ -667,30 +672,35 @@ export function useCopiloto(oportunidadeId?: string) {
         try {
           const geracao = await getGeracao(jobId);
           if (!ativo) return;
-          dispatch({ t: 'atualizarGeracao', jobId, geracao });
+          let curriculo: Curriculo | null = null;
+          let conversaReidratada: ConversaCopilotoDetalhe | null = null;
           if (geracao.status === 'CONCLUIDA' || geracao.status === 'ERRO') {
             if (geracao.status === 'CONCLUIDA' && geracao.curriculoId) {
               try {
-                const curriculo = await getCurriculo(geracao.curriculoId);
-                if (ativo) dispatch({ t: 'previewCurriculo', jobId, curriculo });
+                curriculo = await getCurriculo(geracao.curriculoId);
               } catch {
                 /* o próximo carregamento da conversa mantém a operação concluída */
               }
             }
-            if (ativo && !refEstado.current.streaming && !retomadas.current.has(jobId) && refEstado.current.conversaId) {
+            if (!curriculo && !refEstado.current.streaming && !retomadas.current.has(jobId) && refEstado.current.conversaId) {
               try {
                 const conversa = await buscarConversaCopiloto(refEstado.current.conversaId);
                 const temNarracao = conversa.mensagens.some(
                   (mensagem) => mensagem.papel === 'assistant' && /etapa\s*[13]/i.test(mensagem.conteudo),
                 );
-                if (temNarracao && ativo) {
-                  retomadas.current.add(jobId);
-                  dispatch({ t: 'abrirHistorico', conversa });
-                }
+                if (temNarracao) conversaReidratada = conversa;
               } catch {
                 /* a persistência assíncrona pode terminar no próximo intervalo */
               }
             }
+          }
+          if (!ativo) return;
+          dispatch({ t: 'atualizarGeracao', jobId, geracao });
+          if (curriculo) {
+            dispatch({ t: 'previewCurriculo', jobId, curriculo });
+          } else if (conversaReidratada) {
+            retomadas.current.add(jobId);
+            dispatch({ t: 'abrirHistorico', conversa: conversaReidratada });
           }
         } catch {
           /* indisponibilidade transitória: tenta novamente no próximo intervalo */
