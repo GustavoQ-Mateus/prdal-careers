@@ -451,10 +451,10 @@ function ScoreInicialRadial({ score }: { score: number }) {
             if (!viewBox || !('cx' in viewBox) || !('cy' in viewBox)) return null;
             return (
               <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
-                <tspan x={viewBox.cx} y={viewBox.cy} className="fill-foreground text-4xl font-bold">
+                <tspan x={viewBox.cx} y={viewBox.cy} className="text-4xl font-bold" fill="var(--ink)">
                   {valor}
                 </tspan>
-                <tspan x={viewBox.cx} y={(viewBox.cy ?? 0) + 24} className="fill-muted-foreground">
+                <tspan x={viewBox.cx} y={(viewBox.cy ?? 0) + 24} fill="var(--muted)">
                   Score ATS inicial
                 </tspan>
               </text>
