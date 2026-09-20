@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { consolidarStatusGeracao, localizarStatusGeracao, scoresAts } from '../src/copiloto/visualizacao.ts';
+import {
+  consolidarStatusGeracao,
+  localizarStatusGeracao,
+  scoresAts,
+  scoresNarracaoAts,
+} from '../src/copiloto/visualizacao.ts';
 
 const inicial = { score: 73, breakdown: {} };
 const final = { score: 82, breakdown: {} };
@@ -16,6 +21,7 @@ test('matriz de gráficos por ferramenta', () => {
     { etapa: 'Base', score: 73 },
   ]);
   assert.deepEqual(scoresAts('buscar_curriculo', { analiseInicial: inicial, analiseFinal: final }), [
+    { etapa: '', score: 0 },
     { etapa: 'Base', score: 73 },
     { etapa: 'Gerado', score: 82 },
   ]);
@@ -30,6 +36,25 @@ test('consultas repetidas do mesmo job localizam o mesmo passo', () => {
   ];
   assert.equal(localizarStatusGeracao(itens, 'job-1'), 0);
   assert.equal(localizarStatusGeracao(itens, 'job-2'), -1);
+});
+
+test('narração da Etapa 1 isola o score real, não o ponto zero de partida', () => {
+  const itens = [
+    {
+      tipo: 'passo',
+      tool: 'buscar_curriculo',
+      status: 'ok',
+      resultado: { analiseInicial: inicial, analiseFinal: final },
+    },
+  ];
+  assert.deepEqual(scoresNarracaoAts(itens, 'Etapa 1 concluída'), [
+    { etapa: 'Base', score: 73 },
+  ]);
+  assert.deepEqual(scoresNarracaoAts(itens, 'Etapa 3 concluída'), [
+    { etapa: '', score: 0 },
+    { etapa: 'Base', score: 73 },
+    { etapa: 'Gerado', score: 82 },
+  ]);
 });
 
 test('histórico mantém uma única leitura visual por job', () => {
