@@ -52,6 +52,11 @@ codex-session-*.md
 .claude/agents/
 .codex/agents/
 
+# Dossies internos de orquestracao/continuidade (nao sao doc de produto)
+docs/ESTADO_ATUAL.md
+docs/MAPEAMENTO_COPILOTO.md
+docs/ORQUESTRACAO.md
+
 # Screenshots avulsos deixados na raiz
 /image.png
 /image copy.png
