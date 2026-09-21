@@ -38,3 +38,15 @@ chroma/
 pgdata/
 mongodata/
 *.log
+
+# Sessoes/prompts locais de agente (nao sao entregavel do projeto)
+prompts/
+codex-session-*.md
+[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-*.txt
+
+# Skill de terceiro instalada localmente (nao faz parte do agente do projeto)
+.claude/skills/
+
+# Screenshots avulsos deixados na raiz
+/image.png
+/image copy.png
