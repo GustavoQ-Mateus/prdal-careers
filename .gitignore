@@ -47,6 +47,11 @@ codex-session-*.md
 # Skill de terceiro instalada localmente (nao faz parte do agente do projeto)
 .claude/skills/
 
+# Configuracao de agente de IA e instrucoes locais (nao deve ir pro repo publico)
+/CLAUDE.md
+.claude/agents/
+.codex/agents/
+
 # Screenshots avulsos deixados na raiz
 /image.png
 /image copy.png
