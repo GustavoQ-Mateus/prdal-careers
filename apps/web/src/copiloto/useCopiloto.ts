@@ -548,7 +548,7 @@ function reducer(estado: Estado, acao: Acao): Estado {
         ...estado,
         itens,
         conversaId: acao.conversa.id,
-        modo: 'autopiloto',
+        modo: 'assistido',
         oportunidadeId: acao.conversa.oportunidadeId ?? undefined,
         estado: temPendencia ? 'aguardando_confirmacao' : temErro ? 'erro_turno' : temEntrega ? 'entrega_externa' : 'ocioso',
         streaming: false,
@@ -577,7 +577,7 @@ function carregar(oportunidadeId?: string): Partial<Estado> {
     return {
       itens: normalizarSnapshot((p.itens ?? []).map((it) => (it.tipo === 'agente' ? { ...it, vivo: false } : it))),
       conversaId: p.conversaId,
-      modo: 'autopiloto',
+      modo: 'assistido',
       oportunidadeId: p.oportunidadeId ?? oportunidadeId,
       estado: p.estado === 'erro_turno' ? 'erro_turno' : reidratarEstado(p),
     };
@@ -597,7 +597,7 @@ export function useCopiloto(oportunidadeId?: string) {
   const [estado, dispatch] = useReducer(reducer, undefined, (): Estado => ({
     itens: [],
     estado: 'ocioso',
-    modo: 'autopiloto',
+    modo: 'assistido',
     streaming: false,
     oportunidadeId,
     ...carregar(oportunidadeId),

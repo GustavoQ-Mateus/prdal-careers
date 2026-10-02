@@ -826,7 +826,7 @@ export function gerarCvAlias(vagaId: string) {
   return request<{ jobId: string }>(`/vagas/${vagaId}/gerar-cv`, { method: 'POST' });
 }
 
-export type ModoCopiloto = 'autopiloto';
+export type ModoCopiloto = 'assistido' | 'autopiloto';
 
 export interface ConfirmacaoCopiloto {
   callId: string;
