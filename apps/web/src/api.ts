@@ -120,6 +120,7 @@ export interface ScoreBreakdown {
 
 export interface AtsAnalysis {
   score: number;
+  scoreVersao?: number;
   keywordsEncontradas: string[];
   keywordsCriticasAusentes: string[];
   pontosEliminatorios: string[];
