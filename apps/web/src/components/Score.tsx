@@ -95,7 +95,7 @@ export function Breakdown({ breakdown }: { breakdown: ScoreBreakdown | null }) {
   return (
     <div className="flex flex-col gap-3">
       <BarraScore rotulo="Keyword match" valor={breakdown.keywordMatch} />
-      <BarraScore rotulo="Densidade" valor={breakdown.densidade} />
+      <BarraScore rotulo="Em experiência" valor={breakdown.densidade} />
       <BarraScore rotulo="Seções" valor={breakdown.secoes} />
       <div className="flex flex-col gap-1.5">
         <span className="text-label uppercase text-muted">
