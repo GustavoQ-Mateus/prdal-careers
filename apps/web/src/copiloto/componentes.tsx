@@ -23,6 +23,7 @@ import {
   AreaChart,
   CartesianGrid,
   Label,
+  type LabelProps,
   PolarRadiusAxis,
   RadialBar,
   RadialBarChart,
@@ -447,7 +448,7 @@ function ScoreInicialRadial({ score }: { score: number }) {
       <RadialBar dataKey="score" />
       <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
         <Label
-          content={({ viewBox }: { viewBox?: { cx?: number; cy?: number } }) => {
+          content={({ viewBox }: LabelProps) => {
             if (!viewBox || !('cx' in viewBox) || !('cy' in viewBox)) return null;
             return (
               <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">

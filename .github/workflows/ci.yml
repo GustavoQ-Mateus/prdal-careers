@@ -15,13 +15,13 @@ jobs:
           node-version: 22
       - name: Build shared-types
         working-directory: packages/shared-types
-        run: npm install && npm run build
+        run: npm install --workspaces=false && npm run build
       - name: Build api
         working-directory: apps/api
-        run: npm install && npm run build
+        run: npm ci --workspaces=false && npm run build
       - name: Build web
         working-directory: apps/web
-        run: npm install && npm run typecheck && npm run build
+        run: npm ci --workspaces=false && npm run typecheck && npm run build
 
   ai-service:
     runs-on: ubuntu-latest
