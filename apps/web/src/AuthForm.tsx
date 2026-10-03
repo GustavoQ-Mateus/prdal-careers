@@ -9,8 +9,11 @@ function mensagemAmigavel(bruto: string, modo: 'login' | 'registro'): string {
   if (t.includes('econnrefused') || t.includes('failed to fetch') || t.includes('network') || t.includes('erro 5')) {
     return 'Não foi possível conectar ao servidor agora. Tente novamente em instantes.';
   }
-  if (t.includes('409') || t.includes('existe') || t.includes('conflict')) {
-    return 'Já existe uma conta com esse e-mail. Tente entrar.';
+  if (t.includes('pelo menos 10')) {
+    return 'A senha precisa ter pelo menos 10 caracteres.';
+  }
+  if (t.includes('429') || t.includes('muitas requisicoes')) {
+    return 'Muitas tentativas seguidas. Aguarde um pouco e tente de novo.';
   }
   if (t.includes('401') || t.includes('credenc') || t.includes('inval') || t.includes('senha')) {
     return 'E-mail ou senha incorretos.';
@@ -81,7 +84,7 @@ export function AuthForm({ onAuth }: { onAuth: () => void }) {
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             required
-            minLength={6}
+            minLength={login_ ? 1 : 10}
           />
         </div>
 

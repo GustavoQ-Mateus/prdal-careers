@@ -202,11 +202,11 @@ export async function login(email: string, senha: string) {
 }
 
 export async function registrar(email: string, senha: string) {
-  const data = await request<{ accessToken: string }>('/auth/register', {
+  await request<{ mensagem: string }>('/auth/register', {
     method: 'POST',
     body: JSON.stringify({ email, senha }),
   });
-  localStorage.setItem('token', data.accessToken);
+  await login(email, senha);
 }
 
 export function logout() {
