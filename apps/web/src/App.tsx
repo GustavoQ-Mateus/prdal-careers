@@ -15,7 +15,7 @@ import { Hoje } from './Hoje';
 import { Oportunidades } from './Oportunidades';
 import { PerfilForm } from './PerfilForm';
 import { Workspace } from './Workspace';
-import { estaAutenticado, logout } from './api';
+import { iniciarSessao, logout } from './api';
 import { abaDaRota, useRota, type Aba, type Rota } from './rotas';
 import { useEffect, useState } from 'react';
 
@@ -35,7 +35,7 @@ const CONTEXTO: Record<Aba, { titulo: string; descricao: string }> = {
 };
 
 export function App() {
-  const [autenticado, setAutenticado] = useState(estaAutenticado());
+  const [autenticado, setAutenticado] = useState<boolean | null>(null);
   const { rota, ir } = useRota();
   const [mobileAberta, setMobileAberta] = useState(false);
   const [navColapsada, setNavColapsada] = useState(() => {
@@ -51,12 +51,26 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    let ativo = true;
+    iniciarSessao().then((ok) => {
+      if (ativo) setAutenticado(ok);
+    });
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  useEffect(() => {
     try {
       localStorage.setItem('nav-colapsada', navColapsada ? '1' : '0');
     } catch {
       /* preferência não persistida */
     }
   }, [navColapsada]);
+
+  if (autenticado === null) {
+    return <div className="min-h-screen bg-ground" aria-busy="true" />;
+  }
 
   if (!autenticado) {
     return (
@@ -116,8 +130,8 @@ export function App() {
     setMobileAberta(false);
   }
 
-  function sair() {
-    logout();
+  async function sair() {
+    await logout();
     setAutenticado(false);
     ir({ tela: 'hoje' }, true);
   }

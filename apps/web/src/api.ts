@@ -1,3 +1,5 @@
+import { criarCliente } from './sessao';
+
 export interface Keyword {
   termo: string;
   peso: number;
@@ -165,8 +167,16 @@ export interface DashboardItem {
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
-function token(): string | null {
-  return localStorage.getItem('token');
+function sessaoExpirada() {
+  sessionStorage.setItem('prdal-sessao-expirada', '1');
+  window.location.assign('/?sessao=expirada');
+}
+
+const cliente = criarCliente(API_URL, sessaoExpirada);
+
+async function falha(res: Response): Promise<never> {
+  const body = await res.json().catch(() => ({}));
+  throw new Error(body.message ?? `erro ${res.status}`);
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -175,30 +185,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
     ...(options.headers as Record<string, string>),
   };
-  const t = token();
-  if (t) headers.Authorization = `Bearer ${t}`;
-
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
-  if (res.status === 401 && !path.startsWith('/auth/')) {
-    localStorage.removeItem('token');
-    sessionStorage.setItem('prdal-sessao-expirada', '1');
-    window.location.assign('/?sessao=expirada');
-    throw new Error('sessão expirada');
-  }
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.message ?? `erro ${res.status}`);
-  }
+  const res = await cliente.chamar(path, { ...options, headers });
+  if (res.status === 401 && !path.startsWith('/auth/')) throw new Error('sessão expirada');
+  if (!res.ok) await falha(res);
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 
-export async function login(email: string, senha: string) {
-  const data = await request<{ accessToken: string }>('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, senha }),
-  });
-  localStorage.setItem('token', data.accessToken);
+export function login(email: string, senha: string) {
+  return cliente.entrar(email, senha);
 }
 
 export async function registrar(email: string, senha: string) {
@@ -210,11 +205,18 @@ export async function registrar(email: string, senha: string) {
 }
 
 export function logout() {
-  localStorage.removeItem('token');
+  return cliente.sair();
 }
 
-export function estaAutenticado(): boolean {
-  return !!token();
+export function iniciarSessao(): Promise<boolean> {
+  return cliente.iniciar();
+}
+
+export function trocarSenha(senhaAtual: string, novaSenha: string) {
+  return request<void>('/auth/senha', {
+    method: 'POST',
+    body: JSON.stringify({ senhaAtual, novaSenha }),
+  });
 }
 
 export function getPerfil() {
@@ -329,24 +331,13 @@ export function reindexarContexto() {
 export async function uploadContexto(arquivos: File[]) {
   const form = new FormData();
   for (const a of arquivos) form.append('arquivos', a);
-  const t = token();
-  const res = await fetch(`${API_URL}/contexto/upload`, {
-    method: 'POST',
-    headers: t ? { Authorization: `Bearer ${t}` } : {},
-    body: form,
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.message ?? `erro ${res.status}`);
-  }
+  const res = await cliente.chamar('/contexto/upload', { method: 'POST', body: form });
+  if (!res.ok) await falha(res);
   return res.json() as Promise<{ loteId: string; total: number }>;
 }
 
 export async function baixarArquivo(url: string, nomeArquivo: string) {
-  const t = token();
-  const res = await fetch(`${API_URL}${url}`, {
-    headers: t ? { Authorization: `Bearer ${t}` } : {},
-  });
+  const res = await cliente.chamar(url);
   if (!res.ok) throw new Error(`erro ${res.status}`);
   const blob = await res.blob();
   if (blob.size === 0) throw new Error('o arquivo baixado está vazio');
@@ -946,13 +937,11 @@ export async function streamCopiloto(
   onEvento: (ev: CopilotoEvento) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  const t = token();
-  const res = await fetch(`${API_URL}/copiloto/chat`, {
+  const res = await cliente.chamar('/copiloto/chat', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'text/event-stream',
-      ...(t ? { Authorization: `Bearer ${t}` } : {}),
     },
     body: JSON.stringify(body),
     signal,
