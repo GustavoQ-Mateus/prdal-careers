@@ -168,15 +168,15 @@ export function BaseConhecimento() {
 
             <div className="flex flex-col gap-1.5 border-t border-line pt-4">
               <span className="text-label uppercase text-muted">Enviar notas</span>
-              <p className="text-[13px] text-muted">Arquivos .md com contexto adicional seu.</p>
+              <p className="text-[13px] text-muted">Arquivos .md ou .txt com contexto adicional seu, até 1 MB cada.</p>
               <div className="mt-1">
                 <Button variant="secondary" onClick={() => fileRef.current?.click()} disabled={processando}>
-                  Selecionar notas .md
+                  Selecionar notas
                 </Button>
                 <input
                   ref={fileRef}
                   type="file"
-                  accept=".md"
+                  accept=".md,.txt,text/markdown,text/plain"
                   multiple
                   hidden
                   onChange={(e) => {
