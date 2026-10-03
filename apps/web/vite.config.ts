@@ -44,4 +44,7 @@ export default defineConfig({
     host: true,
     port: 5173,
   },
+  build: {
+    assetsInlineLimit: (arquivo) => (/\.(woff2?|ttf|otf)$/.test(arquivo) ? false : undefined),
+  },
 });
