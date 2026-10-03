@@ -11,6 +11,9 @@ COPY apps/web ./
 RUN npm run build
 
 FROM nginx:1.27-alpine
-COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+ARG VITE_API_URL=http://localhost:3000
+ENV PRDAL_API_ORIGIN=$VITE_API_URL
+ENV PRDAL_HSTS=""
+COPY apps/web/nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /repo/apps/web/dist /usr/share/nginx/html
 EXPOSE 80
