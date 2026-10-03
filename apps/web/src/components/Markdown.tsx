@@ -1,4 +1,5 @@
 import React from 'react';
+import { hrefSeguro } from '@/lib/link-seguro';
 import { cn } from '@/lib/utils';
 
 function inline(text: string, base: string): React.ReactNode[] {
@@ -22,16 +23,21 @@ function inline(text: string, base: string): React.ReactNode[] {
         </code>,
       );
     } else if (m[4] !== undefined) {
+      const href = hrefSeguro(m[5]);
       nodes.push(
-        <a
-          key={`${base}-a${i}`}
-          href={m[5]}
-          target="_blank"
-          rel="noreferrer"
-          className="text-accent underline underline-offset-2"
-        >
-          {m[4]}
-        </a>,
+        href === null ? (
+          m[4]
+        ) : (
+          <a
+            key={`${base}-a${i}`}
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            className="text-accent underline underline-offset-2"
+          >
+            {m[4]}
+          </a>
+        ),
       );
     }
     last = m.index + m[0].length;

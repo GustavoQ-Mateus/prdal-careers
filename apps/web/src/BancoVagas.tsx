@@ -8,6 +8,7 @@ import {
   type ItemImportacao,
   type LoteStatus,
 } from './api';
+import { hrefSeguro } from './lib/link-seguro';
 import { fmtData } from './ui';
 
 const ENTRADA_VAZIA: ItemImportacao = { titulo: '', empresa: '', fonte: '', descricao: '' };
@@ -164,12 +165,7 @@ export function BancoVagas() {
                       <div>{b.titulo}</div>
                       <div className="faint" style={{ fontSize: 12 }}>
                         {b.empresa}
-                        {b.fonte && (
-                          <>
-                            {' · '}
-                            <a href={b.fonte} target="_blank" rel="noreferrer">Abrir fonte</a>
-                          </>
-                        )}
+                        <LinkFonte fonte={b.fonte} />
                       </div>
                     </td>
                     <td>
@@ -199,5 +195,16 @@ export function BancoVagas() {
         )}
       </section>
     </div>
+  );
+}
+
+function LinkFonte({ fonte }: { fonte: string | null }) {
+  const href = fonte ? hrefSeguro(fonte) : null;
+  if (!href) return null;
+  return (
+    <>
+      {' · '}
+      <a href={href} target="_blank" rel="noreferrer">Abrir fonte</a>
+    </>
   );
 }
