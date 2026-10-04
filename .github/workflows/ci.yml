@@ -19,9 +19,20 @@ jobs:
       - name: Build api
         working-directory: apps/api
         run: npm ci --workspaces=false && npm run build
+      - name: Testes da api
+        working-directory: apps/api
+        run: node --test test/*.test.js
+      - name: Contrato das tools do conjunto do agente atualizado
+        working-directory: apps/api
+        run: |
+          node dist/scripts/exportar-tools.js ../ai-service/evals/agente/tools.json
+          git diff --exit-code -- ../ai-service/evals/agente/tools.json
       - name: Build web
         working-directory: apps/web
         run: npm ci --workspaces=false && npm run typecheck && npm run build
+      - name: Testes do web
+        working-directory: apps/web
+        run: npm test
 
   ai-service:
     runs-on: ubuntu-latest
@@ -30,12 +41,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: huggingface-${{ runner.os }}-paraphrase-multilingual-MiniLM-L12-v2
       - name: Install deps
         working-directory: apps/ai-service
-        run: pip install -r requirements.txt
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt pytest
       - name: Import check
         working-directory: apps/ai-service
         run: python -c "import app.main"
+      - name: Testes do ai-service
+        working-directory: apps/ai-service
+        run: PYTHONPATH=. python -m pytest -q
 
   doc-service:
     runs-on: ubuntu-latest
@@ -47,3 +67,126 @@ jobs:
       - name: Build
         working-directory: apps/doc-service
         run: dotnet build -c Release
+      - name: Testes do doc-service
+        working-directory: apps/doc-service
+        run: dotnet test tests
+
+  mudancas-de-ia:
+    runs-on: ubuntu-latest
+    outputs:
+      geracao: ${{ steps.filtro.outputs.geracao }}
+      agente: ${{ steps.filtro.outputs.agente }}
+      rag: ${{ steps.filtro.outputs.rag }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filtro
+        with:
+          filters: |
+            comum: &comum
+              - apps/ai-service/app/prompts/**
+              - apps/ai-service/app/llm.py
+              - apps/ai-service/app/schemas.py
+              - apps/ai-service/evals/*.py
+              - apps/ai-service/evals/linha_de_base.json
+              - .github/workflows/ci.yml
+            geracao:
+              - *comum
+              - apps/ai-service/app/generate.py
+              - apps/ai-service/app/verificacao.py
+              - apps/ai-service/app/renderizador.py
+              - apps/ai-service/app/fontes.py
+              - apps/ai-service/app/orcamento.py
+              - apps/ai-service/app/estrutura.py
+              - apps/ai-service/app/casamento.py
+              - apps/ai-service/app/carregador_prompts.py
+              - apps/ai-service/evals/geracao/**
+            agente:
+              - *comum
+              - apps/ai-service/app/copiloto.py
+              - apps/ai-service/app/contexto.py
+              - apps/ai-service/app/main.py
+              - apps/api/src/copiloto/**
+              - apps/api/src/pipeline-ats/**
+              - apps/ai-service/evals/agente/**
+            rag:
+              - apps/ai-service/app/rag.py
+              - apps/ai-service/evals/*.py
+              - apps/ai-service/evals/linha_de_base.json
+              - apps/ai-service/evals/rag/**
+              - .github/workflows/ci.yml
+
+  avaliacao-llm:
+    needs: mudancas-de-ia
+    if: needs.mudancas-de-ia.outputs.geracao == 'true' || needs.mudancas-de-ia.outputs.agente == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        conjunto: [geracao, agente]
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
+      AI_MODEL: ${{ secrets.AI_MODEL }}
+      MUDOU: ${{ needs.mudancas-de-ia.outputs[matrix.conjunto] }}
+    steps:
+      - name: Confere mudanca e segredos
+        id: pronto
+        run: |
+          if [ "$MUDOU" != "true" ]; then
+            echo "::notice::conjunto ${{ matrix.conjunto }} sem mudanca nos caminhos que ele cobre; pulado"
+            echo "rodar=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "$ANTHROPIC_API_KEY" ] || [ -z "$AI_MODEL" ]; then
+            echo "::notice::ANTHROPIC_API_KEY ou AI_MODEL ausente (fork ou segredo nao criado); conjunto ${{ matrix.conjunto }} pulado"
+            echo "rodar=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "rodar=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.pronto.outputs.rodar == 'true'
+      - uses: actions/setup-python@v5
+        if: steps.pronto.outputs.rodar == 'true'
+        with:
+          python-version: "3.12"
+      - name: Install deps sem embedding
+        if: steps.pronto.outputs.rodar == 'true'
+        working-directory: apps/ai-service
+        run: |
+          grep -vE "^(transformers|sentence-transformers|chromadb-client)==" requirements.txt > "$RUNNER_TEMP/requisitos.txt"
+          pip install -r "$RUNNER_TEMP/requisitos.txt"
+      - name: Roda o conjunto
+        if: steps.pronto.outputs.rodar == 'true'
+        working-directory: apps/ai-service
+        run: python -m evals.rodar --conjunto ${{ matrix.conjunto }} --saida "$RUNNER_TEMP/relatorios/${{ matrix.conjunto }}"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.pronto.outputs.rodar == 'true'
+        with:
+          name: avaliacao-${{ matrix.conjunto }}
+          path: ${{ runner.temp }}/relatorios/${{ matrix.conjunto }}
+
+  avaliacao-rag:
+    needs: mudancas-de-ia
+    if: needs.mudancas-de-ia.outputs.rag == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: huggingface-${{ runner.os }}-paraphrase-multilingual-MiniLM-L12-v2
+      - name: Install deps
+        working-directory: apps/ai-service
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+      - name: Roda o conjunto
+        working-directory: apps/ai-service
+        run: python -m evals.rodar --conjunto rag --saida "$RUNNER_TEMP/relatorios/rag"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: avaliacao-rag
+          path: ${{ runner.temp }}/relatorios/rag
