@@ -586,6 +586,7 @@ export function CartaoEntrega({ item }: { item: Extract<Item, { tipo: 'entrega' 
         </Button>
       </div>
       <div className="p-4">
+        {item.aviso && <p className="mb-2.5 text-[13px] text-ink-2">{item.aviso}</p>}
         <p className="whitespace-pre-wrap rounded-control border border-line bg-canvas p-3 text-[14px] leading-relaxed text-ink-2">
           {item.texto}
         </p>

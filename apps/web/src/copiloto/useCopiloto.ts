@@ -179,6 +179,7 @@ function aplicarEvento(estado: Estado, ev: CopilotoEvento): Estado {
         titulo: ev.data.titulo,
         texto: ev.data.texto,
         destino: ev.data.destino,
+        aviso: ev.data.aviso?.mensagem,
       };
       return { ...estado, itens: [...encerrarVivos(itens), cartao] };
     }
@@ -415,7 +416,7 @@ function itensDeHistorico(conversa: ConversaCopilotoDetalhe): Item[] {
     }
     if (mensagem.dados?.entrega) {
       const entrega = mensagem.dados.entrega;
-      itens.push({ tipo: 'entrega', id: `h${indice}-entrega`, kind: entrega.tipo, titulo: entrega.titulo, texto: entrega.texto, destino: entrega.destino });
+      itens.push({ tipo: 'entrega', id: `h${indice}-entrega`, kind: entrega.tipo, titulo: entrega.titulo, texto: entrega.texto, destino: entrega.destino, aviso: entrega.aviso?.mensagem });
       return;
     }
     itens = consolidarPasso(

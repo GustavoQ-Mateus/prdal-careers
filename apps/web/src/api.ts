@@ -915,7 +915,7 @@ export interface MensagemCopilotoPersistida {
     ok?: boolean;
     resultado?: unknown;
     erro?: string;
-    entrega?: { tipo: string; titulo: string; texto: string; destino?: string };
+    entrega?: { tipo: string; titulo: string; texto: string; destino?: string; aviso?: AvisoAcao };
     evento?: 'erro';
     escopo?: string;
   };
@@ -954,6 +954,12 @@ export function buscarConversaCopiloto(id: string) {
 
 export type EfeitoTool = 'leitura' | 'escrita';
 
+export interface AvisoAcao {
+  tipo: string;
+  mensagem: string;
+  sugestao: string;
+}
+
 export type CopilotoEvento =
   | { evento: 'token'; data: { delta: string } }
   | {
@@ -982,7 +988,7 @@ export type CopilotoEvento =
     }
   | {
       evento: 'entrega_externa';
-      data: { tipo: string; titulo: string; texto: string; destino?: string };
+      data: { tipo: string; titulo: string; texto: string; destino?: string; aviso?: AvisoAcao };
     }
   | { evento: 'erro'; data: { escopo: string; mensagem: string; recuperavel: boolean } }
   | { evento: 'fim_turno'; data: { motivo: string; conversaId: string } };

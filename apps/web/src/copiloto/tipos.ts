@@ -60,6 +60,7 @@ export type Item =
       titulo: string;
       texto: string;
       destino?: string;
+      aviso?: string;
     }
   | { tipo: 'erro'; id: string; escopo: string; mensagem: string };
 
