@@ -6,5 +6,8 @@
     "packages/*",
     "apps/web",
     "apps/api"
-  ]
+  ],
+  "overrides": {
+    "deepmerge-ts": "^8.0.2"
+  }
 }
