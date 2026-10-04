@@ -916,7 +916,7 @@ export interface MensagemCopilotoPersistida {
     resultado?: unknown;
     erro?: string;
     entrega?: { tipo: string; titulo: string; texto: string; destino?: string; aviso?: AvisoAcao };
-    evento?: 'erro';
+    evento?: 'erro' | 'cancelado';
     escopo?: string;
   };
 }
