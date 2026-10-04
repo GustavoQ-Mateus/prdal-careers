@@ -31,14 +31,14 @@ Microsserviços poliglota com orquestração única na `api`:
 
 ## Stack
 
-React · TypeScript · Vite · NestJS · Python · FastAPI · .NET 8 · PostgreSQL · MongoDB · Chroma · Docker · GitHub Actions · Terraform (stub AWS). IA via Groq free tier com fallback Ollama local; embeddings locais com `sentence-transformers`.
+React · TypeScript · Vite · NestJS · Python · FastAPI · .NET 8 · PostgreSQL · MongoDB · Chroma · Docker · GitHub Actions · Terraform (stub AWS). IA via Claude Sonnet na API da Anthropic; embeddings locais com `sentence-transformers`.
 
 ## Como rodar
 
 > Pré-requisitos: Docker e Docker Compose. Para desenvolvimento local dos serviços: Node 20+, Python 3.12, .NET 8 SDK.
 
 ```bash
-cp .env.example .env      # configure AI_PROVIDER e chaves
+cp .env.example .env      # configure ANTHROPIC_API_KEY e AI_MODEL
 docker compose -f infra/docker-compose.yml up
 ```
 
