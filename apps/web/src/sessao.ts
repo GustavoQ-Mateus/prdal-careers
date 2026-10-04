@@ -1,6 +1,7 @@
 const METODOS_SEGUROS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const ROTAS_SEM_RENOVACAO = new Set(['/auth/login', '/auth/register', '/auth/refresh']);
 const ROTAS_SEM_CSRF = ROTAS_SEM_RENOVACAO;
+const TRAVA_REFRESH = 'prdal-refresh';
 
 export function lerCookie(nome: string): string | null {
   if (typeof document === 'undefined') return null;
@@ -41,12 +42,23 @@ export function criarCliente(base: string, aoExpirar: () => void) {
     return fetch(`${base}${path}`, { ...init, headers, credentials: 'include' });
   }
 
+  async function pedirRefresh(): Promise<boolean> {
+    const res = await bruto('/auth/refresh', { method: 'POST' });
+    if (res.status === 409) {
+      csrf = null;
+      return true;
+    }
+    if (res.ok) lembrarCsrf(await res.json().catch(() => null));
+    return res.ok;
+  }
+
+  async function refreshEntreAbas(): Promise<boolean> {
+    const travas = typeof navigator === 'undefined' ? undefined : navigator.locks;
+    return travas?.request ? await travas.request(TRAVA_REFRESH, pedirRefresh) : pedirRefresh();
+  }
+
   function renovar(): Promise<boolean> {
-    renovando ??= bruto('/auth/refresh', { method: 'POST' })
-      .then(async (res) => {
-        if (res.ok) lembrarCsrf(await res.json().catch(() => null));
-        return res.ok;
-      })
+    renovando ??= refreshEntreAbas()
       .catch(() => false)
       .finally(() => {
         renovando = null;

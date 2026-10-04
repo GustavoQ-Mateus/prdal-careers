@@ -2,9 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { criarCliente } from '../src/sessao.ts';
 
-function servidorFalso({ acessoValido = () => true, refreshOk = true } = {}) {
+function servidorFalso({ acessoValido = () => true, refreshOk = true, refresh } = {}) {
   const chamadas = [];
   let sessaoValida = true;
+  let refreshEmCurso = 0;
+  const estado = { maxRefreshSimultaneos: 0 };
   globalThis.fetch = async (url, init) => {
     const caminho = new URL(url).pathname;
     const headers = new Headers(init.headers);
@@ -13,6 +15,15 @@ function servidorFalso({ acessoValido = () => true, refreshOk = true } = {}) {
     const json = (status, corpo) => new Response(corpo === undefined ? null : JSON.stringify(corpo), { status });
     if (caminho === '/auth/login') return json(201, { usuario: { id: 'u', email: 'u@teste.dev' }, csrfToken: 'csrf-do-login' });
     if (caminho === '/auth/refresh') {
+      refreshEmCurso++;
+      estado.maxRefreshSimultaneos = Math.max(estado.maxRefreshSimultaneos, refreshEmCurso);
+      await new Promise((r) => setTimeout(r, 10));
+      refreshEmCurso--;
+      if (refresh) {
+        const [status, corpo, valida] = refresh();
+        if (valida !== undefined) sessaoValida = valida;
+        return json(status, corpo);
+      }
       if (!refreshOk) return json(401, { message: 'sessao expirada' });
       sessaoValida = true;
       return json(200, { csrfToken: 'csrf-renovado' });
@@ -23,6 +34,7 @@ function servidorFalso({ acessoValido = () => true, refreshOk = true } = {}) {
   };
   return {
     chamadas,
+    estado,
     expirarAcesso() {
       sessaoValida = false;
     },
@@ -92,4 +104,59 @@ test('iniciar apaga o token legado do localStorage', async () => {
   assert.equal(guardado.has('token'), false);
   assert.equal(guardado.get('nav-colapsada'), '1');
   delete globalThis.localStorage;
+});
+
+function semWebLocks(t) {
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  Object.defineProperty(globalThis, 'navigator', { value: {}, configurable: true });
+  t.after(() => Object.defineProperty(globalThis, 'navigator', original));
+}
+
+const OUTRA_ABA_RENOVOU = () => [409, { message: 'sessao renovada em outra aba' }, true];
+
+test('409 no refresh repete a chamada original uma vez e nao expira a sessao', async () => {
+  const srv = servidorFalso({ refresh: OUTRA_ABA_RENOVOU });
+  let expirou = 0;
+  const cliente = criarCliente('http://api.teste', () => expirou++);
+  await cliente.entrar('u@teste.dev', 'senha-forte-123');
+  srv.expirarAcesso();
+  const res = await cliente.chamar('/oportunidades');
+  assert.equal(res.status, 200);
+  assert.deepEqual(srv.chamadas.slice(1).map((c) => c.caminho), ['/oportunidades', '/auth/refresh', '/oportunidades']);
+  assert.equal(expirou, 0);
+});
+
+test('409 no refresh sem Web Locks tambem repete a chamada original', async (t) => {
+  semWebLocks(t);
+  assert.equal(globalThis.navigator.locks, undefined);
+  const srv = servidorFalso({ refresh: OUTRA_ABA_RENOVOU });
+  let expirou = 0;
+  const cliente = criarCliente('http://api.teste', () => expirou++);
+  await cliente.entrar('u@teste.dev', 'senha-forte-123');
+  srv.expirarAcesso();
+  assert.equal((await cliente.chamar('/oportunidades')).status, 200);
+  assert.equal(expirou, 0);
+});
+
+test('409 no refresh seguido de 401 na repeticao leva ao fluxo de sessao expirada', async () => {
+  const srv = servidorFalso({ refresh: () => [409, { message: 'sessao renovada em outra aba' }] });
+  let expirou = 0;
+  const cliente = criarCliente('http://api.teste', () => expirou++);
+  await cliente.entrar('u@teste.dev', 'senha-forte-123');
+  srv.expirarAcesso();
+  const res = await cliente.chamar('/oportunidades');
+  assert.equal(res.status, 401);
+  assert.equal(srv.chamadas.filter((c) => c.caminho === '/oportunidades').length, 2);
+  assert.equal(expirou, 1);
+});
+
+test('duas abas renovando ao mesmo tempo passam pelo refresh uma de cada vez', async () => {
+  const srv = servidorFalso();
+  const abaA = criarCliente('http://api.teste', () => {});
+  const abaB = criarCliente('http://api.teste', () => {});
+  await abaA.entrar('u@teste.dev', 'senha-forte-123');
+  srv.expirarAcesso();
+  const respostas = await Promise.all([abaA.chamar('/a'), abaB.chamar('/b')]);
+  assert.deepEqual(respostas.map((r) => r.status), [200, 200]);
+  assert.equal(srv.estado.maxRefreshSimultaneos, 1);
 });
