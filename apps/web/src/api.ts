@@ -76,39 +76,108 @@ export interface ItemImportacao {
   descricao: string;
 }
 
-export type TipoContatoPerfil =
-  | 'email'
-  | 'telefone'
-  | 'linkedin'
-  | 'github'
-  | 'site'
-  | 'localizacao'
-  | 'outro';
+export type TipoLink = 'linkedin' | 'github' | 'facebook' | 'instagram' | 'site';
 
-export interface ContatoPerfil {
+export type StatusFormacao = 'concluido' | 'em_andamento' | 'trancado';
+
+export type MotivoRevisao =
+  | 'formato_antigo'
+  | 'periodo_texto'
+  | 'local_texto'
+  | 'tecnologias_na_descricao'
+  | 'ddi_ausente'
+  | 'localizacao_texto'
+  | 'contato_sem_tipo';
+
+export interface EmailPerfil {
   id: string;
-  tipo: TipoContatoPerfil;
   valor: string;
-  rotulo?: string;
+  principal: boolean;
+}
+
+export interface TelefonePerfil {
+  id: string;
+  ddi: string;
+  numero: string;
+  principal: boolean;
+  revisao?: MotivoRevisao[];
+}
+
+export interface LinkPerfil {
+  id: string;
+  tipo: TipoLink;
+  url: string;
+}
+
+export interface LocalPerfil {
+  pais: string;
+  estado: string;
+  cidade: string;
+}
+
+export interface EnderecoPerfil extends LocalPerfil {
+  bairro?: string;
+  logradouro?: string;
+  complemento?: string;
+  legado?: string;
+  revisao?: MotivoRevisao[];
+}
+
+export interface OutroContatoPerfil {
+  id: string;
+  rotulo: string;
+  valor: string;
+  revisao?: MotivoRevisao[];
+}
+
+export interface FormacaoPerfil {
+  id: string;
+  grau: string;
+  status: StatusFormacao | '';
+  instituicao: string;
+  curso: string;
+  inicioMes: number | null;
+  inicioAno: number | null;
+  fimMes: number | null;
+  fimAno: number | null;
+  revisao?: MotivoRevisao[];
+}
+
+export interface CertificacaoPerfil {
+  id: string;
+  titulo: string;
+  descricao: string;
+  revisao?: MotivoRevisao[];
 }
 
 export interface ExperienciaPerfil {
   id: string;
   cargo: string;
   empresa: string;
-  periodo: string;
-  local?: string;
+  dataInicioMes: number | null;
+  dataInicioAno: number | null;
+  dataFimMes: number | null;
+  dataFimAno: number | null;
+  atual: boolean;
+  local: LocalPerfil | string | null;
   descricao: string;
-  tecnologias?: string[];
+  periodo?: string;
+  periodoLegado?: string;
+  localLegado?: string;
+  revisao?: MotivoRevisao[];
 }
 
 export interface PerfilMestre {
   nome: string;
-  contato: ContatoPerfil[];
+  emails: EmailPerfil[];
+  telefones: TelefonePerfil[];
+  links: LinkPerfil[];
+  endereco: EnderecoPerfil | string | null;
+  outrosContatos: OutroContatoPerfil[];
   resumo: string;
   experiencias: ExperienciaPerfil[];
-  formacao: string[];
-  certificacoes: string[];
+  formacao: FormacaoPerfil[];
+  certificacoes: CertificacaoPerfil[];
   idiomas: string[];
   skills: string[];
 }

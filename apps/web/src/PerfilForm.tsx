@@ -5,11 +5,16 @@ import {
   patchPreferencias,
   reindexarContexto,
   salvarPerfil,
-  type ContatoPerfil,
-  type ExperienciaPerfil,
   type PerfilMestre,
-  type TipoContatoPerfil,
 } from './api';
+import {
+  paraApi,
+  paraTela,
+  type ContatoTela as ContatoPerfil,
+  type ExperienciaTela as ExperienciaPerfil,
+  type PerfilTela,
+  type TipoContatoTela as TipoContatoPerfil,
+} from './perfilAdaptador';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,7 +29,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-const VAZIO: PerfilMestre = {
+const VAZIO: PerfilTela = {
   nome: '',
   contato: [],
   resumo: '',
@@ -84,7 +89,8 @@ function Regiao({
 }
 
 export function PerfilForm() {
-  const [perfil, setPerfil] = useState<PerfilMestre>(VAZIO);
+  const [perfil, setPerfil] = useState<PerfilTela>(VAZIO);
+  const [origem, setOrigem] = useState<PerfilMestre | undefined>(undefined);
   const [formacaoTexto, setFormacaoTexto] = useState('');
   const [certificacoesTexto, setCertificacoesTexto] = useState('');
   const [idiomasTexto, setIdiomasTexto] = useState('');
@@ -99,10 +105,12 @@ export function PerfilForm() {
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [desatualizado, setDesatualizado] = useState(false);
   const [reindexando, setReindexando] = useState(false);
-  const [snapshot, setSnapshot] = useState<{ perfil: PerfilMestre; formacao: string; certificacoes: string; idiomas: string; skills: string; fuso: string } | null>(null);
+  const [snapshot, setSnapshot] = useState<{ perfil: PerfilTela; formacao: string; certificacoes: string; idiomas: string; skills: string; fuso: string } | null>(null);
 
-  function aplicarPerfil(novoPerfil: PerfilMestre) {
-    setPerfil({ ...VAZIO, ...novoPerfil, contato: novoPerfil.contato ?? [], experiencias: novoPerfil.experiencias ?? [] });
+  function aplicarPerfil(salvo: PerfilMestre) {
+    setOrigem(salvo);
+    const novoPerfil = paraTela(salvo);
+    setPerfil(novoPerfil);
     setFormacaoTexto((novoPerfil.formacao ?? []).join('\n'));
     setCertificacoesTexto((novoPerfil.certificacoes ?? []).join('\n'));
     setIdiomasTexto((novoPerfil.idiomas ?? []).join('\n'));
@@ -158,11 +166,11 @@ export function PerfilForm() {
     setErro(null);
   }
 
-  async function persistir(proximo: PerfilMestre, sucesso: string) {
+  async function persistir(proximo: PerfilTela, sucesso: string) {
     setSalvando(true);
     setErro(null);
     try {
-      const salvo = await salvarPerfil(proximo);
+      const salvo = await salvarPerfil(paraApi(proximo, origem));
       aplicarPerfil(salvo);
       setEditando(null);
       setSnapshot(null);
@@ -178,7 +186,7 @@ export function PerfilForm() {
   }
 
   async function salvarSecao() {
-    const proximo: PerfilMestre = {
+    const proximo: PerfilTela = {
       ...perfil,
       formacao: formacaoTexto.split('\n').map((linha) => linha.trim()).filter(Boolean),
       certificacoes: certificacoesTexto.split('\n').map((linha) => linha.trim()).filter(Boolean),
