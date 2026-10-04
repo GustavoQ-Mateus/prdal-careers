@@ -87,12 +87,14 @@ export type MotivoRevisao =
   | 'tecnologias_na_descricao'
   | 'ddi_ausente'
   | 'localizacao_texto'
-  | 'contato_sem_tipo';
+  | 'contato_sem_tipo'
+  | 'email_invalido';
 
 export interface EmailPerfil {
   id: string;
   valor: string;
   principal: boolean;
+  revisao?: MotivoRevisao[];
 }
 
 export interface TelefonePerfil {
