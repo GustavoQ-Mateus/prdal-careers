@@ -60,3 +60,6 @@ docs/ORQUESTRACAO.md
 # Screenshots avulsos deixados na raiz
 /image.png
 /image copy.png
+
+# Relatorios locais dos conjuntos de avaliacao
+apps/ai-service/evals/relatorios/
