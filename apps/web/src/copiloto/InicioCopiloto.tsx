@@ -65,7 +65,7 @@ export function InicioCopiloto({
         {modelo.saudacao}{modelo.nome ? `, ${modelo.nome}` : ''}.
         {modelo.passos && (modelo.atrasados || modelo.paraResolver ? (
           <>{' '}Hoje tem {modelo.atrasados > 0 && <><span className="text-score-warn">{modelo.atrasados} passo{modelo.atrasados === 1 ? '' : 's'} atrasado{modelo.atrasados === 1 ? '' : 's'}</span>{modelo.paraResolver > 0 ? ' e ' : '.'}</>}{modelo.paraResolver > 0 ? `${modelo.paraResolver} para resolver.` : ''}</>
-        ) : <> Hoje não tem passos pendentes.</>)}
+        ) : <> Nada vence hoje.</>)}
       </h1>
       <p className="mt-2 max-w-[600px] text-[14px] leading-relaxed text-muted">
         Montei este resumo a partir das suas oportunidades. Nada aqui chamou a IA; ela só entra quando você mandar uma mensagem ou escolher uma ação.

@@ -46,9 +46,12 @@ test('limita a cinco e ordena atrasadas, hoje, próximos dias e sem passo', () =
   }), [], perfil, agora, fuso);
   assert.deepEqual(modelo.passos.map((item) => item.id), ['a', 'b', 'c', 'd', 'e']);
   assert.equal(modelo.totalPassos, 6);
+  assert.equal(modelo.paraResolver, 2);
   const sem = montarInicioCopiloto(dados({ semProximoPasso: [{ id: 'f', titulo: 'Vaga F', empresa: 'Empresa' }] }), [], perfil, agora, fuso);
   assert.equal(sem.passos[0].botao, 'Definir próximo passo');
   assert.equal(sem.passos[0].oportunidadeId, 'f');
+  assert.equal(sem.paraResolver, 0);
+  assert.equal(montarInicioCopiloto(dados({ proximosDias: [acao('g', '2026-10-08T12:00:00Z')] }), [], perfil, agora, fuso).paraResolver, 0);
 });
 
 test('fontes opcionais ausentes não produzem seções vazias nem vocativo', () => {

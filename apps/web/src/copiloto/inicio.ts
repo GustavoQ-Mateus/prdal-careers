@@ -121,7 +121,7 @@ export function montarInicioCopiloto(
     saudacao,
     nome: perfil && !semPerfil ? perfil.nome?.trim().split(/\s+/)[0] || undefined : undefined,
     atrasados: hoje?.atrasadas.length ?? 0,
-    paraResolver: hoje ? hoje.hoje.length + hoje.proximosDias.length + (hoje.semProximoPasso ?? []).length : 0,
+    paraResolver: hoje?.hoje.length ?? 0,
     conversa: conversas?.length ? [...conversas].sort((a, b) => b.atualizadoEm.localeCompare(a.atualizadoEm))[0] : undefined,
     passos: passos?.slice(0, 5),
     totalPassos: passos?.length ?? 0,
