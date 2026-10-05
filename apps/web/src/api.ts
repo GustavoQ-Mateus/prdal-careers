@@ -1,3 +1,4 @@
+import { lerEventos } from './copiloto/sse';
 import { criarCliente } from './sessao';
 
 export interface Keyword {
@@ -991,23 +992,8 @@ export type CopilotoEvento =
       data: { tipo: string; titulo: string; texto: string; destino?: string; aviso?: AvisoAcao };
     }
   | { evento: 'erro'; data: { escopo: string; mensagem: string; recuperavel: boolean } }
-  | { evento: 'fim_turno'; data: { motivo: string; conversaId: string } };
-
-function parseFrameCopiloto(frame: string): CopilotoEvento | null {
-  let evento = '';
-  let data = '';
-  for (const linha of frame.split('\n')) {
-    const l = linha.replace(/\r$/, '');
-    if (l.startsWith('event:')) evento = l.slice(6).trim();
-    else if (l.startsWith('data:')) data += l.slice(5).trim();
-  }
-  if (!evento || !data) return null;
-  try {
-    return { evento, data: JSON.parse(data) } as CopilotoEvento;
-  } catch {
-    return null;
-  }
-}
+  | { evento: 'fim_turno'; data: { motivo: string; conversaId: string } }
+  | { evento: 'conversa'; data: { conversaId: string } };
 
 export async function streamCopiloto(
   body: CopilotoChatBody,
@@ -1027,20 +1013,5 @@ export async function streamCopiloto(
     const b = await res.json().catch(() => ({}));
     throw new Error(b.message ?? `erro ${res.status}`);
   }
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    let sep = buffer.indexOf('\n\n');
-    while (sep !== -1) {
-      const frame = buffer.slice(0, sep);
-      buffer = buffer.slice(sep + 2);
-      const ev = parseFrameCopiloto(frame);
-      if (ev) onEvento(ev);
-      sep = buffer.indexOf('\n\n');
-    }
-  }
+  await lerEventos(res.body, (frame) => onEvento(frame as CopilotoEvento));
 }

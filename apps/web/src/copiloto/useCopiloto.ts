@@ -11,6 +11,7 @@ import {
   type GeracaoCurriculo,
   type ModoCopiloto,
 } from '../api';
+import { reidratarAposQueda } from './sse';
 import type { EstadoCopiloto, Item } from './tipos';
 import {
   MARCADOR_NARRACAO_ATS_ETAPA_3,
@@ -76,6 +77,8 @@ function aplicarEvento(estado: Estado, ev: CopilotoEvento): Estado {
   const autopiloto = estado.modo === 'autopiloto';
 
   switch (ev.evento) {
+    case 'conversa':
+      return { ...estado, conversaId: ev.data.conversaId || estado.conversaId };
     case 'token': {
       const ultimo = itens[itens.length - 1];
       const proximoEstado: EstadoCopiloto = autopiloto ? 'autopiloto_em_curso' : 'pensando';
@@ -644,8 +647,13 @@ export function useCopiloto(oportunidadeId?: string) {
     try {
       await streamCopiloto(corpo, (ev) => dispatch({ t: 'evento', ev }), ctrl.signal);
     } catch (err) {
+      const conversa = ctrl.signal.aborted
+        ? null
+        : await reidratarAposQueda(err, refEstado.current.conversaId, buscarConversaCopiloto);
       if (ctrl.signal.aborted) {
         dispatch({ t: 'abortado' });
+      } else if (conversa) {
+        dispatch({ t: 'abrirHistorico', conversa });
       } else {
         dispatch({
           t: 'evento',
