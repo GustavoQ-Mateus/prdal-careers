@@ -764,6 +764,48 @@ export function gerarCvOportunidade(id: string) {
   });
 }
 
+export interface ContaResposta {
+  email: string;
+  consentimento: { aceitoEm: string | null; provedor: string; regiao: string };
+  exclusaoAgendadaPara: string | null;
+}
+
+export interface ExportacaoConta {
+  status: 'PENDENTE' | 'PROCESSANDO' | 'CONCLUIDO' | 'ERRO';
+  url?: string;
+  expiraEm?: string;
+}
+
+export function getConta() {
+  return request<ContaResposta>('/conta');
+}
+
+export function aceitarConsentimento() {
+  return request<void>('/conta/consentimento', { method: 'POST' });
+}
+
+export function revogarConsentimento() {
+  return request<void>('/conta/consentimento', { method: 'DELETE' });
+}
+
+export function iniciarExportacaoConta() {
+  return request<{ jobId: string }>('/conta/exportacoes', { method: 'POST' });
+}
+
+export function getExportacaoConta(jobId: string) {
+  return request<ExportacaoConta>(`/conta/exportacoes/${encodeURIComponent(jobId)}`);
+}
+
+export function agendarExclusaoConta(senha: string) {
+  return request<{ exclusaoAgendadaPara: string }>('/conta/exclusao', {
+    method: 'POST', body: JSON.stringify({ senha }),
+  });
+}
+
+export function cancelarExclusaoConta() {
+  return request<void>('/conta/exclusao', { method: 'DELETE' });
+}
+
 export function getGeracao(jobId: string) {
   return request<GeracaoCurriculo>(`/geracoes-curriculo/${jobId}`);
 }

@@ -1,11 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseRota } from '../src/rotas.ts';
+import { abaDaRota, hrefRota, parseRota } from '../src/rotas.ts';
 
 test('início e rotas desconhecidas abrem o copiloto', () => {
   for (const path of ['/', '/qualquer-rota', '/dashboard', '/vagas']) {
     assert.deepEqual(parseRota(path, ''), { tela: 'copiloto' });
   }
+});
+
+test('conta vai e volta pela rota', () => {
+  assert.deepEqual(parseRota('/conta', ''), { tela: 'conta' });
+  assert.equal(hrefRota({ tela: 'conta' }), '/conta');
+  assert.equal(abaDaRota(parseRota('/conta', '')), 'conta');
 });
 
 test('Hoje e deep links mantêm o destino', () => {

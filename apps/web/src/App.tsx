@@ -2,6 +2,7 @@ import { Menu } from 'lucide-react';
 import { AuthForm } from './AuthForm';
 import { BaseConhecimento } from './BaseConhecimento';
 import { Copiloto } from './Copiloto';
+import { Conta } from './Conta';
 import { AppNav } from './components/AppNav';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ThemeToggle } from './components/ThemeToggle';
@@ -15,7 +16,8 @@ import { Hoje } from './Hoje';
 import { Oportunidades } from './Oportunidades';
 import { PerfilForm } from './PerfilForm';
 import { Workspace } from './Workspace';
-import { iniciarSessao, logout } from './api';
+import { getConta, iniciarSessao, logout } from './api';
+import { textoPrazoExclusao } from './contaEstado';
 import { abaDaRota, useRota, type Aba, type Rota } from './rotas';
 import { useEffect, useState } from 'react';
 import { limparArmazenamentosCopiloto } from './copiloto/armazenamento';
@@ -33,12 +35,14 @@ const CONTEXTO: Record<Aba, { titulo: string; descricao: string }> = {
   curriculos: { titulo: 'Currículos', descricao: 'Biblioteca de versões geradas para cada oportunidade' },
   conhecimento: { titulo: 'Conhecimento', descricao: 'Fontes usadas pelo RAG na geração ATS' },
   perfil: { titulo: 'Perfil', descricao: 'Histórico profissional canônico para os currículos' },
+  conta: { titulo: 'Conta', descricao: 'Consentimento, exportação e exclusão dos seus dados' },
 };
 
 export function App() {
   const [autenticado, setAutenticado] = useState<boolean | null>(null);
   const { rota, ir } = useRota();
   const [mobileAberta, setMobileAberta] = useState(false);
+  const [exclusaoAgendadaPara, setExclusaoAgendadaPara] = useState<string | null>(null);
   const [acaoInicial, setAcaoInicial] = useState<{ id: string; mensagem: string } | null>(null);
   const [navColapsada, setNavColapsada] = useState(() => {
     try {
@@ -61,6 +65,15 @@ export function App() {
   useEffect(() => {
     if (rota.tela !== 'copiloto') setAcaoInicial(null);
   }, [rota.tela]);
+
+  useEffect(() => {
+    if (!autenticado) return;
+    let ativo = true;
+    getConta().then((dados) => {
+      if (ativo) setExclusaoAgendadaPara(dados.exclusaoAgendadaPara);
+    }).catch(() => undefined);
+    return () => { ativo = false; };
+  }, [autenticado, rota.tela]);
 
   useEffect(() => {
     try {
@@ -137,6 +150,7 @@ export function App() {
     await logout();
     limparArmazenamentosCopiloto(localStorage, sessionStorage);
     setAutenticado(false);
+    setExclusaoAgendadaPara(null);
     ir({ tela: 'copiloto' }, true);
   }
 
@@ -188,6 +202,13 @@ export function App() {
           <Marca variante="marca" fundo="claro" className="h-6 w-auto dark:hidden" />
           <Marca variante="marca" fundo="escuro" className="hidden h-6 w-auto dark:block" />
         </header>
+
+        {textoPrazoExclusao(exclusaoAgendadaPara) && (
+          <div className="border-b border-score-warn/30 bg-ground px-6 py-2 text-[13px] text-muted nav:px-8" role="status">
+            {textoPrazoExclusao(exclusaoAgendadaPara)}{' '}
+            <button type="button" className="font-medium text-accent hover:underline" onClick={() => ir({ tela: 'conta' })}>Ver conta</button>
+          </div>
+        )}
 
         {rota.tela !== 'copiloto' && <header
           className={cn(
@@ -247,6 +268,7 @@ export function App() {
                     ir({ tela: 'curriculo', oportunidadeId: rota.id, curriculoId })
                   }
                   onCopiloto={() => ir({ tela: 'copiloto', oportunidadeId: rota.id })}
+                  onAbrirConta={() => ir({ tela: 'conta' })}
                 />
               )}
               {rota.tela === 'copiloto' && (
@@ -258,6 +280,7 @@ export function App() {
                   onAbrirWorkspace={(id) => ir({ tela: 'workspace', id })}
                   onAbrirCurriculo={(oportunidadeId, curriculoId) => ir({ tela: 'curriculo', oportunidadeId, curriculoId })}
                   onAbrirPerfil={() => ir({ tela: 'perfil' })}
+                  onAbrirConta={() => ir({ tela: 'conta' })}
                   onImportarLote={() => ir({ tela: 'oportunidades', visao: 'lista', importar: true })}
                   onAcao={abrirAcaoCopiloto}
                 />
@@ -286,6 +309,7 @@ export function App() {
               )}
               {rota.tela === 'conhecimento' && <BaseConhecimento />}
               {rota.tela === 'perfil' && <PerfilForm />}
+              {rota.tela === 'conta' && <Conta onExclusaoAlterada={setExclusaoAgendadaPara} />}
             </div>
           </ErrorBoundary>
         </main>

@@ -2,6 +2,7 @@ import {
   BookOpen,
   CalendarCheck,
   Compass,
+  CircleUserRound,
   FileText,
   LayoutGrid,
   LogOut,
@@ -31,6 +32,7 @@ const GRUPOS: Grupo[] = [
     titulo: 'Fundação',
     itens: [
       { tela: 'perfil', nome: 'Perfil', icon: User },
+      { tela: 'conta', nome: 'Conta', icon: CircleUserRound },
       { tela: 'conhecimento', nome: 'Conhecimento', icon: BookOpen },
     ],
   },
