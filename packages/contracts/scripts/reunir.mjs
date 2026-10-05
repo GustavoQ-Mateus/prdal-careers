@@ -3,6 +3,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import openapiTS from 'openapi-typescript';
 import ts from 'typescript';
+import { conferirCompatibilidade, versaoPublicada } from './compatibilidade.mjs';
 
 export const raizPacote = fileURLToPath(new URL('../', import.meta.url));
 
@@ -58,7 +59,19 @@ export async function reunir(raiz = raizPacote, apps = path.resolve(raiz, '../..
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   try {
-    await reunir(raizPacote, undefined, process.argv.includes('--conferir'));
+    const conferir = process.argv.includes('--conferir');
+    const arquivos = await reunir(raizPacote, undefined, conferir);
+    if (conferir) {
+      const indice = process.argv.indexOf('--anterior');
+      const anterior = indice === -1 ? undefined : pathToFileURL(path.resolve(process.argv[indice + 1]) + path.sep);
+      const publicada = await versaoPublicada(raizPacote, anterior);
+      const pacote = JSON.parse(await readFile(path.join(raizPacote, 'package.json'), 'utf8'));
+      if (publicada) {
+        for (const [nome, documento] of publicada.documentos) {
+          conferirCompatibilidade(JSON.parse(documento), JSON.parse(arquivos.get(nome) ?? '{"paths":{}}'), publicada.versao, pacote.version);
+        }
+      }
+    }
   } catch (erro) {
     console.error(erro.message);
     process.exitCode = 1;
