@@ -64,10 +64,12 @@ export function Workspace({
   id,
   onCurriculo,
   onCopiloto,
+  onAbrirConta,
 }: {
   id: string;
   onCurriculo: (curriculoId: string) => void;
   onCopiloto: () => void;
+  onAbrirConta: () => void;
 }) {
   const [ws, setWs] = useState<WorkspaceOportunidade | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -464,6 +466,7 @@ export function Workspace({
       />
 
       <GeracaoWizard
+        onAbrirConta={onAbrirConta}
         open={wizardAberto}
         onOpenChange={setWizardAberto}
         oportunidadeId={id}

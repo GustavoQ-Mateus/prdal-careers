@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type Aba = 'hoje' | 'oportunidades' | 'copiloto' | 'curriculos' | 'conhecimento' | 'perfil';
+export type Aba = 'hoje' | 'oportunidades' | 'copiloto' | 'curriculos' | 'conhecimento' | 'perfil' | 'conta';
 
 export type VisaoHub = 'lista' | 'board' | 'grafo';
 export type ModoCurriculos = 'lista' | 'oportunidade';
@@ -34,7 +34,8 @@ export type Rota =
   | { tela: 'curriculo'; oportunidadeId: string; curriculoId: string }
   | ({ tela: 'curriculos' } & Partial<FiltrosCurriculos>)
   | { tela: 'conhecimento' }
-  | { tela: 'perfil' };
+  | { tela: 'perfil' }
+  | { tela: 'conta' };
 
 const VISOES: VisaoHub[] = ['lista', 'board', 'grafo'];
 
@@ -102,6 +103,7 @@ export function parseRota(
   }
   if (path === '/conhecimento') return { tela: 'conhecimento' };
   if (path === '/perfil') return { tela: 'perfil' };
+  if (path === '/conta') return { tela: 'conta' };
   return { tela: 'copiloto' };
 }
 
@@ -143,6 +145,8 @@ export function hrefRota(rota: Rota): string {
       return '/conhecimento';
     case 'perfil':
       return '/perfil';
+    case 'conta':
+      return '/conta';
   }
 }
 
@@ -162,6 +166,8 @@ export function abaDaRota(rota: Rota): Aba | null {
       return 'conhecimento';
     case 'perfil':
       return 'perfil';
+    case 'conta':
+      return 'conta';
   }
 }
 
