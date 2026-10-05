@@ -73,7 +73,7 @@ export function App() {
       if (ativo) setExclusaoAgendadaPara(dados.exclusaoAgendadaPara);
     }).catch(() => undefined);
     return () => { ativo = false; };
-  }, [autenticado, rota.tela]);
+  }, [autenticado]);
 
   useEffect(() => {
     try {
