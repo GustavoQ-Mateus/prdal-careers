@@ -262,6 +262,7 @@ const INDICE_ETAPA: Record<Extract<Item, { tipo: 'operacao' }>['etapa'], number>
 
 export function OperacaoCorrente({ item }: { item: Extract<Item, { tipo: 'operacao' }> }) {
   const [aberto, setAberto] = useState(false);
+  if (item.fase) return <OperacaoPorFase item={item} />;
   const ativa = !['aguardando_etapa2', 'concluida', 'erro'].includes(item.etapa);
   const falhou = item.etapa === 'erro';
   const ultimo = item.passos[item.passos.length - 1];
@@ -344,6 +345,39 @@ export function OperacaoCorrente({ item }: { item: Extract<Item, { tipo: 'operac
   );
 }
 
+function OperacaoPorFase({ item }: { item: Extract<Item, { tipo: 'operacao' }> }) {
+  const [aberto, setAberto] = useState(false);
+  const ultimo = item.passos[item.passos.length - 1];
+  const falhou = item.etapa === 'erro';
+  const concluida = item.etapa === 'aguardando_etapa2' || item.etapa === 'concluida';
+  const analise = item.fase === 1 ? item.passos.find((passo) => passo.tool === 'analisar_ats' && passo.status === 'ok')?.resultado : null;
+  const curriculo = item.fase === 3 ? item.passos.find((passo) => passo.tool === 'buscar_curriculo' && passo.status === 'ok')?.resultado : null;
+  const scores = curriculo ? scoresAts('buscar_curriculo', curriculo) : null;
+  const titulo = item.fase === 1 ? 'Etapa 1 - Análise ATS' : item.fase === 2 ? 'Etapa 2 - Reescrita otimizada' : 'Etapa 3 - ATS pós-geração';
+  return (
+    <div className="rounded-card border border-line-strong bg-ground p-4 shadow-rest motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1" role="status" aria-live="polite">
+      <div className="flex items-center gap-2">
+        <span className={cn('flex size-7 items-center justify-center rounded-full border', falhou ? 'border-score-bad text-score-bad' : concluida ? 'border-line-strong text-score-good' : 'border-accent text-accent')}>
+          {falhou ? <TriangleAlert className="size-4" /> : concluida ? <Check className="size-4" /> : <Loader2 className="size-4 animate-spin" />}
+        </span>
+        <div>
+          <p className="text-[14px] font-medium text-ink">{titulo}</p>
+          <p className="text-[12px] text-muted">{falhou ? ultimo?.erro ?? 'Falha na execução' : concluida ? 'Concluído' : item.fase === 2 && !item.jobId ? 'Iniciando a reescrita' : item.jobId ? 'Acompanhando a geração' : 'Executando'}</p>
+        </div>
+      </div>
+      {item.fase === 1 && Boolean(analise) && typeof analise === 'object' && <ResultadoEtapa1 analise={analise as Record<string, unknown>} scores={scoresAts('analisar_ats', analise) ?? []} />}
+      {item.fase === 3 && scores && <GraficoScoreAts scores={scores} />}
+      {item.fase === 3 && item.curriculoId && <CartaoPreviewCurriculo item={{ tipo: 'preview_curriculo', id: item.id, curriculoId: item.curriculoId, rotulo: item.rotuloCurriculo ?? 'Currículo pronto', score: item.scoreCurriculo ?? null }} interno />}
+      {item.passos.length > 0 && <>
+        <button type="button" onClick={() => setAberto((valor) => !valor)} className="mt-3 inline-flex items-center gap-1 text-[12px] text-muted hover:text-ink">
+          <ChevronDown className={cn('size-3.5 transition-transform', aberto && 'rotate-180')} />{aberto ? 'Ocultar retorno técnico' : 'Ver retorno técnico'}
+        </button>
+        {aberto && <div className="mt-2 space-y-2">{item.passos.map((passo) => <pre key={passo.callId} className="max-h-40 overflow-auto rounded-control border border-line bg-canvas p-2 text-[11px] text-ink-2">{passo.erro ?? JSON.stringify(passo.resultado ?? { status: passo.status }, null, 2)}</pre>)}</div>}
+      </>}
+    </div>
+  );
+}
+
 function listaAnalise(analise: Record<string, unknown>, campo: string): string[] {
   const valores = analise[campo];
   return Array.isArray(valores)
@@ -370,7 +404,7 @@ function ResultadoEtapa1({ analise, scores }: { analise: Record<string, unknown>
   );
 }
 
-export function CartaoPreviewCurriculo({ item }: { item: Extract<Item, { tipo: 'preview_curriculo' }> }) {
+export function CartaoPreviewCurriculo({ item, interno = false }: { item: Extract<Item, { tipo: 'preview_curriculo' }>; interno?: boolean }) {
   const [baixando, setBaixando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -387,7 +421,7 @@ export function CartaoPreviewCurriculo({ item }: { item: Extract<Item, { tipo: '
   }
 
   return (
-    <div className="rounded-card border border-line-strong bg-ground p-4 shadow-rest motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1">
+    <div className={interno ? 'mt-3 border-t border-line pt-3' : 'rounded-card border border-line-strong bg-ground p-4 shadow-rest motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1'}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <span className="text-label uppercase text-accent-ink">Etapa 3 - ATS pós-geração</span>

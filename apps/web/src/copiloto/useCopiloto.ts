@@ -59,13 +59,32 @@ function passoDoEvento(ev: Extract<CopilotoEvento, { evento: 'tool_call' }>): im
   };
 }
 
-function operacaoAtual(itens: Item[]): number {
-  return itens.findLastIndex(
-    (item) =>
-      item.tipo === 'operacao' &&
-      item.etapa !== 'erro' &&
-      (item.etapa !== 'concluida' || item.aguardandoCurriculo),
-  );
+type Operacao = Extract<Item, { tipo: 'operacao' }>;
+
+function indiceFase(itens: Item[], fase: 1 | 2 | 3, jobId?: string): number {
+  return itens.findLastIndex((item) => item.tipo === 'operacao' && item.fase === fase && (!jobId || item.jobId === jobId));
+}
+
+function iniciarFase(itens: Item[], fase: 1 | 2 | 3, jobId?: string): Item[] {
+  if (indiceFase(itens, fase, jobId) >= 0) return itens;
+  return [...itens, { tipo: 'operacao', id: novoId(), fase, etapa: fase === 1 ? 'etapa1' : fase === 2 ? 'etapa2' : 'etapa3', passos: [], jobId }];
+}
+
+function atualizarJob(itens: Item[], jobId: string, geracao: GeracaoCurriculo): Item[] {
+  const posGeracao = geracao.status === 'VALIDANDO' || geracao.status === 'CONCLUIDA' || Boolean(geracao.etapas?.analiseFinal);
+  let atualizados = itens.map((item): Item => {
+    if (item.tipo !== 'operacao' || item.jobId !== jobId || !item.fase) return item;
+    if (item.fase === 2) return { ...item, etapa: geracao.status === 'ERRO' ? item.etapa === 'concluida' ? 'concluida' : 'erro' : posGeracao ? 'concluida' : 'etapa2' };
+    if (item.fase !== 3) return item;
+    const status: import('./tipos').PassoOperacao = {
+      callId: `geracao-${jobId}`, tool: 'status_geracao', efeito: 'leitura', args: { jobId },
+      status: geracao.status === 'ERRO' ? 'erro' : geracao.status === 'CONCLUIDA' ? 'ok' : 'executando',
+      resultado: geracao, erro: geracao.erro ?? undefined,
+    };
+    return { ...item, passos: [...item.passos.filter((passo) => passo.callId !== status.callId), status], etapa: geracao.status === 'ERRO' ? 'erro' : 'etapa3', aguardandoCurriculo: geracao.status === 'CONCLUIDA' };
+  });
+  if (posGeracao && geracao.status !== 'ERRO') atualizados = iniciarFase(atualizados, 3, jobId);
+  return atualizados;
 }
 
 function proximoEstadoTool(autopiloto: boolean, efeito: 'leitura' | 'escrita'): EstadoCopiloto {
@@ -102,30 +121,25 @@ function aplicarEvento(estado: Estado, ev: CopilotoEvento): Estado {
     }
     case 'tool_call': {
       const passo = passoDoEvento(ev);
-      const indiceOperacao = operacaoAtual(itens);
-      const deveConsolidar =
-        ev.data.tool === 'analisar_ats' ||
-        (indiceOperacao >= 0 &&
-          ['gerar_curriculo', 'status_geracao', 'buscar_curriculo'].includes(ev.data.tool));
-
-      if (deveConsolidar) {
-        const operacao = ev.data.tool === 'analisar_ats' || indiceOperacao < 0
-          ? null
-          : itens[indiceOperacao] as Extract<Item, { tipo: 'operacao' }>;
-        const proximaEtapa = ev.data.tool === 'analisar_ats'
-          ? 'etapa1'
-          : ev.data.tool === 'gerar_curriculo'
-            ? 'etapa2'
-            : ev.data.tool === 'status_geracao'
-              ? 'etapa3'
-              : operacao?.etapa ?? 'etapa3';
-        const atualizados = [...encerrarVivos(itens)];
-        if (operacao) {
-          atualizados[indiceOperacao] = { ...operacao, etapa: proximaEtapa, passos: [...operacao.passos, passo] };
-        } else {
-          atualizados.push({ tipo: 'operacao', id: novoId(), etapa: proximaEtapa, passos: [passo] });
+      const jobId = typeof ev.data.args.jobId === 'string' ? ev.data.args.jobId : undefined;
+      const fase = ev.data.tool === 'analisar_ats' ? 1 : ev.data.tool === 'gerar_curriculo' ? 2 : ev.data.tool === 'status_geracao' ? indiceFase(itens, 3, jobId) >= 0 ? 3 : 2 : ev.data.tool === 'buscar_curriculo' ? 3 : null;
+      if (fase) {
+        const existentes = encerrarVivos(itens);
+        const indice = fase === 1 ? -1 : fase === 2 && ev.data.tool === 'gerar_curriculo' ? existentes.findLastIndex((item) => item.tipo === 'operacao' && item.fase === 2 && item.confirmacaoId === ev.data.callId) : indiceFase(existentes, fase, jobId);
+        if (indice >= 0) {
+          const atualizados = [...existentes];
+          const item = atualizados[indice] as Operacao;
+          atualizados[indice] = { ...item, passos: [...item.passos, passo] };
+          return { ...estado, estado: proximoEstadoTool(autopiloto, ev.data.efeito), itens: atualizados };
         }
-        return { ...estado, estado: proximoEstadoTool(autopiloto, ev.data.efeito), itens: atualizados };
+        if (fase === 1) return { ...estado, estado: proximoEstadoTool(autopiloto, ev.data.efeito), itens: [...existentes, { tipo: 'operacao', id: novoId(), fase, etapa: 'etapa1', passos: [passo] }] };
+        if (fase === 2 && itens.some((item) => item.tipo === 'confirmacao' && item.callId === ev.data.callId && item.decisao === 'confirmar')) {
+          return { ...estado, estado: proximoEstadoTool(autopiloto, ev.data.efeito), itens: [...existentes, { tipo: 'operacao', id: novoId(), fase, etapa: 'etapa2', passos: [passo] }] };
+        }
+        if (fase === 3 && ev.data.tool === 'buscar_curriculo') {
+          const etapa2 = [...existentes].reverse().find((item): item is Operacao => item.tipo === 'operacao' && item.fase === 2 && Boolean(item.jobId));
+          if (etapa2) return { ...estado, estado: proximoEstadoTool(autopiloto, ev.data.efeito), itens: [...existentes, { tipo: 'operacao', id: novoId(), fase, etapa: 'etapa3', passos: [passo], jobId: etapa2.jobId }] };
+        }
       }
 
       const item: Item = { tipo: 'passo', id: novoId(), ...passo };
@@ -161,6 +175,12 @@ function aplicarEvento(estado: Estado, ev: CopilotoEvento): Estado {
         );
         const resultado = ev.data.resultado as Record<string, unknown> | null;
         const status = String(resultado?.status ?? '');
+        if (it.fase) {
+          if (it.fase === 1) return { ...it, passos, etapa: ev.data.ok ? 'aguardando_etapa2' : 'erro' };
+          if (it.fase === 2) return { ...it, passos, jobId: typeof resultado?.jobId === 'string' ? resultado.jobId : it.jobId, etapa: !ev.data.ok || status === 'ERRO' ? 'erro' : status === 'VALIDANDO' || status === 'CONCLUIDA' ? 'concluida' : 'etapa2' };
+          if (passo.tool === 'buscar_curriculo' && ev.data.ok) return { ...it, passos, etapa: 'concluida', aguardandoCurriculo: false, curriculoId: typeof resultado?.id === 'string' ? resultado.id : undefined, rotuloCurriculo: typeof resultado?.rotulo === 'string' ? resultado.rotulo : 'Currículo pronto', scoreCurriculo: typeof resultado?.score === 'number' ? resultado.score : null };
+          return { ...it, passos, etapa: ev.data.ok && status !== 'ERRO' ? it.etapa : 'erro' };
+        }
         if (passo.tool === 'analisar_ats') {
           return { ...it, passos, etapa: ev.data.ok ? 'aguardando_etapa2' : 'erro' };
         }
@@ -173,7 +193,12 @@ function aplicarEvento(estado: Estado, ev: CopilotoEvento): Estado {
         if (passo.tool === 'buscar_curriculo') return { ...it, passos, etapa: ev.data.ok ? 'concluida' : 'erro', aguardandoCurriculo: false };
         return { ...it, passos, etapa: ev.data.ok ? it.etapa : 'erro' };
       });
-      return { ...estado, itens: atualizados };
+      const resultado = ev.data.resultado as Record<string, unknown> | null;
+      const jobId = typeof resultado?.jobId === 'string' ? resultado.jobId : typeof resultado?.id === 'string' && ev.data.tool === 'status_geracao' ? resultado.id : undefined;
+      const comFase3 = jobId && ev.data.ok && (ev.data.tool === 'gerar_curriculo' || ev.data.tool === 'status_geracao') && (resultado?.status === 'VALIDANDO' || resultado?.status === 'CONCLUIDA')
+        ? iniciarFase(atualizados, 3, jobId)
+        : atualizados;
+      return { ...estado, itens: comFase3 };
     }
     case 'entrega_externa': {
       const cartao: Item = {
@@ -248,8 +273,6 @@ const TOOLS_ESCRITA = new Set([
   'registrar_nota',
 ]);
 
-type Operacao = Extract<Item, { tipo: 'operacao' }>;
-
 function resultadoPersistido(
   tool: string | null | undefined,
   conteudo: string,
@@ -285,7 +308,7 @@ function itemToolHistorico(
   const jobId =
     typeof dados?.args?.jobId === 'string'
       ? dados.args.jobId
-      : valor && typeof valor === 'object' && typeof (valor.jobId ?? valor.id) === 'string'
+      : valor && typeof valor === 'object' && typeof (valor.jobId ?? (nome === 'status_geracao' ? valor.id : undefined)) === 'string'
         ? String(valor.jobId ?? valor.id)
         : undefined;
   const args = dados?.args ?? (jobId ? { jobId } : {});
@@ -309,21 +332,12 @@ function itemToolHistorico(
   };
 }
 
-function operacaoAtiva(itens: Item[]): number {
-  return itens.findLastIndex(
-    (item) =>
-      item.tipo === 'operacao' &&
-      item.etapa !== 'erro' &&
-      (item.etapa !== 'concluida' || item.aguardandoCurriculo),
-  );
-}
-
 function atualizarOperacao(operacao: Operacao, passo: Extract<Item, { tipo: 'passo' }>): Operacao {
   const resultado = passo.resultado as Record<string, unknown> | null;
   const jobId =
     typeof passo.args.jobId === 'string'
       ? passo.args.jobId
-      : resultado && typeof (resultado.jobId ?? resultado.id) === 'string'
+      : resultado && typeof (resultado.jobId ?? (passo.tool === 'status_geracao' ? resultado.id : undefined)) === 'string'
         ? String(resultado.jobId ?? resultado.id)
         : undefined;
   const indiceStatus =
@@ -366,14 +380,26 @@ function atualizarOperacao(operacao: Operacao, passo: Extract<Item, { tipo: 'pas
 
 function consolidarPasso(itens: Item[], passo: Extract<Item, { tipo: 'passo' }>): Item[] {
   if (!TOOLS_OPERACAO.has(passo.tool)) return [...itens, passo];
-  let indice = operacaoAtiva(itens);
+  const resultado = passo.resultado as Record<string, unknown> | null;
+  const fase = passo.tool === 'analisar_ats' ? 1 : passo.tool === 'gerar_curriculo' || passo.tool === 'status_geracao' && !['VALIDANDO', 'CONCLUIDA'].includes(String(resultado?.status ?? '')) && !itens.some((item) => item.tipo === 'operacao' && item.fase === 3) ? 2 : 3;
+  const jobId = typeof passo.args.jobId === 'string' ? passo.args.jobId : typeof resultado?.jobId === 'string' ? resultado.jobId : typeof resultado?.id === 'string' && passo.tool === 'status_geracao' ? resultado.id : undefined;
+  if (fase === 3) {
+    const indice2 = indiceFase(itens, 2, jobId);
+    if (indice2 >= 0) {
+      const etapa2 = itens[indice2] as Operacao;
+      itens = [...itens];
+      itens[indice2] = { ...etapa2, etapa: 'concluida' };
+    }
+  }
+  let indice = indiceFase(itens, fase, jobId);
   if (indice < 0) {
     indice = itens.length;
-    itens = [...itens, { tipo: 'operacao', id: `op-${passo.id}`, passos: [], etapa: 'etapa1' }];
+    itens = [...itens, { tipo: 'operacao', id: `op-${passo.id}`, fase, passos: [], etapa: fase === 1 ? 'etapa1' : fase === 2 ? 'etapa2' : 'etapa3', jobId }];
   }
   const operacao = itens[indice] as Operacao;
   const atualizados = [...itens];
-  atualizados[indice] = atualizarOperacao(operacao, passo);
+  const atualizada = atualizarOperacao(operacao, passo);
+  atualizados[indice] = { ...atualizada, fase, etapa: fase === 1 ? atualizada.etapa : fase === 2 ? atualizada.etapa === 'etapa3' ? 'etapa2' : atualizada.etapa : atualizada.etapa === 'aguardando_etapa2' ? 'etapa3' : atualizada.etapa };
   return atualizados;
 }
 
@@ -390,6 +416,11 @@ function adicionarPreview(itens: Item[]): Item[] {
     const curriculoId = typeof resultado?.id === 'string' ? resultado.id : null;
     if (!resultado || !curriculoId || previews.has(curriculoId)) continue;
     previews.add(curriculoId);
+    if (item.fase === 3) {
+      const indice = novos.findIndex((candidato) => candidato.id === item.id);
+      novos[indice] = { ...item, etapa: 'concluida', curriculoId, rotuloCurriculo: typeof resultado.rotulo === 'string' ? resultado.rotulo : 'Currículo pronto', scoreCurriculo: typeof resultado.score === 'number' ? resultado.score : null };
+      continue;
+    }
     novos.push({
       tipo: 'preview_curriculo',
       id: `preview-${curriculoId}`,
@@ -401,7 +432,7 @@ function adicionarPreview(itens: Item[]): Item[] {
   return novos;
 }
 
-function itensDeHistorico(conversa: ConversaCopilotoDetalhe): Item[] {
+export function itensDeHistorico(conversa: ConversaCopilotoDetalhe): Item[] {
   let itens: Item[] = [];
   conversa.mensagens.forEach((mensagem, indice) => {
     if (mensagem.papel === 'user') {
@@ -447,7 +478,7 @@ function itensDeHistorico(conversa: ConversaCopilotoDetalhe): Item[] {
   );
 }
 
-function normalizarSnapshot(itens: Item[]): Item[] {
+export function normalizarSnapshot(itens: Item[]): Item[] {
   let normalizados: Item[] = [];
   for (const item of itens) {
     normalizados = item.tipo === 'passo' ? consolidarPasso(normalizados, item) : [...normalizados, item];
@@ -455,7 +486,7 @@ function normalizarSnapshot(itens: Item[]): Item[] {
   return adicionarPreview(normalizados);
 }
 
-function reducer(estado: Estado, acao: Acao): Estado {
+export function reducer(estado: Estado, acao: Acao): Estado {
   switch (acao.t) {
     case 'restaurar':
       return { ...estado, ...acao.payload };
@@ -467,11 +498,15 @@ function reducer(estado: Estado, acao: Acao): Estado {
       }
       if (envio.confirmacao) {
         const alvo = envio.confirmacao;
+        const confirmacao = itens.find((item) => item.tipo === 'confirmacao' && item.callId === alvo.callId);
         itens = itens.map((it) =>
           it.tipo === 'confirmacao' && it.callId === alvo.callId
             ? { ...it, decisao: alvo.decisao }
             : it,
         );
+        if (alvo.decisao === 'confirmar' && confirmacao?.tipo === 'confirmacao' && confirmacao.tool === 'gerar_curriculo') {
+          itens = [...itens, { tipo: 'operacao', id: novoId(), fase: 2, confirmacaoId: alvo.callId, etapa: 'etapa2', passos: [] }];
+        }
       }
       return {
         ...estado,
@@ -484,6 +519,9 @@ function reducer(estado: Estado, acao: Acao): Estado {
     case 'evento':
       return aplicarEvento(estado, acao.ev);
     case 'atualizarGeracao': {
+      if (estado.itens.some((item) => item.tipo === 'operacao' && item.fase === 2 && item.jobId === acao.jobId)) {
+        return { ...estado, itens: atualizarJob(estado.itens, acao.jobId, acao.geracao) };
+      }
       const terminal = acao.geracao.status === 'CONCLUIDA' || acao.geracao.status === 'ERRO';
       return {
         ...estado,
@@ -522,6 +560,8 @@ function reducer(estado: Estado, acao: Acao): Estado {
       };
       const itens = estado.itens.map((item): Item => {
         if (item.tipo !== 'operacao' || item.jobId !== acao.jobId) return item;
+        if (item.fase === 3) return { ...item, passos: [...item.passos.filter((candidato) => candidato.callId !== passo.callId), passo], etapa: 'concluida', aguardandoCurriculo: false, curriculoId: acao.curriculo.id, rotuloCurriculo: acao.curriculo.rotulo, scoreCurriculo: acao.curriculo.score };
+        if (item.fase === 2) return item;
         if (item.passos.some((candidato) => candidato.callId === passo.callId)) return item;
         return {
           ...item,
@@ -530,7 +570,7 @@ function reducer(estado: Estado, acao: Acao): Estado {
           aguardandoCurriculo: false,
         };
       });
-      return itens.some((item) => item.tipo === 'preview_curriculo' && item.curriculoId === acao.curriculo.id)
+      return itens.some((item) => item.tipo === 'operacao' && item.fase === 3 && item.curriculoId === acao.curriculo.id) || itens.some((item) => item.tipo === 'preview_curriculo' && item.curriculoId === acao.curriculo.id)
         ? { ...estado, itens }
         : {
             ...estado,
