@@ -282,7 +282,7 @@ export function editarCurriculo(id: string, dto: { markdown: string; rotulo?: st
 }
 
 export function listarCurriculos(vagaId: string) {
-  return request<CurriculoResumo[]>(`/vagas/${vagaId}/curriculos`);
+  return request<CurriculoResumo[]>(`/oportunidades/${vagaId}/curriculos`);
 }
 
 export function getLote(id: string) {
@@ -785,21 +785,6 @@ export function listarCurriculosGlobal(params: {
 
 export function getPipeline(filtros: PipelineFiltros) {
   return request<PipelineItem[]>(`/pipeline${query(filtros)}`);
-}
-
-export function getPipelineCanvas() {
-  return request<CanvasLayout>('/pipeline/canvas');
-}
-
-export function putPipelineCanvas(dto: {
-  revisaoBase: number;
-  viewport: { x: number; y: number; zoom: number };
-  posicoes: { vagaId: string; x: number; y: number }[];
-}) {
-  return request<CanvasLayout>('/pipeline/canvas', {
-    method: 'PUT',
-    body: JSON.stringify(dto),
-  });
 }
 
 export function getPipelineGrafo(filtros: PipelineFiltros) {
