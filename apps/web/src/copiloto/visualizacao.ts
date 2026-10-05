@@ -23,7 +23,6 @@ export function scoresAts(tool: string, resultado: unknown): ScoreAts[] | null {
   const final = valor.analiseFinal as Record<string, unknown> | null;
   if (typeof inicial?.score !== 'number' || typeof final?.score !== 'number') return null;
   return [
-    { etapa: '', score: 0 },
     { etapa: 'Base', score: inicial.score },
     { etapa: 'Gerado', score: final.score },
   ];
@@ -48,7 +47,7 @@ export function scoresNarracaoAts(itens: Item[], texto: string): ScoreAts[] | un
     .find((item) => item.tool === 'buscar_curriculo' && item.status === 'ok');
   const scores = curriculo ? scoresAts(curriculo.tool, curriculo.resultado) : null;
   if (!scores) return undefined;
-  return etapa === 'inicial' ? scores.slice(1, 2) : scores;
+  return etapa === 'inicial' ? scores.slice(0, 1) : scores;
 }
 
 export function dividirNarracaoAts(texto: string): string[] {

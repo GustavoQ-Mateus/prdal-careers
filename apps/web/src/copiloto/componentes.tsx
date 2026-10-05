@@ -17,18 +17,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { ChartContainer } from '@/components/ui/chart';
+import { ScoreDelta } from '@/components/Score';
+import { faixaScore } from '../ui';
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
   Label,
   type LabelProps,
   PolarRadiusAxis,
   RadialBar,
   RadialBarChart,
-  XAxis,
-  YAxis,
 } from 'recharts';
 import { baixarArquivo, type ModoCopiloto } from '../api';
 import {
@@ -262,6 +259,7 @@ const INDICE_ETAPA: Record<Extract<Item, { tipo: 'operacao' }>['etapa'], number>
 
 export function OperacaoCorrente({ item }: { item: Extract<Item, { tipo: 'operacao' }> }) {
   const [aberto, setAberto] = useState(false);
+  if (item.fase) return <OperacaoPorFase item={item} />;
   const ativa = !['aguardando_etapa2', 'concluida', 'erro'].includes(item.etapa);
   const falhou = item.etapa === 'erro';
   const ultimo = item.passos[item.passos.length - 1];
@@ -344,6 +342,39 @@ export function OperacaoCorrente({ item }: { item: Extract<Item, { tipo: 'operac
   );
 }
 
+function OperacaoPorFase({ item }: { item: Extract<Item, { tipo: 'operacao' }> }) {
+  const [aberto, setAberto] = useState(false);
+  const ultimo = item.passos[item.passos.length - 1];
+  const falhou = item.etapa === 'erro';
+  const concluida = item.etapa === 'aguardando_etapa2' || item.etapa === 'concluida';
+  const analise = item.fase === 1 ? item.passos.find((passo) => passo.tool === 'analisar_ats' && passo.status === 'ok')?.resultado : null;
+  const curriculo = item.fase === 3 ? item.passos.find((passo) => passo.tool === 'buscar_curriculo' && passo.status === 'ok')?.resultado : null;
+  const scores = curriculo ? scoresAts('buscar_curriculo', curriculo) : null;
+  const titulo = item.fase === 1 ? 'Etapa 1 - Análise ATS' : item.fase === 2 ? 'Etapa 2 - Reescrita otimizada' : 'Etapa 3 - ATS pós-geração';
+  return (
+    <div className="rounded-card border border-line-strong bg-ground p-4 shadow-rest motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1" role="status" aria-live="polite">
+      <div className="flex items-center gap-2">
+        <span className={cn('flex size-7 items-center justify-center rounded-full border', falhou ? 'border-score-bad text-score-bad' : concluida ? 'border-line-strong text-score-good' : 'border-accent text-accent')}>
+          {falhou ? <TriangleAlert className="size-4" /> : concluida ? <Check className="size-4" /> : <Loader2 className="size-4 animate-spin" />}
+        </span>
+        <div>
+          <p className="text-[14px] font-medium text-ink">{titulo}</p>
+          <p className="text-[12px] text-muted">{falhou ? ultimo?.erro ?? 'Falha na execução' : concluida ? 'Concluído' : item.fase === 2 && !item.jobId ? 'Iniciando a reescrita' : item.jobId ? 'Acompanhando a geração' : 'Executando'}</p>
+        </div>
+      </div>
+      {item.fase === 1 && Boolean(analise) && typeof analise === 'object' && <ResultadoEtapa1 analise={analise as Record<string, unknown>} scores={scoresAts('analisar_ats', analise) ?? []} />}
+      {item.fase === 3 && scores && <GraficoScoreAts scores={scores} />}
+      {item.fase === 3 && item.curriculoId && <CartaoPreviewCurriculo item={{ tipo: 'preview_curriculo', id: item.id, curriculoId: item.curriculoId, rotulo: item.rotuloCurriculo ?? 'Currículo pronto', score: item.scoreCurriculo ?? null }} interno />}
+      {item.passos.length > 0 && <>
+        <button type="button" onClick={() => setAberto((valor) => !valor)} className="mt-3 inline-flex items-center gap-1 text-[12px] text-muted hover:text-ink">
+          <ChevronDown className={cn('size-3.5 transition-transform', aberto && 'rotate-180')} />{aberto ? 'Ocultar retorno técnico' : 'Ver retorno técnico'}
+        </button>
+        {aberto && <div className="mt-2 space-y-2">{item.passos.map((passo) => <pre key={passo.callId} className="max-h-40 overflow-auto rounded-control border border-line bg-canvas p-2 text-[11px] text-ink-2">{passo.erro ?? JSON.stringify(passo.resultado ?? { status: passo.status }, null, 2)}</pre>)}</div>}
+      </>}
+    </div>
+  );
+}
+
 function listaAnalise(analise: Record<string, unknown>, campo: string): string[] {
   const valores = analise[campo];
   return Array.isArray(valores)
@@ -370,7 +401,7 @@ function ResultadoEtapa1({ analise, scores }: { analise: Record<string, unknown>
   );
 }
 
-export function CartaoPreviewCurriculo({ item }: { item: Extract<Item, { tipo: 'preview_curriculo' }> }) {
+export function CartaoPreviewCurriculo({ item, interno = false }: { item: Extract<Item, { tipo: 'preview_curriculo' }>; interno?: boolean }) {
   const [baixando, setBaixando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -387,7 +418,7 @@ export function CartaoPreviewCurriculo({ item }: { item: Extract<Item, { tipo: '
   }
 
   return (
-    <div className="rounded-card border border-line-strong bg-ground p-4 shadow-rest motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1">
+    <div className={interno ? 'mt-3 border-t border-line pt-3' : 'rounded-card border border-line-strong bg-ground p-4 shadow-rest motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1'}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <span className="text-label uppercase text-accent-ink">Etapa 3 - ATS pós-geração</span>
@@ -411,28 +442,23 @@ function GraficoScoreAts({ scores }: { scores: ScoreAts[] }) {
       <p className="mb-2 text-label uppercase text-muted">
         {scores.length === 1 ? 'Score ATS · Etapa 1' : 'Comparação de score ATS · Etapas 1 e 3'}
       </p>
-      <ChartContainer
-        className={scores.length === 1 ? 'mx-auto aspect-square h-48 max-h-[250px]' : 'h-40'}
+      {scores.length === 1 && <ChartContainer
+        className="mx-auto aspect-square h-48 max-h-[250px]"
         config={{ score: { label: 'Score ATS', color: 'var(--accent)' } }}
       >
-        {scores.length === 1 ? (
-          <ScoreInicialRadial score={scores[0].score} />
-        ) : (
-          <AreaChart data={scores} margin={{ left: -20, right: 4, top: 4, bottom: 0 }}>
-            <defs>
-              <linearGradient id="score-ats" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-score)" stopOpacity={0.45} />
-                <stop offset="95%" stopColor="var(--color-score)" stopOpacity={0.05} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid vertical={false} stroke="var(--line)" />
-            <XAxis dataKey="etapa" tickLine={false} axisLine={false} tickMargin={8} />
-            <YAxis domain={[0, 100]} tickLine={false} axisLine={false} width={28} />
-            <ChartTooltip />
-            <Area dataKey="score" type="monotone" stroke="var(--color-score)" fill="url(#score-ats)" strokeWidth={2} />
-          </AreaChart>
-        )}
+        <ScoreInicialRadial score={scores[0].score} />
       </ChartContainer>
+      }
+      {scores.length > 1 && <div className="space-y-3" aria-label="Comparação de score ATS de 0 a 100">
+        {scores.map((item) => <div key={item.etapa} className="grid grid-cols-[4.5rem_1fr_2rem] items-center gap-2 text-[12px] text-ink-2">
+          <span>{item.etapa}</span>
+          <div className="h-3 rounded-full bg-line" role="meter" aria-label={`Score ${item.etapa}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={item.score}>
+            <div className={cn('h-3 rounded-full', faixaScore(item.score) === 'good' ? 'bg-score-good' : faixaScore(item.score) === 'mid' ? 'bg-score-warn' : 'bg-score-bad')} style={{ width: `${Math.max(0, Math.min(100, item.score))}%` }} />
+          </div>
+          <span className="text-right font-mono">{item.score}</span>
+        </div>)}
+        <div className="flex items-center justify-end gap-2 text-[12px] text-muted">Diferença <ScoreDelta valor={scores[1].score - scores[0].score} semGanho /></div>
+      </div>}
     </div>
   );
 }
@@ -546,7 +572,7 @@ export function CartaoConfirmacao({
       <div className="flex items-center justify-end gap-2 border-t border-line px-4 py-3">
         {resolvido ? (
           <span className="text-[13px] text-muted">
-            {resolvido === 'confirmar' ? 'Confirmado' : 'Recusado, nada foi gravado'}
+            {resolvido === 'recusar' ? 'Recusado, nada foi gravado' : item.execucao === 'erro' ? <span className="text-score-bad">{item.erro ?? 'Falha na execução'}</span> : item.execucao === 'ok' ? 'Confirmado' : <span className="inline-flex items-center gap-1"><Loader2 className="size-3.5 animate-spin" />Executando</span>}
           </span>
         ) : (
           <>

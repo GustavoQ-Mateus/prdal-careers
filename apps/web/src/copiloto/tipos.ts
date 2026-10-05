@@ -34,8 +34,13 @@ export type Item =
       id: string;
       passos: PassoOperacao[];
       etapa: 'etapa1' | 'aguardando_etapa2' | 'etapa2' | 'etapa3' | 'concluida' | 'erro';
+      fase?: 1 | 2 | 3;
+      confirmacaoId?: string;
       jobId?: string;
       aguardandoCurriculo?: boolean;
+      curriculoId?: string;
+      rotuloCurriculo?: string;
+      scoreCurriculo?: number | null;
     }
   | {
       tipo: 'preview_curriculo';
@@ -52,6 +57,8 @@ export type Item =
       resumo: string;
       args: Record<string, unknown>;
       decisao?: 'confirmar' | 'recusar';
+      execucao?: 'executando' | 'ok' | 'erro';
+      erro?: string;
     }
   | {
       tipo: 'entrega';

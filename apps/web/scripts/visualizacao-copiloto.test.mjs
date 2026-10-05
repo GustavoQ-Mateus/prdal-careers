@@ -21,7 +21,6 @@ test('matriz de gráficos por ferramenta', () => {
     { etapa: 'Base', score: 73 },
   ]);
   assert.deepEqual(scoresAts('buscar_curriculo', { analiseInicial: inicial, analiseFinal: final }), [
-    { etapa: '', score: 0 },
     { etapa: 'Base', score: 73 },
     { etapa: 'Gerado', score: 82 },
   ]);
@@ -38,7 +37,7 @@ test('consultas repetidas do mesmo job localizam o mesmo passo', () => {
   assert.equal(localizarStatusGeracao(itens, 'job-2'), -1);
 });
 
-test('narração da Etapa 1 isola o score real, não o ponto zero de partida', () => {
+test('narração da Etapa 1 isola o score inicial', () => {
   const itens = [
     {
       tipo: 'passo',
@@ -51,10 +50,17 @@ test('narração da Etapa 1 isola o score real, não o ponto zero de partida', (
     { etapa: 'Base', score: 73 },
   ]);
   assert.deepEqual(scoresNarracaoAts(itens, 'Etapa 3 concluída'), [
-    { etapa: '', score: 0 },
     { etapa: 'Base', score: 73 },
     { etapa: 'Gerado', score: 82 },
   ]);
+});
+
+test('comparação conserva ganho, igualdade e queda sem ponto artificial', () => {
+  for (const gerado of [82, 73, 61]) {
+    const scores = scoresAts('buscar_curriculo', { analiseInicial: inicial, analiseFinal: { score: gerado } });
+    assert.deepEqual(scores, [{ etapa: 'Base', score: 73 }, { etapa: 'Gerado', score: gerado }]);
+    assert.equal(scores[1].score - scores[0].score, gerado - 73);
+  }
 });
 
 test('histórico mantém uma única leitura visual por job', () => {
