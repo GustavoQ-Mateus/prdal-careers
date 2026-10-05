@@ -12,6 +12,7 @@ import {
   type ModoCopiloto,
 } from '../api';
 import { reidratarAposQueda } from './sse';
+import { armazenamentoConversa } from './armazenamento';
 import type { EstadoCopiloto, Item } from './tipos';
 import {
   MARCADOR_NARRACAO_ATS_ETAPA_3,
@@ -575,7 +576,7 @@ const chave = (oportunidadeId?: string) => `copiloto:conversa:${oportunidadeId ?
 
 function carregar(oportunidadeId?: string): Partial<Estado> {
   try {
-    const bruto = localStorage.getItem(chave(oportunidadeId));
+    const bruto = armazenamentoConversa(oportunidadeId, localStorage, sessionStorage).getItem(chave(oportunidadeId));
     if (!bruto) return {};
     const p = JSON.parse(bruto) as Partial<Estado>;
     return {
@@ -631,7 +632,7 @@ export function useCopiloto(oportunidadeId?: string) {
       oportunidadeId: estado.oportunidadeId,
     };
     try {
-      localStorage.setItem(chave(oportunidadeId), JSON.stringify(payload));
+      armazenamentoConversa(oportunidadeId, localStorage, sessionStorage).setItem(chave(oportunidadeId), JSON.stringify(payload));
     } catch {
       /* storage cheio ou indisponivel */
     }

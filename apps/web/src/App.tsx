@@ -18,6 +18,7 @@ import { Workspace } from './Workspace';
 import { iniciarSessao, logout } from './api';
 import { abaDaRota, useRota, type Aba, type Rota } from './rotas';
 import { useEffect, useState } from 'react';
+import { limparArmazenamentosCopiloto } from './copiloto/armazenamento';
 
 const CONTEXTO: Record<Aba, { titulo: string; descricao: string }> = {
   hoje: { titulo: 'Hoje', descricao: 'O que precisa da sua atenção neste momento' },
@@ -134,6 +135,7 @@ export function App() {
 
   async function sair() {
     await logout();
+    limparArmazenamentosCopiloto(localStorage, sessionStorage);
     setAutenticado(false);
     ir({ tela: 'copiloto' }, true);
   }
