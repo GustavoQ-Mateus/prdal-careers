@@ -195,3 +195,6 @@ DATABASE_URL=postgresql://prdal:SENHA_DO_POSTGRES@127.0.0.1:5432/prdal_careers n
 
 Confira no `migracao-entradas.json` que `ok` é `true`, que `entradasEncontradas` é igual a `entradasEsperadas` e que `depois.vagas.entrada` é igual a `antes.bancoVagas.crua`. Em seguida suba o resto com `docker compose -f infra/docker-compose.yml up -d --build`.
 
+### Normalização de e-mails de contas
+
+Antes de aplicar a migração de e-mails, pare a API e o worker e execute `npm run migrar:emails` em `apps/api` com `DATABASE_URL` explícito para o banco escolhido. O script informa as contagens antes e depois e recusa aplicar qualquer migração quando duas contas tiverem o mesmo e-mail após `trim` e conversão para minúsculas. Nesse caso, a lista de contas em `colisoes` deve ser resolvida manualmente pelo autor antes de repetir o comando. Não há mesclagem automática de dados de contas.
