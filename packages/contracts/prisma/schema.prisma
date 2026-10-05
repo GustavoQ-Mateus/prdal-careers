@@ -1,0 +1,592 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+model Usuario {
+  id            String               @id @default(uuid())
+  email         String               @unique
+  senhaHash     String               @map("senha_hash")
+  criadoEm      DateTime             @default(now()) @map("criado_em")
+  consentimentoLlmEm DateTime?        @map("consentimento_llm_em")
+  exclusaoAgendadaPara DateTime?      @map("exclusao_agendada_para")
+  perfil        PerfilMestre?
+  vagas         Vaga[]
+  lotes         Lote[]
+  acoes         AcaoOportunidade[]
+  eventos       EventoOportunidade[]
+  preferencia   PreferenciaUsuario?
+  geracoes      GeracaoCurriculo[]
+  sessoes       Sessao[]
+  usosTokens    UsoTokensDiario[]
+  pipelinesAts  PipelineAts[]
+  conversas     CopilotoConversa[]
+  documentosRag DocumentoRag[]
+  notas         NotaObsidian[]
+  chunksRag     ChunkRag[]
+  jobs          Job[]
+
+  @@map("usuarios")
+}
+
+model UsoTokensDiario {
+  usuarioId    String   @map("usuario_id")
+  usuario      Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  dia          DateTime @db.Date
+  entrada      Int      @default(0)
+  saida        Int      @default(0)
+  cacheLida    Int      @default(0) @map("cache_lida")
+  cacheEscrita Int      @default(0) @map("cache_escrita")
+  chamadas     Int      @default(0)
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  @@id([usuarioId, dia])
+  @@map("uso_tokens_diario")
+}
+
+model Sessao {
+  id            String    @id @default(uuid())
+  usuarioId     String    @map("usuario_id")
+  usuario       Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  familia       String
+  refreshHash   String    @unique @map("refresh_hash")
+  criadoEm      DateTime  @default(now()) @map("criado_em")
+  expiraEm      DateTime  @map("expira_em")
+  ultimoUsoEm   DateTime? @map("ultimo_uso_em")
+  substituidaEm DateTime? @map("substituida_em")
+  revogadaEm    DateTime? @map("revogada_em")
+
+  @@index([usuarioId])
+  @@index([familia])
+  @@map("sessoes")
+}
+
+model PerfilMestre {
+  id            String   @id @default(uuid())
+  usuarioId     String   @unique @map("usuario_id")
+  usuario       Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  nome          String
+  contato       Json
+  resumo        String
+  experiencias  Json
+  formacao      Json
+  certificacoes Json     @default("[]")
+  idiomas       Json     @default("[]")
+  skills        Json
+  atualizadoEm  DateTime @updatedAt @map("atualizado_em")
+
+  @@map("perfil_mestre")
+}
+
+enum PrioridadeOportunidade {
+  BAIXA
+  MEDIA
+  ALTA
+}
+
+enum OrigemOportunidade {
+  MANUAL
+  IMPORTACAO
+}
+
+enum EstagioOportunidade {
+  ENTRADA
+  ATIVA
+}
+
+enum StatusKeywords {
+  VALIDAS
+  PENDENTE
+}
+
+enum EstadoExtracaoKeywords {
+  PENDENTE
+  EXTRAINDO
+  PRONTAS
+  ERRO
+}
+
+model Vaga {
+  id                 String                 @id @default(uuid())
+  usuarioId          String                 @map("usuario_id")
+  usuario            Usuario                @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  titulo             String
+  empresa            String
+  descricao          String
+  fonte              String?
+  keywords           Json
+  keywordsStatus     StatusKeywords         @default(PENDENTE) @map("keywords_status")
+  keywordsExtracao   EstadoExtracaoKeywords @default(PENDENTE) @map("keywords_extracao")
+  keywordsErro       String?                @map("keywords_erro")
+  categoria          String?
+  nivel              String?
+  prioridade         PrioridadeOportunidade @default(MEDIA)
+  origem             OrigemOportunidade     @default(MANUAL)
+  estagio            EstagioOportunidade    @default(ATIVA)
+  origemImportacaoId String?                @map("origem_importacao_id")
+  criadoEm           DateTime               @default(now()) @map("criado_em")
+  atualizadoEm       DateTime               @default(now()) @updatedAt @map("atualizado_em")
+  arquivadaEm        DateTime?              @map("arquivada_em")
+  curriculos         Curriculo[]
+  candidaturas       Candidatura[]
+  acoes              AcaoOportunidade[]
+  eventos            EventoOportunidade[]
+  geracoes           GeracaoCurriculo[]
+  pipelineAts        PipelineAts?
+  conversas          CopilotoConversa[]
+  loteItens          LoteItem[]
+
+  @@unique([usuarioId, origemImportacaoId])
+  @@index([usuarioId, estagio, criadoEm(sort: Desc)])
+  @@map("vagas")
+}
+
+model Curriculo {
+  id             String               @id @default(uuid())
+  vagaId         String               @map("vaga_id")
+  vaga           Vaga                 @relation(fields: [vagaId], references: [id], onDelete: Cascade)
+  rotulo         String               @default("Versao 1")
+  markdown       String
+  docxPath       String?              @map("docx_path")
+  pdfPath        String?              @map("pdf_path")
+  pacotePath     String?              @map("pacote_path")
+  score          Int?
+  scoreBreakdown Json?                @map("score_breakdown")
+  analiseInicial Json?                @map("analise_inicial")
+  analiseFinal   Json?                @map("analise_final")
+  degradacao     String?
+  modelo         String?
+  promptVersion  String?              @map("prompt_version")
+  estrutura      Json?
+  geradoEm       DateTime             @default(now()) @map("gerado_em")
+  candidaturas   Candidatura[]
+  eventos        EventoOportunidade[]
+  geracoes       GeracaoCurriculo[]
+
+  @@index([vagaId])
+  @@map("curriculos")
+}
+
+enum StatusCandidatura {
+  RASCUNHO
+  INSCRITA
+  EM_PROCESSO
+  ENTREVISTA
+  OFERTA
+  REJEITADA
+  DESISTIU
+}
+
+model Candidatura {
+  id                 String               @id @default(uuid())
+  vagaId             String               @map("vaga_id")
+  vaga               Vaga                 @relation(fields: [vagaId], references: [id], onDelete: Cascade)
+  curriculoId        String?              @map("curriculo_id")
+  curriculo          Curriculo?           @relation(fields: [curriculoId], references: [id], onDelete: Restrict)
+  status             StatusCandidatura    @default(RASCUNHO)
+  notas              String               @default("")
+  principal          Boolean              @default(false)
+  enviadaEm          DateTime?            @map("enviada_em")
+  encerradaEm        DateTime?            @map("encerrada_em")
+  motivoEncerramento String?              @map("motivo_encerramento")
+  criadoEm           DateTime             @default(now()) @map("criado_em")
+  atualizadoEm       DateTime             @updatedAt @map("atualizado_em")
+  acoes              AcaoOportunidade[]
+  eventos            EventoOportunidade[]
+  documentosRag      DocumentoRag[]
+
+  @@index([vagaId])
+  @@index([curriculoId])
+  @@map("candidaturas")
+}
+
+enum StatusLote {
+  PENDENTE
+  PROCESSANDO
+  CONCLUIDO
+}
+
+enum StatusLoteItem {
+  PENDENTE
+  PROCESSANDO
+  CONCLUIDO
+  ERRO
+}
+
+model Lote {
+  id          String     @id @default(uuid())
+  usuarioId   String     @map("usuario_id")
+  usuario     Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tipo        String
+  status      StatusLote @default(PENDENTE)
+  total       Int
+  processados Int        @default(0)
+  criadoEm    DateTime   @default(now()) @map("criado_em")
+  itens       LoteItem[]
+
+  @@index([usuarioId])
+  @@map("lotes")
+}
+
+model LoteItem {
+  id               String         @id @default(uuid())
+  loteId           String         @map("lote_id")
+  lote             Lote           @relation(fields: [loteId], references: [id], onDelete: Cascade)
+  vagaId           String?        @map("vaga_id")
+  vaga             Vaga?          @relation(fields: [vagaId], references: [id], onDelete: SetNull)
+  documentoRagId   String?        @map("documento_rag_id")
+  documentoRag     DocumentoRag?  @relation(fields: [documentoRagId], references: [id], onDelete: SetNull)
+  referenciaLegada String?        @map("referencia_legada")
+  status           StatusLoteItem @default(PENDENTE)
+  tentativas       Int            @default(0)
+  erro             String?
+
+  @@index([loteId])
+  @@index([vagaId])
+  @@index([documentoRagId])
+  @@map("lote_itens")
+}
+
+enum TipoAcaoOportunidade {
+  REVISAR_VAGA
+  GERAR_CURRICULO
+  ENVIAR_CANDIDATURA
+  FAZER_FOLLOW_UP
+  PREPARAR_ENTREVISTA
+  PARTICIPAR_ENTREVISTA
+  ENVIAR_MATERIAL
+  OUTRO
+}
+
+model AcaoOportunidade {
+  id            String               @id @default(uuid())
+  usuarioId     String               @map("usuario_id")
+  usuario       Usuario              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  vagaId        String               @map("vaga_id")
+  vaga          Vaga                 @relation(fields: [vagaId], references: [id], onDelete: Cascade)
+  candidaturaId String?              @map("candidatura_id")
+  candidatura   Candidatura?         @relation(fields: [candidaturaId], references: [id], onDelete: SetNull)
+  titulo        String
+  tipo          TipoAcaoOportunidade
+  principal     Boolean              @default(false)
+  venceEm       DateTime?            @map("vence_em")
+  lembrarEm     DateTime?            @map("lembrar_em")
+  lembreteEnviadoEm DateTime?         @map("lembrete_enviado_em")
+  concluidaEm   DateTime?            @map("concluida_em")
+  canceladaEm   DateTime?            @map("cancelada_em")
+  criadoEm      DateTime             @default(now()) @map("criado_em")
+  atualizadoEm  DateTime             @updatedAt @map("atualizado_em")
+
+  @@index([usuarioId, venceEm])
+  @@index([lembrarEm, lembreteEnviadoEm])
+  @@index([vagaId])
+  @@index([candidaturaId])
+  @@map("acoes_oportunidade")
+}
+
+enum OrigemEvento {
+  SISTEMA
+  USUARIO
+}
+
+model EventoOportunidade {
+  id            String       @id @default(uuid())
+  usuarioId     String       @map("usuario_id")
+  usuario       Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  vagaId        String       @map("vaga_id")
+  vaga          Vaga         @relation(fields: [vagaId], references: [id], onDelete: Cascade)
+  candidaturaId String?      @map("candidatura_id")
+  candidatura   Candidatura? @relation(fields: [candidaturaId], references: [id], onDelete: SetNull)
+  curriculoId   String?      @map("curriculo_id")
+  curriculo     Curriculo?   @relation(fields: [curriculoId], references: [id], onDelete: SetNull)
+  tipo          String
+  origem        OrigemEvento
+  descricao     String
+  dados         Json
+  ocorridoEm    DateTime     @map("ocorrido_em")
+  registradoEm  DateTime     @default(now()) @map("registrado_em")
+
+  @@index([usuarioId, vagaId, ocorridoEm])
+  @@index([vagaId])
+  @@index([candidaturaId])
+  @@index([curriculoId])
+  @@map("eventos_oportunidade")
+}
+
+model PreferenciaUsuario {
+  usuarioId    String   @id @map("usuario_id")
+  usuario      Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  fusoHorario  String   @map("fuso_horario")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  @@map("preferencias_usuario")
+}
+
+enum StatusGeracaoCurriculo {
+  PENDENTE
+  ANALISANDO
+  GERANDO
+  VALIDANDO
+  CONCLUIDA
+  ERRO
+}
+
+model GeracaoCurriculo {
+  id             String                 @id @default(uuid())
+  usuarioId      String                 @map("usuario_id")
+  usuario        Usuario                @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  vagaId         String                 @map("vaga_id")
+  vaga           Vaga                   @relation(fields: [vagaId], references: [id], onDelete: Cascade)
+  curriculoId    String?                @map("curriculo_id")
+  curriculo      Curriculo?             @relation(fields: [curriculoId], references: [id], onDelete: SetNull)
+  status         StatusGeracaoCurriculo @default(PENDENTE)
+  erro           String?
+  analiseInicial Json?                  @map("analise_inicial")
+  analiseFinal   Json?                  @map("analise_final")
+  degradacao     String?
+  criadoEm       DateTime               @default(now()) @map("criado_em")
+  atualizadoEm   DateTime               @updatedAt @map("atualizado_em")
+
+  @@index([usuarioId])
+  @@index([vagaId])
+  @@index([curriculoId])
+  @@map("geracoes_curriculo")
+}
+
+enum EstadoPipelineAts {
+  SEM_ANALISE
+  ANALISADA
+  AGUARDANDO_CONFIRMACAO
+  GERANDO
+  CONCLUIDA
+  FALHOU
+  DESATUALIZADA
+}
+
+model PipelineAts {
+  vagaId                  String              @id @map("vaga_id")
+  vaga                    Vaga                @relation(fields: [vagaId], references: [id], onDelete: Cascade)
+  usuarioId               String              @map("usuario_id")
+  usuario                 Usuario             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  estado                  EstadoPipelineAts
+  jobId                   String?             @map("job_id")
+  curriculoId             String?             @map("curriculo_id")
+  perfilAlteradoNaGeracao Boolean             @default(false) @map("perfil_alterado_na_geracao")
+  versao                  Int                 @default(0)
+  atualizadoEm            DateTime            @default(now()) @updatedAt @map("atualizado_em")
+  eventos                 EventoPipelineAts[]
+
+  @@index([usuarioId, estado])
+  @@map("pipelines_ats")
+}
+
+model EventoPipelineAts {
+  id         String            @id @default(uuid())
+  vagaId     String            @map("vaga_id")
+  pipeline   PipelineAts       @relation(fields: [vagaId], references: [vagaId], onDelete: Cascade)
+  usuarioId  String            @map("usuario_id")
+  tipo       String
+  de         EstadoPipelineAts
+  para       EstadoPipelineAts
+  jobId      String?           @map("job_id")
+  dados      Json
+  ocorridoEm DateTime          @default(now()) @map("ocorrido_em")
+
+  @@index([vagaId, ocorridoEm])
+  @@index([usuarioId, jobId])
+  @@map("eventos_pipeline_ats")
+}
+
+model TurnoCopiloto {
+  conversaId String   @id @map("conversa_id")
+  turnoId    String   @map("turno_id")
+  expiraEm   DateTime @map("expira_em")
+
+  @@map("turnos_copiloto")
+}
+
+enum ModoConversaCopiloto {
+  assistido
+  autopiloto
+}
+
+enum PapelMensagemCopiloto {
+  user
+  assistant
+  tool
+  evento
+}
+
+model CopilotoConversa {
+  id             String                @id @default(uuid())
+  usuarioId      String                @map("usuario_id")
+  usuario        Usuario               @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  modo           ModoConversaCopiloto
+  oportunidadeId String?               @map("oportunidade_id")
+  oportunidade   Vaga?                 @relation(fields: [oportunidadeId], references: [id], onDelete: SetNull)
+  pendencia      Json?
+  resumo         Json?
+  totalMensagens Int                   @default(0) @map("total_mensagens")
+  criadoEm       DateTime              @default(now()) @map("criado_em")
+  atualizadoEm   DateTime              @default(now()) @map("atualizado_em")
+  mensagens      CopilotoMensagem[]
+  confirmacoes   CopilotoConfirmacao[]
+
+  @@index([usuarioId, atualizadoEm(sort: Desc)])
+  @@index([usuarioId, oportunidadeId])
+  @@index([oportunidadeId])
+  @@map("copiloto_conversas")
+}
+
+model CopilotoMensagem {
+  id         String                @id @default(uuid())
+  conversaId String                @map("conversa_id")
+  conversa   CopilotoConversa      @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+  ordem      Int
+  papel      PapelMensagemCopiloto
+  conteudo   String
+  tool       String?
+  blocos     Json?
+  dados      Json?
+  criadoEm   DateTime              @default(now()) @map("criado_em")
+
+  @@unique([conversaId, ordem])
+  @@map("copiloto_mensagens")
+}
+
+model CopilotoConfirmacao {
+  conversaId  String           @map("conversa_id")
+  conversa    CopilotoConversa @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+  callId      String           @map("call_id")
+  tool        String
+  decisao     String
+  resultado   Json?
+  erro        String?
+  concluidaEm DateTime         @map("concluida_em")
+
+  @@id([conversaId, callId])
+  @@map("copiloto_confirmacoes")
+}
+
+model NotaObsidian {
+  id         String         @id @default(uuid())
+  usuarioId  String         @map("usuario_id")
+  usuario    Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  titulo     String
+  corpo      String
+  historico  Boolean        @default(false)
+  criadoEm   DateTime       @default(now()) @map("criado_em")
+  documentos DocumentoRag[]
+
+  @@index([usuarioId])
+  @@map("notas_obsidian")
+}
+
+enum OrigemDocumentoRag {
+  perfil
+  candidatura
+  nota
+}
+
+enum TipoDocumentoRag {
+  experiencia
+  resumo
+  skills
+  formacao
+  certificacao
+  idiomas
+  nota
+  candidatura
+}
+
+model DocumentoRag {
+  id            String             @id @default(uuid())
+  usuarioId     String             @map("usuario_id")
+  usuario       Usuario            @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  origem        OrigemDocumentoRag
+  origemId      String             @map("origem_id")
+  tipo          TipoDocumentoRag
+  factual       Boolean
+  titulo        String
+  texto         String
+  notaId        String?            @map("nota_id")
+  nota          NotaObsidian?      @relation(fields: [notaId], references: [id], onDelete: Cascade)
+  candidaturaId String?            @map("candidatura_id")
+  candidatura   Candidatura?       @relation(fields: [candidaturaId], references: [id], onDelete: Cascade)
+  criadoEm      DateTime           @default(now()) @map("criado_em")
+  loteItens     LoteItem[]
+  chunks        ChunkRag[]
+
+  @@index([usuarioId, origem])
+  @@index([notaId])
+  @@index([candidaturaId])
+  @@map("documentos_rag")
+}
+
+model ChunkRag {
+  id          String                     @id @default(uuid())
+  documentoId String                     @map("documento_id")
+  documento   DocumentoRag               @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  usuarioId   String                     @map("usuario_id")
+  usuario     Usuario                    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  indice      Int
+  fonteId     String                     @map("fonte_id")
+  texto       String
+  modelo      String
+  embedding   Unsupported("vector(384)")
+  criadoEm    DateTime                   @default(now()) @map("criado_em")
+
+  @@unique([documentoId, indice])
+  @@index([usuarioId, modelo])
+  @@map("chunks_rag")
+}
+
+enum TipoJob {
+  gerar_curriculo
+  extrair_keywords
+  importar_lote
+  reindexar_contexto
+  empacotar_curriculo
+  exportar_dados
+  excluir_conta
+  sincronizar_lembrete
+}
+
+enum StatusJob {
+  PENDENTE
+  PROCESSANDO
+  CONCLUIDO
+  ERRO
+}
+
+model Job {
+  id            String    @id @default(uuid())
+  tipo          TipoJob
+  status        StatusJob @default(PENDENTE)
+  tentativas    Int       @default(0)
+  lockedUntil   DateTime? @map("locked_until")
+  lockedBy      String?   @map("locked_by")
+  erro          String?
+  entrada       Json?
+  resultado     Json?
+  usuarioId     String    @map("usuario_id")
+  usuario       Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  referenciaId  String    @map("referencia_id")
+  requestId     String?   @map("request_id")
+  enfileiradoEm DateTime? @map("enfileirado_em")
+  iniciadoEm    DateTime? @map("iniciado_em")
+  concluidoEm   DateTime? @map("concluido_em")
+  criadoEm      DateTime  @default(now()) @map("criado_em")
+  atualizadoEm  DateTime  @default(now()) @updatedAt @map("atualizado_em")
+
+  @@index([status, criadoEm])
+  @@index([tipo, referenciaId])
+  @@index([usuarioId])
+  @@map("jobs")
+}

@@ -1,19 +1,37 @@
 {
-  "name": "@prdal/shared-types",
+  "name": "@prdal/contracts",
   "version": "1.0.0",
-  "private": true,
+  "type": "module",
+  "publishConfig": { "registry": "https://npm.pkg.github.com" },
+  "files": [
+    "openapi",
+    "src",
+    "prisma",
+    "dist",
+    "scripts",
+    "README.md",
+    "tsconfig.json"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    }
+    },
+    "./openapi/*": "./openapi/*",
+    "./prisma/*": "./prisma/*",
+    "./*": { "types": "./dist/*.d.ts", "default": "./dist/*.js" }
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "prepare": "npm run build",
+    "reunir": "node scripts/reunir.mjs",
+    "conferir": "node scripts/reunir.mjs --conferir",
+    "test": "node --test test/*.test.mjs"
   },
   "devDependencies": {
+    "openapi-typescript": "^7.13.0",
     "typescript": "^5.7.3"
   }
 }
