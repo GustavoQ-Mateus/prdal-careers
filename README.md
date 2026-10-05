@@ -90,6 +90,21 @@ docker compose -f infra/docker-compose.yml run --rm migracao
 
 Na AWS o RDS PostgreSQL já traz o pgvector; a mesma migração cria a extensão.
 
+### Busca no histórico (RAG)
+
+A api é dona dos documentos e dos vetores: `documentos_rag` guarda o texto e `chunks_rag` guarda cada pedaço com o vetor numa coluna `vector(384)`. O ai-service não guarda nada; ele só divide o documento em pedaços e calcula o embedding (`POST /embeddings/documentos` e `POST /embeddings/consultas`). A recuperação é uma consulta SQL na api por distância de cosseno, sempre filtrada pelo usuário e pelo modelo que gerou o vetor.
+
+O modelo é o `intfloat/multilingual-e5-small` (384 dimensões, janela de 512 tokens, cerca de 470 MB). Ele usa os prefixos `query: ` na consulta e `passage: ` no documento, e a consulta vai no molde `experiência com <keyword>`. O limiar de similaridade é 0,864, calibrado no conjunto de avaliação de RAG: as similaridades do e5 ficam concentradas entre 0,80 e 0,90, a maior nota de um texto sem relação ficou em 0,8586 e o recall@5 de 0,7188 se mantém de 0,859 a 0,867; o 0,864 fica no meio dessa faixa. Cada modelo aceito tem prefixos e limiar registrados em `apps/ai-service/app/rag.py`; `RAG_LIMIAR_SIMILARIDADE` sobrepõe o limiar só para experimento.
+
+A dimensão do vetor é fixa na migração. O ai-service e a api leem `EMBED_DIMENSAO` (384) no boot: o ai-service não sobe se o modelo gerar outra dimensão, e a api não sobe se a coluna tiver outra dimensão. Trocar de modelo exige, nesta ordem: registrar o modelo novo em `rag.py` com limiar calibrado no conjunto de RAG; se a dimensão mudar, uma migração nova que altera a coluna e o `EMBED_DIMENSAO`; e a reindexação. Enquanto houver vetor de outro modelo, a geração avisa que parte do histórico ficou de fora.
+
+```bash
+cd apps/api
+DATABASE_URL=postgresql://... AI_SERVICE_URL=http://localhost:8000 SERVICE_TOKEN=... npm run rag:reindexar
+```
+
+Sem argumento, reindexa só o documento sem vetor do modelo atual ou com vetor de outro modelo; com `-- --todos`, reindexa tudo. O resultado lista quantos documentos e pedaços foram gravados e o que falhou.
+
 ## Documentação
 
 - **Spec atual:** [`docs/specs/spec-v1.7.0.md`](docs/specs/spec-v1.7.0.md)
