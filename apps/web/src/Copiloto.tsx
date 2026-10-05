@@ -87,7 +87,6 @@ export function Copiloto({ oportunidadeId, acaoInicial, onAbrirHoje, onAbrirWork
     getWorkspace(oportunidadeId)
       .then((w) => ativo && setAncora({ titulo: w.oportunidade.titulo, empresa: w.oportunidade.empresa }))
       .catch(() => {
-        /* segue sem o rotulo da ancora */
       });
     return () => {
       ativo = false;

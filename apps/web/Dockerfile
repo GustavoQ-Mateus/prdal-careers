@@ -18,4 +18,7 @@ ENV PRDAL_API_ORIGIN=$VITE_API_URL
 ENV PRDAL_HSTS=""
 COPY apps/web/nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /repo/apps/web/dist /usr/share/nginx/html
-EXPOSE 80
+RUN sed -i '/^user /d; s|/var/run/nginx.pid|/tmp/nginx.pid|; s|/run/nginx.pid|/tmp/nginx.pid|' /etc/nginx/nginx.conf \
+    && chown -R nginx:nginx /etc/nginx/conf.d /var/cache/nginx
+USER nginx
+EXPOSE 8080

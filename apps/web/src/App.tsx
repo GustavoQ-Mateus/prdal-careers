@@ -79,7 +79,6 @@ export function App() {
     try {
       localStorage.setItem('nav-colapsada', navColapsada ? '1' : '0');
     } catch {
-      /* preferência não persistida */
     }
   }, [navColapsada]);
 

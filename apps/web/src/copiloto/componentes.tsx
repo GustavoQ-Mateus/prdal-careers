@@ -598,7 +598,6 @@ export function CartaoEntrega({ item }: { item: Extract<Item, { tipo: 'entrega' 
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     } catch {
-      /* clipboard indisponivel */
     }
   }
 

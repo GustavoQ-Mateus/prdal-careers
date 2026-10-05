@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    outputs:
+      imagem: ${{ steps.contexto.outputs.proprio }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar dependencias
+        run: npm ci --workspaces=false
+      - name: Verificar texto
+        run: node scripts/verificar-texto.cjs
+      - name: Compilar
+        run: npm run typecheck && npm run build
+      - name: Testar
+        run: npm test
+      - name: Conferir contexto proprio
+        id: contexto
+        run: |
+          if [ -f .contexto-proprio ]; then
+            echo "proprio=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Construir imagem
+        if: steps.contexto.outputs.proprio == 'true'
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL || '/api' }}
+        run: docker build --build-arg VITE_API_URL="$VITE_API_URL" -t unidade:${{ github.sha }} .
+      - name: Verificar vulnerabilidades
+        if: steps.contexto.outputs.proprio == 'true'
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: unidade:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+      - name: Salvar imagem verificada
+        if: steps.contexto.outputs.proprio == 'true'
+        run: docker save unidade:${{ github.sha }} -o "${{ runner.temp }}/imagem.tar"
+      - uses: actions/upload-artifact@v4
+        if: steps.contexto.outputs.proprio == 'true'
+        with:
+          name: imagem
+          path: ${{ runner.temp }}/imagem.tar
+          retention-days: 1
+
+  publicar:
+    needs: verificar
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_ROLE_ARN != '' && needs.verificar.outputs.imagem == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: publicar
+      cancel-in-progress: false
+    env:
+      AWS_PROFILE: prdal-gustavo
+      AWS_REGION: us-east-1
+      S3_BUCKET: ${{ vars.S3_BUCKET }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+      SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: imagem
+          path: ${{ runner.temp }}
+      - name: Extrair bundle verificado
+        run: |
+          docker load -i "$RUNNER_TEMP/imagem.tar"
+          container=$(docker create "unidade:$SHA")
+          trap 'docker rm "$container"' EXIT
+          mkdir -p "$RUNNER_TEMP/web"
+          docker cp "$container:/usr/share/nginx/html/." "$RUNNER_TEMP/web"
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: Preparar perfil temporario
+        run: |
+          aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID" --profile prdal-gustavo
+          aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY" --profile prdal-gustavo
+          aws configure set aws_session_token "$AWS_SESSION_TOKEN" --profile prdal-gustavo
+          aws configure set region us-east-1 --profile prdal-gustavo
+      - name: Conferir identidade
+        run: aws sts get-caller-identity --profile prdal-gustavo
+      - name: Publicar bundle e invalidar cache
+        run: |
+          test -n "$S3_BUCKET"
+          test -n "$CLOUDFRONT_DISTRIBUTION_ID"
+          aws s3 sync "$RUNNER_TEMP/web" "s3://$S3_BUCKET" --profile prdal-gustavo --delete --cache-control no-cache
+          invalidacao=$(aws cloudfront create-invalidation --profile prdal-gustavo --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths '/*' --query Invalidation.Id --output text)
+          aws cloudfront wait invalidation-completed --profile prdal-gustavo --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --id "$invalidacao"
