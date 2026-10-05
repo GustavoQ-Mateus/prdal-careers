@@ -409,22 +409,21 @@ export async function uploadContexto(arquivos: File[]) {
   return res.json() as Promise<{ loteId: string; total: number }>;
 }
 
+export interface UrlDeDownload {
+  url: string;
+  expiraEm: string;
+}
+
 export async function baixarArquivo(url: string, nomeArquivo: string) {
-  const res = await cliente.chamar(url);
-  if (!res.ok) throw new Error(`erro ${res.status}`);
-  const blob = await res.blob();
-  if (blob.size === 0) throw new Error('o arquivo baixado está vazio');
-  const objectUrl = URL.createObjectURL(blob);
+  const { url: destino } = await request<UrlDeDownload>(url);
   const link = document.createElement('a');
-  link.href = objectUrl;
+  link.href = destino;
   link.download = nomeArquivo;
+  link.rel = 'noopener';
   link.style.display = 'none';
   document.body.appendChild(link);
   link.click();
-  window.setTimeout(() => {
-    link.remove();
-    URL.revokeObjectURL(objectUrl);
-  }, 1000);
+  window.setTimeout(() => link.remove(), 1000);
 }
 
 export type PrioridadeOportunidade = 'BAIXA' | 'MEDIA' | 'ALTA';

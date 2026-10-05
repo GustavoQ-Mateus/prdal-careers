@@ -43,7 +43,7 @@ cp .env.example .env      # configure ANTHROPIC_API_KEY e AI_MODEL
 docker compose -f infra/docker-compose.yml up
 ```
 
-Sobe `web`, `api`, `worker`, `ai-service`, `doc-service`, ElasticMQ e PostgreSQL com pgvector. Cada serviço expõe `/health`.
+Sobe `web`, `api`, `worker`, `ai-service`, `doc-service`, ElasticMQ, SeaweedFS (S3 local) e PostgreSQL com pgvector. Cada serviço expõe `/health`.
 
 ### Migrações do banco
 
@@ -102,6 +102,25 @@ Na AWS a fila é o SQS; no compose é o ElasticMQ (`infra/elasticmq/elasticmq.co
 ```bash
 cd apps/worker && npm ci && npm test   # PRDAL_TESTE_POSTGRES_URL opcional, banco ja migrado pela api
 ```
+
+### Arquivos no S3
+
+PDF, DOCX e o pacote ZIP de cada currículo ficam no S3 por chave (`usuarios/<usuario>/curriculos/<curriculo>.pdf|docx|zip`); o banco guarda só a chave. O download é uma URL pré-assinada que vale no máximo 5 minutos (`S3_URL_VALIDADE_S`, teto de 300): a api responde `{ url, expiraEm }` e o navegador baixa direto do S3. A api não lê nem comprime arquivo; o ZIP é gravado pelo worker.
+
+No compose o S3 é o SeaweedFS (`chrislusf/seaweedfs`, comando `mini`), que cria o bucket na subida e usa como credencial o par `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY`. A imagem do MinIO deixou de ser publicada no Docker Hub e no quay.io. Como a URL assinada leva o host no cálculo da assinatura, há dois endereços: `S3_ENDPOINT` (`http://s3:8333`, usado por dentro da rede) e `S3_ENDPOINT_PUBLICO` (`http://localhost:8333`, que entra na URL e precisa ser alcançável pelo navegador). Na AWS os dois ficam vazios.
+
+#### Migração dos arquivos locais
+
+Os arquivos gerados antes desta versão estão no volume `apistorage`. O job `apps/jobs/migrar-arquivos-s3` (aplicação própria, roda como AWS Batch na nuvem) lê o volume montado só para leitura, envia cada arquivo para a chave nova, atualiza a referência no banco e monta o ZIP que faltar. Ele é idempotente: o que já está no S3 não é reenviado. O relatório traz as contagens antes e depois, o que foi enviado, o que não migrou e por quê, e os arquivos do volume que nenhum currículo referencia. Nada é apagado do volume.
+
+```bash
+docker compose -f infra/docker-compose.yml up -d --build migracao s3
+docker compose -f infra/docker-compose.yml --profile migracao-arquivos run --rm --build migrar-arquivos-s3 node dist/main.js --simular
+docker compose -f infra/docker-compose.yml --profile migracao-arquivos run --rm migrar-arquivos-s3 > migracao-arquivos.json
+docker compose -f infra/docker-compose.yml up -d --build --remove-orphans
+```
+
+Confira no `migracao-arquivos.json` que `depois.docxLocal` e `depois.pdfLocal` estão em zero, que `depois.semPacote` está em zero e que `naoMigrados` está vazio ou explicado. O job sai com código 2 quando sobra algo em `naoMigrados`. O volume `apistorage` pode ser apagado depois dessa conferência.
 
 ### Busca no histórico (RAG)
 
