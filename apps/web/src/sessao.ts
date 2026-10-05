@@ -15,6 +15,18 @@ export function mensagemDeErro(corpo: unknown, status: number): string {
   return mensagem || `erro ${status}`;
 }
 
+export class ErroRespostaApi extends Error {
+  readonly codigo?: string;
+  readonly status: number;
+
+  constructor(corpo: unknown, status: number) {
+    super(mensagemDeErro(corpo, status));
+    this.name = 'ErroRespostaApi';
+    this.codigo = (corpo as ErroApi | null)?.erro?.codigo;
+    this.status = status;
+  }
+}
+
 export function lerCookie(nome: string): string | null {
   if (typeof document === 'undefined') return null;
   for (const parte of document.cookie.split(';')) {
@@ -118,7 +130,7 @@ export function criarCliente(base: string, aoExpirar: () => void) {
       body: JSON.stringify({ email, senha }),
     });
     const corpo = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(mensagemDeErro(corpo, res.status));
+    if (!res.ok) throw new ErroRespostaApi(corpo, res.status);
     lembrarCsrf(corpo);
   }
 

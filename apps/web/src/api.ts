@@ -2,7 +2,7 @@ import { lerEventos } from './copiloto/sse';
 import type { EstadoExtracao } from './lib/extracao';
 import { urlBaseApi } from './lib/url-api';
 import { lerCorpoResposta } from './lib/corpo-resposta';
-import { criarCliente, mensagemDeErro } from './sessao';
+import { criarCliente, ErroRespostaApi } from './sessao';
 
 export interface Keyword {
   termo: string;
@@ -217,7 +217,7 @@ const cliente = criarCliente(urlBaseApi(API_URL, import.meta.env.VITE_API_VERSAO
 
 async function falha(res: Response): Promise<never> {
   const body = await res.json().catch(() => ({}));
-  throw new Error(mensagemDeErro(body, res.status));
+  throw new ErroRespostaApi(body, res.status);
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -913,7 +913,7 @@ export async function streamCopiloto(
   });
   if (!res.ok || !res.body) {
     const b = await res.json().catch(() => ({}));
-    throw new Error(mensagemDeErro(b, res.status));
+    throw new ErroRespostaApi(b, res.status);
   }
   await lerEventos(res.body, (frame) => onEvento(frame as CopilotoEvento));
 }
