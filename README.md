@@ -82,7 +82,7 @@ O serviço `postgres` do compose é construído de `infra/postgres/Dockerfile`: 
 Para o banco de quem já roda o compose, faça um dump de segurança, troque a imagem e aplique as migrações:
 
 ```bash
-docker compose -f infra/docker-compose.yml exec postgres pg_dump -U prdal -Fc prdal_careers > prdal-antes-pgvector.dump
+docker compose -f infra/docker-compose.yml exec -T postgres pg_dump -U prdal -Fc prdal_careers > prdal-antes-pgvector.dump
 docker compose -f infra/docker-compose.yml build postgres
 docker compose -f infra/docker-compose.yml up -d postgres
 docker compose -f infra/docker-compose.yml run --rm migracao
@@ -104,6 +104,34 @@ DATABASE_URL=postgresql://... AI_SERVICE_URL=http://localhost:8000 SERVICE_TOKEN
 ```
 
 Sem argumento, reindexa só o documento sem vetor do modelo atual ou com vetor de outro modelo; com `-- --todos`, reindexa tudo. O resultado lista quantos documentos e pedaços foram gravados e o que falhou.
+
+### Migração dos dados do MongoDB
+
+Conversas do copiloto, documentos de RAG, notas e banco de vagas saíram do MongoDB para tabelas do PostgreSQL. O script `apps/api/src/scripts/migrar-mongo.ts` lê as quatro coleções, grava nas tabelas mantendo os mesmos ids, liga os itens de lote antigos aos registros migrados e reindexa os documentos com o modelo de embedding atual pelo ai-service (os vetores do Chroma não são aproveitados). Ele é idempotente: o que já está no PostgreSQL é contado como existente e não é gravado de novo. O relatório traz a contagem por coleção antes e por tabela depois, o que não migrou e por quê, e os avisos (ligação com oportunidade apagada, documento antigo sem tipo).
+
+O MongoDB precisa estar no ar durante a migração. Rode antes de remover o container antigo do Mongo (`docker compose up --remove-orphans` o removeria). Na ordem, a partir da raiz do repositório:
+
+```bash
+docker compose -f infra/docker-compose.yml exec -T postgres pg_dump -U prdal -Fc prdal_careers > prdal-antes-c2.dump
+docker exec prdal-careers-mongo-1 mongodump --username prdal --password SENHA_DO_MONGO --authenticationDatabase admin --db prdal_careers --archive --gzip > mongo-antes-c2.archive.gz
+docker compose -f infra/docker-compose.yml build postgres ai-service api migracao
+docker compose -f infra/docker-compose.yml up -d postgres
+docker compose -f infra/docker-compose.yml run --rm migracao
+docker compose -f infra/docker-compose.yml up -d ai-service
+npm ci
+cd apps/api
+npm run build
+DATABASE_URL=postgresql://prdal:SENHA_DO_POSTGRES@127.0.0.1:5432/prdal_careers \
+MONGO_URL=mongodb://prdal:SENHA_DO_MONGO@127.0.0.1:27017 \
+MONGO_DB=prdal_careers \
+AI_SERVICE_URL=http://127.0.0.1:8000 \
+SERVICE_TOKEN=O_MESMO_DO_INFRA_ENV \
+node dist/scripts/migrar-mongo.js > migracao-mongo.json
+```
+
+Confira no `migracao-mongo.json` que `antes.mongo` e `depois.postgres` batem para as quatro coleções, que `naoMigrados` está vazio ou explicado e que `reindexacao.falhas` está vazio. Rodar de novo não duplica nada; com `--sem-reindexar` ele só copia os dados, e a reindexação pode ser feita depois com `npm run rag:reindexar`. Em seguida suba o resto com `docker compose -f infra/docker-compose.yml up -d --remove-orphans`.
+
+Depois da migração conferida, os volumes `prdal-careers_mongodata` e `prdal-careers_chromadata` não são mais usados por nada e podem ser removidos com `docker volume rm`. Nenhum passo deste repositório os apaga.
 
 ## Documentação
 
