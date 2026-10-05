@@ -179,3 +179,19 @@ Confira no `migracao-mongo.json` que `antes.mongo` e `depois.postgres` batem par
 
 Depois da migração conferida, os volumes `prdal-careers_mongodata` e `prdal-careers_chromadata` não são mais usados por nada e podem ser removidos com `docker volume rm`. Nenhum passo deste repositório os apaga.
 
+### Banco de vagas vira oportunidade em entrada
+
+A tabela `banco_vagas` deixou de existir: a vaga importada é uma oportunidade com estágio `ENTRADA`, e ativar muda o estágio da mesma oportunidade. A migração `20261005001100_oportunidade_entrada` faz a mudança de dados na mesma transação: cada vaga `CRUA` vira oportunidade em entrada com o mesmo id, os itens de lote passam a apontar para a oportunidade e a tabela sai. A vaga `ATIVADA` não é copiada, porque a oportunidade dela já existe; a que perdeu a oportunidade fica sem referência no item de lote.
+
+O script `migrar-entradas` aplica as migrações pendentes e mostra as contagens antes e depois. Ele recusa rodar sem `DATABASE_URL` explícito e pode rodar de novo sem efeito. Rode antes de subir o compose, porque o serviço `migracao` também aplicaria a migração, só que sem o relatório. A partir da raiz do repositório:
+
+```bash
+docker compose -f infra/docker-compose.yml exec -T postgres pg_dump -U prdal -Fc prdal_careers > prdal-antes-entradas.dump
+docker compose -f infra/docker-compose.yml stop api worker
+cd apps/api
+npm run build
+DATABASE_URL=postgresql://prdal:SENHA_DO_POSTGRES@127.0.0.1:5432/prdal_careers node dist/scripts/migrar-entradas.js > migracao-entradas.json
+```
+
+Confira no `migracao-entradas.json` que `ok` é `true`, que `entradasEncontradas` é igual a `entradasEsperadas` e que `depois.vagas.entrada` é igual a `antes.bancoVagas.crua`. Em seguida suba o resto com `docker compose -f infra/docker-compose.yml up -d --build`.
+
