@@ -1,4 +1,5 @@
 import { lerEventos } from './copiloto/sse';
+import { urlBaseApi } from './lib/url-api';
 import { criarCliente, mensagemDeErro } from './sessao';
 
 export interface Keyword {
@@ -238,14 +239,13 @@ export interface DashboardItem {
 }
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
-const API_VERSAO = 'v1';
 
 function sessaoExpirada() {
   sessionStorage.setItem('prdal-sessao-expirada', '1');
   window.location.assign('/?sessao=expirada');
 }
 
-const cliente = criarCliente(`${API_URL.replace(/\/+$/, '')}/${API_VERSAO}`, sessaoExpirada);
+const cliente = criarCliente(urlBaseApi(API_URL, import.meta.env.VITE_API_VERSAO), sessaoExpirada);
 
 async function falha(res: Response): Promise<never> {
   const body = await res.json().catch(() => ({}));
