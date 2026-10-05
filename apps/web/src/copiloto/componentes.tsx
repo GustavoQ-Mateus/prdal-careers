@@ -1,4 +1,4 @@
-import { useState, type Ref } from 'react';
+import { useEffect, useState, type Ref } from 'react';
 import {
   ArrowUp,
   Check,
@@ -632,24 +632,27 @@ export function CartaoErro({
   item,
   onRepetir,
   bloqueado,
+  onAbrirConta,
 }: {
   item: Extract<Item, { tipo: 'erro' }>;
   onRepetir: () => void;
   bloqueado: boolean;
+  onAbrirConta: () => void;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-score-bad/40 bg-ground px-4 py-3 motion-safe:animate-in motion-safe:fade-in">
       <div className="flex items-start gap-2">
         <TriangleAlert className="mt-0.5 size-4 shrink-0 text-score-bad" />
-        <div>
-          <p className="text-[14px] text-ink">{item.mensagem}</p>
-          <p className="text-[12px] text-muted">A conversa foi preservada. Você pode repetir o turno.</p>
+          <div>
+            <p className="text-[14px] text-ink">{item.mensagem}</p>
+            {item.codigo === 'consentimento_pendente'
+              ? <button type="button" className="text-[13px] font-medium text-accent hover:underline" onClick={onAbrirConta}>Ir para Conta</button>
+              : <p className="text-[12px] text-muted">A conversa foi preservada. Você pode repetir o turno.</p>}
         </div>
       </div>
-      <Button variant="secondary" size="sm" disabled={bloqueado} onClick={onRepetir}>
-        <RotateCcw />
-        Repetir turno
-      </Button>
+      {item.codigo !== 'consentimento_pendente' && <Button variant="secondary" size="sm" disabled={bloqueado} onClick={onRepetir}>
+        <RotateCcw /> Repetir turno
+      </Button>}
     </div>
   );
 }
@@ -661,7 +664,8 @@ export function Composer({
   bloqueado,
   autopiloto,
   entradaRef,
-  placeholder,
+    placeholder,
+    textoRestaurado,
 }: {
   onEnviar: (texto: string) => void;
   onParar: () => void;
@@ -669,9 +673,12 @@ export function Composer({
   bloqueado: boolean;
   autopiloto: boolean;
   entradaRef?: Ref<HTMLTextAreaElement>;
-  placeholder?: string;
-}) {
-  const [texto, setTexto] = useState('');
+    placeholder?: string;
+    textoRestaurado?: string;
+  }) {
+    const [texto, setTexto] = useState('');
+
+    useEffect(() => { if (textoRestaurado) setTexto(textoRestaurado); }, [textoRestaurado]);
 
   function enviar() {
     if (!texto.trim() || bloqueado) return;

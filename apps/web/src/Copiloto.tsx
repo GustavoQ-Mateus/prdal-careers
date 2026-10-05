@@ -43,13 +43,14 @@ function AvisoParadoExterno() {
   );
 }
 
-export function Copiloto({ oportunidadeId, acaoInicial, onAbrirHoje, onAbrirWorkspace, onAbrirCurriculo, onAbrirPerfil, onImportarLote, onAcao }: {
+export function Copiloto({ oportunidadeId, acaoInicial, onAbrirHoje, onAbrirWorkspace, onAbrirCurriculo, onAbrirPerfil, onAbrirConta, onImportarLote, onAcao }: {
   oportunidadeId?: string;
   acaoInicial?: { id: string; mensagem: string };
   onAbrirHoje: () => void;
   onAbrirWorkspace: (id: string) => void;
   onAbrirCurriculo: (oportunidadeId: string, curriculoId: string) => void;
   onAbrirPerfil: () => void;
+  onAbrirConta: () => void;
   onImportarLote: () => void;
   onAcao: (oportunidadeId: string, mensagem: string) => void;
 }) {
@@ -200,6 +201,7 @@ export function Copiloto({ oportunidadeId, acaoInicial, onAbrirHoje, onAbrirWork
               onConfirmar={c.confirmar}
               onRecusar={c.recusar}
               onRepetir={c.repetir}
+              onAbrirConta={onAbrirConta}
               bloqueado={c.streaming}
             />
           ))
@@ -220,6 +222,7 @@ export function Copiloto({ oportunidadeId, acaoInicial, onAbrirHoje, onAbrirWork
         <Composer
           entradaRef={entradaRef}
           placeholder={vazio && modelo.semPerfil && !oportunidadeId ? 'Ou me diga em uma frase o que você faz' : undefined}
+          textoRestaurado={c.rascunhoPendente}
           onEnviar={c.enviar}
           onParar={c.parar}
           streaming={c.streaming}
@@ -238,6 +241,7 @@ function ItemRender({
   onConfirmar,
   onRecusar,
   onRepetir,
+  onAbrirConta,
   bloqueado,
 }: {
   item: Item;
@@ -246,6 +250,7 @@ function ItemRender({
   onConfirmar: (callId: string, ajustes?: Record<string, unknown>) => void;
   onRecusar: (callId: string) => void;
   onRepetir: () => void;
+  onAbrirConta: () => void;
   bloqueado: boolean;
 }) {
   switch (item.tipo) {
@@ -273,6 +278,6 @@ function ItemRender({
     case 'entrega':
       return <CartaoEntrega item={item} />;
     case 'erro':
-      return <CartaoErro item={item} onRepetir={onRepetir} bloqueado={bloqueado} />;
+      return <CartaoErro item={item} onRepetir={onRepetir} bloqueado={bloqueado} onAbrirConta={onAbrirConta} />;
   }
 }

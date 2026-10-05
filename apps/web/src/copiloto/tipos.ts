@@ -69,7 +69,7 @@ export type Item =
       destino?: string;
       aviso?: string;
     }
-  | { tipo: 'erro'; id: string; escopo: string; mensagem: string };
+  | { tipo: 'erro'; id: string; escopo: string; mensagem: string; codigo?: string };
 
 export const ROTULO_TOOL: Record<string, string> = {
   listar_oportunidades: 'Listar oportunidades',

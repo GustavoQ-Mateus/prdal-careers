@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { destinoErroConta } from './avisosConta';
 
 const PASSOS = [
   { titulo: 'Analisar', descricao: 'Vaga e contexto' },
@@ -41,6 +42,7 @@ export function GeracaoWizard({
   keywords,
   onConcluida,
   onAbrirCurriculo,
+  onAbrirConta,
 }: {
   open: boolean;
   onOpenChange: (aberto: boolean) => void;
@@ -50,6 +52,7 @@ export function GeracaoWizard({
   keywords: Keyword[];
   onConcluida: () => void;
   onAbrirCurriculo: (curriculoId: string) => void;
+  onAbrirConta: () => void;
 }) {
   const [passo, setPasso] = useState(0);
   const [status, setStatus] = useState<StatusGeracaoCurriculo | null>(null);
@@ -125,7 +128,9 @@ export function GeracaoWizard({
       setStatus('PENDENTE');
       setPasso(0);
     } catch (err) {
-      setErro({ titulo: 'A geração falhou', detalhe: (err as Error).message });
+      setErro(destinoErroConta(err, 'geracao') === 'consentimento'
+        ? { titulo: 'Aceite o envio de dados na sua conta para gerar currículos.' }
+        : { titulo: 'A geração falhou', detalhe: (err as Error).message });
     }
   }
 
@@ -200,6 +205,7 @@ export function GeracaoWizard({
               {erro.detalhe && (
                 <p className="mt-0.5 break-words font-mono text-[11px] text-score-bad/70">{erro.detalhe}</p>
               )}
+              {erro.titulo.startsWith('Aceite o envio') && <button type="button" className="mt-2 text-[13px] font-medium text-accent hover:underline" onClick={() => { onOpenChange(false); onAbrirConta(); }}>Ir para Conta</button>}
             </div>
           )}
 

@@ -12,6 +12,7 @@ import {
   type ModoCopiloto,
 } from '../api';
 import { reidratarAposQueda } from './sse';
+import { destinoErroConta } from '../avisosConta';
 import { armazenamentoConversa } from './armazenamento';
 import type { EstadoCopiloto, Item } from './tipos';
 import {
@@ -29,6 +30,7 @@ interface Estado {
   oportunidadeId?: string;
   streaming: boolean;
   ultimoEnvio?: CopilotoChatBody;
+  rascunhoPendente?: string;
 }
 
 type Acao =
@@ -38,6 +40,7 @@ type Acao =
   | { t: 'atualizarGeracao'; jobId: string; geracao: GeracaoCurriculo }
   | { t: 'previewCurriculo'; jobId: string; curriculo: Curriculo }
   | { t: 'abortado' }
+  | { t: 'consentimentoPendente'; mensagem?: string }
   | { t: 'modo'; modo: ModoCopiloto }
   | { t: 'abrirHistorico'; conversa: ConversaCopilotoDetalhe }
   | { t: 'nova' };
@@ -517,6 +520,7 @@ export function reducer(estado: Estado, acao: Acao): Estado {
         streaming: true,
         estado: estadoInicialTurno(estado.modo),
         ultimoEnvio: envio,
+        rascunhoPendente: undefined,
       };
     }
     case 'evento':
@@ -585,6 +589,17 @@ export function reducer(estado: Estado, acao: Acao): Estado {
     }
     case 'abortado':
       return { ...estado, streaming: false, estado: 'ocioso', itens: encerrarVivos(estado.itens) };
+    case 'consentimentoPendente': {
+      const itens = [...estado.itens];
+      if (acao.mensagem && itens.at(-1)?.tipo === 'usuario') itens.pop();
+      return {
+        ...estado,
+        itens: [...itens, { tipo: 'erro', id: novoId(), escopo: 'consentimento', mensagem: 'Aceite o envio de dados na sua conta para usar o copiloto.', codigo: 'consentimento_pendente' }],
+        rascunhoPendente: acao.mensagem,
+        streaming: false,
+        estado: 'erro_turno',
+      };
+    }
     case 'modo':
       return { ...estado, modo: acao.modo };
     case 'abrirHistorico': {
@@ -601,6 +616,7 @@ export function reducer(estado: Estado, acao: Acao): Estado {
         estado: temPendencia ? 'aguardando_confirmacao' : temErro ? 'erro_turno' : temEntrega ? 'entrega_externa' : 'ocioso',
         streaming: false,
         ultimoEnvio: temErro ? {} : undefined,
+        rascunhoPendente: undefined,
       };
     }
     case 'nova':
@@ -611,6 +627,7 @@ export function reducer(estado: Estado, acao: Acao): Estado {
         estado: 'ocioso',
         streaming: false,
         ultimoEnvio: undefined,
+        rascunhoPendente: undefined,
       };
   }
 }
@@ -627,6 +644,7 @@ function carregar(oportunidadeId?: string): Partial<Estado> {
       conversaId: p.conversaId,
       modo: 'assistido',
       oportunidadeId: p.oportunidadeId ?? oportunidadeId,
+      rascunhoPendente: p.rascunhoPendente,
       estado: p.estado === 'erro_turno' ? 'erro_turno' : reidratarEstado(p),
     };
   } catch {
@@ -673,13 +691,14 @@ export function useCopiloto(oportunidadeId?: string) {
       modo: estado.modo,
       estado: estado.estado,
       oportunidadeId: estado.oportunidadeId,
+      rascunhoPendente: estado.rascunhoPendente,
     };
     try {
       armazenamentoConversa(oportunidadeId, localStorage, sessionStorage).setItem(chave(oportunidadeId), JSON.stringify(payload));
     } catch {
       /* storage cheio ou indisponivel */
     }
-  }, [estado.itens, estado.conversaId, estado.modo, estado.estado, oportunidadeId]);
+  }, [estado.itens, estado.conversaId, estado.modo, estado.estado, estado.rascunhoPendente, oportunidadeId]);
 
   async function correr(envio: CopilotoChatBody, nova = false) {
     if (nova) dispatch({ t: 'nova' });
@@ -695,6 +714,10 @@ export function useCopiloto(oportunidadeId?: string) {
     try {
       await streamCopiloto(corpo, (ev) => dispatch({ t: 'evento', ev }), ctrl.signal);
     } catch (err) {
+      if (!ctrl.signal.aborted && destinoErroConta(err, 'copiloto') === 'consentimento') {
+        dispatch({ t: 'consentimentoPendente', mensagem: envio.mensagem });
+        return;
+      }
       const conversa = ctrl.signal.aborted
         ? null
         : await reidratarAposQueda(err, refEstado.current.conversaId, buscarConversaCopiloto);
