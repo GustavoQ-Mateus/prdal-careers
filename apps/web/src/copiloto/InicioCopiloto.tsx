@@ -1,4 +1,4 @@
-import { FileUp, Info, MessageSquare, Pencil } from 'lucide-react';
+import { Info, MessageSquare, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScoreNum } from '../components/Score';
 import type { ModeloInicio, PassoInicio } from './inicio';
@@ -35,21 +35,13 @@ export function InicioCopiloto({
         <h1 className="mt-1 text-page text-ink">Antes de tudo, preciso conhecer sua trajetória.</h1>
         <p className="mt-2 max-w-[600px] text-[14px] leading-relaxed text-muted">
           Todo currículo que eu preparar sai do seu perfil, e só dele. Sem perfil não dá para gerar nada honesto.
-          Leva uns 10 minutos, ou menos se você já tem um currículo pronto.
+          Leva uns 10 minutos.
         </p>
-        <div className="mt-7 grid gap-4 sm:grid-cols-2">
-          <button type="button" onClick={onPerfil} className="flex min-h-44 flex-col items-start gap-2.5 rounded-card border border-line-strong bg-ground p-5 text-left shadow-rest transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
-            <span className="flex size-9 items-center justify-center rounded-control bg-primary text-primary-fg"><FileUp className="size-[18px]" /></span>
-            <span className="text-[15px] font-semibold text-ink">Importar meu currículo</span>
-            <span className="text-[13px] leading-relaxed text-muted">Abra seu perfil para começar com as informações que já tem e conferir cada seção.</span>
-            <span className="mt-auto text-[13px] font-semibold text-accent-ink">Recomendado</span>
-          </button>
-          <button type="button" onClick={onPerfil} className="flex min-h-44 flex-col items-start gap-2.5 rounded-card border border-line bg-ground p-5 text-left transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
-            <span className="flex size-9 items-center justify-center rounded-control border border-line bg-canvas text-ink-2"><Pencil className="size-[18px]" /></span>
-            <span className="text-[15px] font-semibold text-ink">Preencher do zero</span>
-            <span className="text-[13px] leading-relaxed text-muted">Cadastre cada experiência numa tela de perfil, seção por seção.</span>
-          </button>
-        </div>
+        <button type="button" onClick={onPerfil} className="mt-7 flex min-h-44 w-full max-w-[420px] flex-col items-start gap-2.5 rounded-card border border-line-strong bg-ground p-5 text-left shadow-rest transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+          <span className="flex size-9 items-center justify-center rounded-control bg-primary text-primary-fg"><Pencil className="size-[18px]" /></span>
+          <span className="text-[15px] font-semibold text-ink">Montar meu perfil</span>
+          <span className="text-[13px] leading-relaxed text-muted">Cadastre suas experiências, formação e contato, seção por seção.</span>
+        </button>
         <div className="mt-7 flex items-start gap-2.5 rounded-card border border-dashed border-line-strong px-4 py-3.5 text-[13px] text-muted">
           <Info className="mt-0.5 size-4 shrink-0 text-faint" />
           <span>Você já pode colar vagas enquanto isso. Eu guardo em <strong className="font-semibold text-ink-2">Entrada</strong> e analiso depois que o perfil existir.</span>
