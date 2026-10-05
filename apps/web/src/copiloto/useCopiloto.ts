@@ -162,6 +162,9 @@ function aplicarEvento(estado: Estado, ev: CopilotoEvento): Estado {
     }
     case 'tool_resultado': {
       const atualizados = itens.map((it): Item => {
+        if (it.tipo === 'confirmacao' && it.callId === ev.data.callId && it.decisao === 'confirmar') {
+          return { ...it, execucao: ev.data.ok ? 'ok' : 'erro', erro: ev.data.erro?.mensagem };
+        }
         if (it.tipo === 'passo' && it.callId === ev.data.callId) {
           return { ...it, status: statusPasso(it.tool, ev.data.ok, ev.data.resultado), resultado: ev.data.resultado, erro: ev.data.erro?.mensagem };
         }
@@ -501,7 +504,7 @@ export function reducer(estado: Estado, acao: Acao): Estado {
         const confirmacao = itens.find((item) => item.tipo === 'confirmacao' && item.callId === alvo.callId);
         itens = itens.map((it) =>
           it.tipo === 'confirmacao' && it.callId === alvo.callId
-            ? { ...it, decisao: alvo.decisao }
+            ? { ...it, decisao: alvo.decisao, execucao: alvo.decisao === 'confirmar' ? 'executando' : undefined }
             : it,
         );
         if (alvo.decisao === 'confirmar' && confirmacao?.tipo === 'confirmacao' && confirmacao.tool === 'gerar_curriculo') {

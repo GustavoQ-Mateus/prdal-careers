@@ -43,6 +43,7 @@ test('recusa não cria reescrita e falha encerra apenas a etapa 2', () => {
   estado = evento(estado, 'tool_call', call('g', 'gerar_curriculo', 'escrita'));
   estado = evento(estado, 'tool_resultado', retorno('g', 'gerar_curriculo', null, false));
   assert.equal(operacoes(estado)[0].etapa, 'erro');
+  assert.equal(estado.itens.find((item) => item.tipo === 'confirmacao').erro, 'falhou');
   assert.equal(operacoes(estado).length, 1);
 });
 
@@ -68,4 +69,12 @@ test('recarga durante o job retoma a etapa correta e falha na etapa 3', () => {
   assert.deepEqual(operacoes(estado).map((item) => item.fase), [2, 3]);
   estado = reducer(estado, { t: 'atualizarGeracao', jobId: 'job-1', geracao: { status: 'ERRO', erro: 'Falha ATS' } });
   assert.deepEqual(operacoes(estado).map((item) => item.etapa), ['concluida', 'erro']);
+});
+
+test('confirmação genérica executa até o retorno da ferramenta', () => {
+  let estado = evento(inicial(), 'confirmacao', { callId: 'n', tool: 'registrar_nota', resumo: 'Registrar', args: {} });
+  estado = reducer(estado, { t: 'inicioTurno', envio: { confirmacao: { callId: 'n', decisao: 'confirmar' } } });
+  assert.equal(estado.itens[0].execucao, 'executando');
+  estado = evento(estado, 'tool_resultado', retorno('n', 'registrar_nota', { id: 'nota-1' }));
+  assert.equal(estado.itens[0].execucao, 'ok');
 });

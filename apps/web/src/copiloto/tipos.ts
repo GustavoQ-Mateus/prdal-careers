@@ -57,6 +57,8 @@ export type Item =
       resumo: string;
       args: Record<string, unknown>;
       decisao?: 'confirmar' | 'recusar';
+      execucao?: 'executando' | 'ok' | 'erro';
+      erro?: string;
     }
   | {
       tipo: 'entrega';

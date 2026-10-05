@@ -580,7 +580,7 @@ export function CartaoConfirmacao({
       <div className="flex items-center justify-end gap-2 border-t border-line px-4 py-3">
         {resolvido ? (
           <span className="text-[13px] text-muted">
-            {resolvido === 'confirmar' ? 'Confirmado' : 'Recusado, nada foi gravado'}
+            {resolvido === 'recusar' ? 'Recusado, nada foi gravado' : item.execucao === 'erro' ? <span className="text-score-bad">{item.erro ?? 'Falha na execução'}</span> : item.execucao === 'ok' ? 'Confirmado' : <span className="inline-flex items-center gap-1"><Loader2 className="size-3.5 animate-spin" />Executando</span>}
           </span>
         ) : (
           <>
