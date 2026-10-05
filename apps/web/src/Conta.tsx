@@ -42,7 +42,7 @@ export function Conta({ onExclusaoAlterada }: { onExclusaoAlterada: (data: strin
       try {
         const dados = await getExportacaoConta(jobId!);
         if (!ativo) return;
-        setExportacao({ status: dados.status });
+        setExportacao(dados);
         if (estadoExportacao(dados.status).consultar) timer = window.setTimeout(consultar, 3000);
       } catch (falha) {
         if (ativo) setErroExportacao((falha as Error).message);

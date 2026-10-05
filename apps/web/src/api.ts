@@ -1,29 +1,22 @@
+import type { apiPaths, apiComponents } from '@prdal/contracts';
+
+type Resposta<P extends keyof apiPaths, M extends keyof apiPaths[P], S extends number> =
+  apiPaths[P][M] extends { responses: infer R }
+    ? S extends keyof R
+      ? R[S] extends { content: { 'application/json': infer T } } ? T : never
+      : never
+    : never;
+
 import { lerEventos } from './copiloto/sse';
-import type { EstadoExtracao } from './lib/extracao';
 import { urlBaseApi } from './lib/url-api';
 import { lerCorpoResposta } from './lib/corpo-resposta';
 import { criarCliente, ErroRespostaApi } from './sessao';
 
-export interface Keyword {
-  termo: string;
-  peso: number;
-}
+export type Keyword = apiComponents['schemas']['Keyword'];
 
-export interface LoteItemStatus {
-  id: string;
-  bancoVagaId: string;
-  status: string;
-  erro: string | null;
-}
+export type LoteItemStatus = LoteStatus['itens'][number];
 
-export interface LoteStatus {
-  id: string;
-  tipo: string;
-  status: string;
-  total: number;
-  processados: number;
-  itens: LoteItemStatus[];
-}
+export type LoteStatus = Resposta<'/v1/lotes/{id}', 'get', 200>;
 
 export const STATUS_CANDIDATURA = [
   'RASCUNHO',
@@ -33,178 +26,47 @@ export const STATUS_CANDIDATURA = [
   'OFERTA',
   'REJEITADA',
   'DESISTIU',
-] as const;
+] as const satisfies readonly StatusCandidatura[];
 
-export type StatusCandidatura = (typeof STATUS_CANDIDATURA)[number];
+export type StatusCandidatura = Candidatura['status'];
 
-export interface Candidatura {
-  id: string;
-  vagaId: string;
-  tituloVaga: string;
-  empresa: string;
-  curriculoId: string | null;
-  status: StatusCandidatura;
-  notas: string;
-  atualizadoEm: string;
-}
+export type Candidatura = Resposta<'/v1/candidaturas/{id}', 'patch', 200>;
 
-export interface ItemImportacao {
-  titulo: string;
-  empresa: string;
-  fonte?: string;
-  descricao: string;
-}
+export type ItemImportacao = apiComponents['schemas']['ImportarOportunidadesDto']['itens'][number];
 
-export type TipoLink = 'linkedin' | 'github' | 'facebook' | 'instagram' | 'site';
+export type TipoLink = LinkPerfil['tipo'];
 
-export type StatusFormacao = 'concluido' | 'em_andamento' | 'trancado';
+export type StatusFormacao = Exclude<FormacaoPerfil['status'], ''>;
 
-export type MotivoRevisao =
-  | 'formato_antigo'
-  | 'periodo_texto'
-  | 'local_texto'
-  | 'tecnologias_na_descricao'
-  | 'ddi_ausente'
-  | 'localizacao_texto'
-  | 'contato_sem_tipo'
-  | 'email_invalido';
+export type MotivoRevisao = NonNullable<EmailPerfil['revisao']>[number];
 
-export interface EmailPerfil {
-  id: string;
-  valor: string;
-  principal: boolean;
-  revisao?: MotivoRevisao[];
-}
+export type EmailPerfil = PerfilMestre['emails'][number];
 
-export interface TelefonePerfil {
-  id: string;
-  ddi: string;
-  numero: string;
-  principal: boolean;
-  revisao?: MotivoRevisao[];
-}
+export type TelefonePerfil = PerfilMestre['telefones'][number];
 
-export interface LinkPerfil {
-  id: string;
-  tipo: TipoLink;
-  url: string;
-}
+export type LinkPerfil = PerfilMestre['links'][number];
 
-export interface LocalPerfil {
-  pais: string;
-  estado: string;
-  cidade: string;
-}
+export type LocalPerfil = Exclude<NonNullable<ExperienciaPerfil['local']>, string>;
 
-export interface EnderecoPerfil extends LocalPerfil {
-  bairro?: string;
-  logradouro?: string;
-  complemento?: string;
-  legado?: string;
-  revisao?: MotivoRevisao[];
-}
+export type EnderecoPerfil = Exclude<NonNullable<PerfilMestre['endereco']>, string>;
 
-export interface OutroContatoPerfil {
-  id: string;
-  rotulo: string;
-  valor: string;
-  revisao?: MotivoRevisao[];
-}
+export type OutroContatoPerfil = PerfilMestre['outrosContatos'][number];
 
-export interface FormacaoPerfil {
-  id: string;
-  grau: string;
-  status: StatusFormacao | '';
-  instituicao: string;
-  curso: string;
-  inicioMes: number | null;
-  inicioAno: number | null;
-  fimMes: number | null;
-  fimAno: number | null;
-  revisao?: MotivoRevisao[];
-}
+export type FormacaoPerfil = PerfilMestre['formacao'][number];
 
-export interface CertificacaoPerfil {
-  id: string;
-  titulo: string;
-  descricao: string;
-  revisao?: MotivoRevisao[];
-}
+export type CertificacaoPerfil = PerfilMestre['certificacoes'][number];
 
-export interface ExperienciaPerfil {
-  id: string;
-  cargo: string;
-  empresa: string;
-  dataInicioMes: number | null;
-  dataInicioAno: number | null;
-  dataFimMes: number | null;
-  dataFimAno: number | null;
-  atual: boolean;
-  local: LocalPerfil | string | null;
-  descricao: string;
-  periodo?: string;
-  periodoLegado?: string;
-  localLegado?: string;
-  revisao?: MotivoRevisao[];
-}
+export type ExperienciaPerfil = Omit<Resposta<'/v1/perfil-mestre', 'put', 200>['experiencias'][number], 'local'> & Pick<apiComponents['schemas']['ExperienciaPerfilDto'], 'local' | 'periodo'>;
 
-export interface PerfilMestre {
-  nome: string;
-  emails: EmailPerfil[];
-  telefones: TelefonePerfil[];
-  links: LinkPerfil[];
-  endereco: EnderecoPerfil | string | null;
-  outrosContatos: OutroContatoPerfil[];
-  resumo: string;
-  experiencias: ExperienciaPerfil[];
-  formacao: FormacaoPerfil[];
-  certificacoes: CertificacaoPerfil[];
-  idiomas: string[];
-  skills: string[];
-}
+export type PerfilMestre = Omit<Resposta<'/v1/perfil-mestre', 'put', 200>, 'id' | 'usuarioId' | 'atualizadoEm' | 'endereco' | 'experiencias'> & Pick<apiComponents['schemas']['PerfilMestreDto'], 'endereco'> & { experiencias: ExperienciaPerfil[] };
 
-export interface ScoreBreakdown {
-  keywordMatch: number;
-  densidade: number;
-  secoes: number;
-  faltando: string[];
-}
+export type ScoreBreakdown = apiComponents['schemas']['ScoreBreakdown'];
 
-export interface AtsAnalysis {
-  score: number;
-  scoreVersao?: number;
-  keywordsEncontradas: string[];
-  keywordsCriticasAusentes: string[];
-  pontosEliminatorios: string[];
-  veredicto: string;
-  breakdown: ScoreBreakdown;
-}
+export type AtsAnalysis = apiComponents['schemas']['AtsAnalysis'];
 
-export interface Curriculo {
-  id: string;
-  vagaId: string;
-  rotulo: string;
-  markdown: string;
-  score: number | null;
-  breakdown: ScoreBreakdown | null;
-  analiseInicial: AtsAnalysis | null;
-  analiseFinal: AtsAnalysis | null;
-  degradacao: string | null;
-  geradoEm: string;
-  downloadDocxUrl: string | null;
-  downloadPdfUrl: string | null;
-}
+export type Curriculo = Resposta<'/v1/curriculos/{id}', 'get', 200>;
 
-export interface CurriculoResumo {
-  id: string;
-  rotulo: string;
-  score: number | null;
-  breakdown: ScoreBreakdown | null;
-  analiseInicial: AtsAnalysis | null;
-  analiseFinal: AtsAnalysis | null;
-  degradacao: string | null;
-  geradoEm: string;
-}
+export type CurriculoResumo = Resposta<'/v1/oportunidades/{id}/curriculos', 'get', 200>[number];
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
@@ -237,7 +99,7 @@ export function login(email: string, senha: string) {
 }
 
 export async function registrar(email: string, senha: string) {
-  await request<{ mensagem: string }>('/auth/register', {
+  await request<Resposta<'/v1/auth/register', 'post', 201>>('/auth/register', {
     method: 'POST',
     body: JSON.stringify({ email, senha }),
   });
@@ -274,7 +136,7 @@ export function getCurriculo(id: string) {
   return request<Curriculo>(`/curriculos/${id}`);
 }
 
-export function editarCurriculo(id: string, dto: { markdown: string; rotulo?: string }) {
+export function editarCurriculo(id: string, dto: apiComponents['schemas']['EditarCurriculoDto']) {
   return request<Curriculo>(`/curriculos/${id}`, {
     method: 'PUT',
     body: JSON.stringify(dto),
@@ -291,7 +153,7 @@ export function getLote(id: string) {
 
 export function atualizarCandidatura(
   id: string,
-  dto: { status?: StatusCandidatura; notas?: string; curriculoId?: string | null },
+  dto: apiComponents['schemas']['AtualizarCandidaturaDto'],
 ) {
   return request<Candidatura>(`/candidaturas/${id}`, {
     method: 'PATCH',
@@ -299,19 +161,14 @@ export function atualizarCandidatura(
   });
 }
 
-export interface ContextoStatus {
-  documentos: number;
-  ultimaIndexacao: string | null;
-  porOrigem?: { perfil: number; candidatura: number; nota: number };
-  disponivel?: boolean;
-}
+export type ContextoStatus = Resposta<'/v1/contexto/status', 'get', 200>;
 
 export function getContextoStatus() {
   return request<ContextoStatus>('/contexto/status');
 }
 
 export function reindexarContexto() {
-  return request<{ loteId: string; total: number }>('/contexto/reindexar', {
+  return request<Resposta<'/v1/contexto/reindexar', 'post', 201>>('/contexto/reindexar', {
     method: 'POST',
   });
 }
@@ -321,13 +178,10 @@ export async function uploadContexto(arquivos: File[]) {
   for (const a of arquivos) form.append('arquivos', a);
   const res = await cliente.chamar('/contexto/upload', { method: 'POST', body: form });
   if (!res.ok) await falha(res);
-  return res.json() as Promise<{ loteId: string; total: number }>;
+  return res.json() as Promise<Resposta<'/v1/contexto/upload', 'post', 201>>;
 }
 
-export interface UrlDeDownload {
-  url: string;
-  expiraEm: string;
-}
+export type UrlDeDownload = Resposta<'/v1/curriculos/{id}/docx', 'get', 200>;
 
 export async function baixarArquivo(url: string, nomeArquivo: string) {
   const { url: destino } = await request<UrlDeDownload>(url);
@@ -341,273 +195,45 @@ export async function baixarArquivo(url: string, nomeArquivo: string) {
   window.setTimeout(() => link.remove(), 1000);
 }
 
-export type PrioridadeOportunidade = 'BAIXA' | 'MEDIA' | 'ALTA';
-export type ApresentacaoOportunidade = 'ENTRADA' | 'ATIVA' | 'ENCERRADA';
-export type EtapaPipeline =
-  | 'PREPARACAO'
-  | 'INSCRITA'
-  | 'EM_PROCESSO'
-  | 'ENTREVISTA'
-  | 'OFERTA'
-  | 'ENCERRADAS';
-export type DestinoTransicao =
-  | 'PREPARACAO'
-  | 'INSCRITA'
-  | 'EM_PROCESSO'
-  | 'ENTREVISTA'
-  | 'OFERTA'
-  | 'REJEITADA'
-  | 'DESISTIU'
-  | 'ARQUIVADA'
-  | 'REABRIR';
-export type TipoAcaoOportunidade =
-  | 'REVISAR_VAGA'
-  | 'GERAR_CURRICULO'
-  | 'ENVIAR_CANDIDATURA'
-  | 'FAZER_FOLLOW_UP'
-  | 'PREPARAR_ENTREVISTA'
-  | 'PARTICIPAR_ENTREVISTA'
-  | 'ENVIAR_MATERIAL'
-  | 'OUTRO';
-export type StatusGeracaoCurriculo =
-  | 'PENDENTE'
-  | 'ANALISANDO'
-  | 'GERANDO'
-  | 'VALIDANDO'
-  | 'CONCLUIDA'
-  | 'ERRO';
+export type PrioridadeOportunidade = apiComponents['schemas']['AtualizarOportunidadeDto']['prioridade'] & string;
+export type ApresentacaoOportunidade = WorkspaceOportunidade['oportunidade']['apresentacao'];
+export type EtapaPipeline = WorkspaceOportunidade['oportunidade']['etapa'];
+export type DestinoTransicao = apiComponents['schemas']['TransicaoDto']['destino'];
+export type TipoAcaoOportunidade = apiComponents['schemas']['CriarAcaoDto']['tipo'];
+export type StatusGeracaoCurriculo = GeracaoCurriculo['status'];
 export type PipelineModo = 'kanban' | 'canvas' | 'grafo';
 
-export interface ProximoPasso {
-  id: string;
-  titulo: string;
-  tipo?: TipoAcaoOportunidade | string;
-  principal?: boolean;
-  venceEm: string | null;
-  lembrarEm?: string | null;
-}
+export type ProximoPasso = NonNullable<WorkspaceOportunidade['oportunidade']['proximoPasso']>;
 
-export interface OportunidadeItem {
-  tipo: 'ENTRADA' | 'OPORTUNIDADE';
-  id: string;
-  titulo: string;
-  empresa: string;
-  categoria: string | null;
-  nivel: string | null;
-  prioridade: PrioridadeOportunidade | null;
-  etapa: EtapaPipeline | null;
-  apresentacao: ApresentacaoOportunidade;
-  curriculoVinculado: { id: string; rotulo: string; score: number | null } | null;
-  score: number | null;
-  proximoPasso: ProximoPasso | null;
-  ultimaAtividade: string;
-  origem: string;
-  keywords: Keyword[];
-  keywordsStatus: 'VALIDAS' | 'PENDENTE';
-  keywordsExtracao?: EstadoExtracao;
-  keywordsErro?: string | null;
-  descricao?: string;
-  fonte?: string | null;
-  statusCandidatura?: StatusCandidatura | null;
-  arquivadaEm?: string | null;
-}
+export type OportunidadeItem = Resposta<'/v1/oportunidades', 'get', 200>['itens'][number];
 
-export interface EventoOportunidade {
-  id: string;
-  vagaId: string;
-  tipo: string;
-  origem: string;
-  descricao: string;
-  dados: Record<string, unknown>;
-  ocorridoEm: string;
-}
+export type EventoOportunidade = WorkspaceOportunidade['timeline'][number];
 
-export interface AcaoOportunidade extends ProximoPasso {
-  vagaId?: string;
-  candidaturaId?: string | null;
-  concluidaEm?: string | null;
-  canceladaEm?: string | null;
-}
+export type AcaoOportunidade = Resposta<'/v1/acoes/{id}', 'patch', 200>;
 
-export interface CandidaturaWorkspace {
-  id: string;
-  status: StatusCandidatura;
-  notas: string;
-  principal: boolean;
-  enviadaEm: string | null;
-  encerradaEm: string | null;
-  motivoEncerramento: string | null;
-  curriculoId: string | null;
-  vinculo: {
-    curriculoId: string | null;
-    rotulo?: string;
-    score?: number | null;
-    situacao: string;
-  };
-}
+export type CandidaturaWorkspace = NonNullable<WorkspaceOportunidade['candidatura']>;
 
-export interface WorkspaceOportunidade {
-  oportunidade: OportunidadeItem;
-  candidatura: CandidaturaWorkspace | null;
-  curriculos: { id: string; rotulo: string; score: number | null; geradoEm: string }[];
-  acaoPrincipal: AcaoOportunidade | null;
-  acoes: AcaoOportunidade[];
-  timeline: EventoOportunidade[];
-}
+export type WorkspaceOportunidade = Resposta<'/v1/oportunidades/{id}/workspace', 'get', 200>;
 
-export interface HojeAcao {
-  id: string;
-  vagaId: string;
-  titulo: string;
-  tipo: string;
-  principal: boolean;
-  venceEm: string | null;
-  lembrarEm: string | null;
-  quando: string;
-  oportunidade: { id: string; titulo: string; empresa: string };
-}
+export type HojeAcao = HojeResposta['hoje'][number];
 
-export interface HojeResposta {
-  fusoHorario: string;
-  inicioDia: string;
-  fimDia: string;
-  atrasadas: HojeAcao[];
-  hoje: HojeAcao[];
-  proximosDias: HojeAcao[];
-  semProximoPasso: { id: string; titulo: string; empresa: string }[];
-  geracoesConcluidas?: { curriculoId: string; oportunidadeId: string; titulo: string; empresa: string; score: number | null; concluidaEm: string }[];
-  entrada?: { id: string; titulo: string; empresa: string; criadoEm: string }[];
-  atividadeRecente: {
-    id: string;
-    vagaId: string;
-    titulo: string;
-    empresa: string;
-    tipo: string;
-    descricao: string;
-    ocorridoEm: string;
-  }[];
-  resumoAts: { curriculos: number; comScore: number; media: number | null };
-  serieTemporal: {
-    inicio: string;
-    fim: string;
-    periodoDias: 7 | 30 | 90;
-    pontos: {
-      data: string;
-      oportunidadesCriadas: number;
-      acoesConcluidas: number;
-      curriculosGerados: number;
-      scoreMedio: number | null;
-    }[];
-  };
-}
+export type HojeResposta = Resposta<'/v1/hoje', 'get', 200>;
 
-export interface PipelineItem {
-  id: string;
-  titulo: string;
-  empresa: string;
-  categoria: string | null;
-  nivel: string | null;
-  prioridade: PrioridadeOportunidade;
-  apresentacao: ApresentacaoOportunidade;
-  etapa: EtapaPipeline;
-  statusCandidatura: StatusCandidatura | null;
-  arquivadaEm: string | null;
-  score: number | null;
-  curriculo: { id: string; rotulo: string; score: number | null } | null;
-  proximoPasso: ProximoPasso | null;
-  ultimaAtividade: string;
-  keywords: Keyword[];
-  keywordsStatus: 'VALIDAS' | 'PENDENTE';
-  keywordsExtracao?: EstadoExtracao;
-  keywordsErro?: string | null;
-}
+export type PipelineItem = Resposta<'/v1/pipeline', 'get', 200>[number];
 
-export interface PipelineFiltros {
-  busca?: string;
-  apresentacao?: string;
-  statusCandidatura?: string;
-  categoria?: string;
-  nivel?: string;
-  empresa?: string;
-  prioridade?: string;
-  comCurriculo?: string;
-  scoreMinimo?: string;
-  prazo?: string;
-  atividadeDesde?: string;
-  ordenarPor?: string;
-  ordenarDirecao?: 'asc' | 'desc';
-}
+export type PipelineFiltros = NonNullable<apiPaths['/v1/pipeline']['get']['parameters']['query']>;
 
-export interface CanvasLayout {
-  revisao: number;
-  viewport: { x: number; y: number; zoom: number };
-  posicoes: { vagaId: string; x: number; y: number }[];
-}
+export type GrafoResposta = Resposta<'/v1/pipeline/grafo', 'get', 200>;
 
-export interface GrafoResposta {
-  schemaVersion: string;
-  nodes: { id: string; tipo: string; rotulo: string }[];
-  edges: { id: string; origem: string; destino: string; tipo: string }[];
-  facets: {
-    empresas: string[];
-    categorias: string[];
-    niveis: string[];
-    skills: string[];
-  };
-}
+export type GeracaoCurriculo = Resposta<'/v1/geracoes-curriculo/{jobId}', 'get', 200>;
 
-export interface GeracaoCurriculo {
-  id: string;
-  vagaId: string;
-  status: StatusGeracaoCurriculo;
-  erro: string | null;
-  curriculoId: string | null;
-  etapas?: {
-    analiseInicial: AtsAnalysis | null;
-    reescrita: boolean;
-    analiseFinal: AtsAnalysis | null;
-    degradacao: string | null;
-  };
-}
+export type CurriculoGlobal = Resposta<'/v1/curriculos', 'get', 200>['itens'][number];
 
-export interface CurriculoGlobal {
-  id: string;
-  rotulo: string;
-  score: number | null;
-  breakdown: ScoreBreakdown | null;
-  analiseInicial: AtsAnalysis | null;
-  analiseFinal: AtsAnalysis | null;
-  degradacao: string | null;
-  geradoEm: string;
-  vagaId: string;
-  categoria: string | null;
-  nivel: string | null;
-  oportunidade: { id: string; titulo: string; empresa: string };
-  vinculo: { candidaturaId: string; principal: boolean; status: string } | null;
-  downloadDocxUrl: string | null;
-  downloadPdfUrl: string | null;
-}
+export type Pagina<T> = Omit<Resposta<'/v1/curriculos', 'get', 200>, 'itens'> & { itens: T[] };
 
-export interface Pagina<T> {
-  itens: T[];
-  total: number;
-  limit: number | null;
-  offset: number;
-}
+export type Taxonomia = Resposta<'/v1/taxonomia', 'get', 200>;
 
-export interface Taxonomia {
-  categorias: string[];
-  niveis: string[];
-}
-
-export interface PreferenciasUsuario {
-  usuarioId: string;
-  fusoHorario: string;
-  canvasX: number;
-  canvasY: number;
-  canvasZoom: number;
-  canvasRevisao: number;
-}
+export type PreferenciasUsuario = Resposta<'/v1/preferencias', 'get', 200>;
 
 function query(params: object) {
   const sp = new URLSearchParams();
@@ -626,7 +252,7 @@ export function getPreferencias() {
   return request<PreferenciasUsuario>('/preferencias');
 }
 
-export function patchPreferencias(dto: { fusoHorario?: string }) {
+export function patchPreferencias(dto: apiComponents['schemas']['PatchPreferenciasDto']) {
   return request<PreferenciasUsuario>('/preferencias', {
     method: 'PATCH',
     body: JSON.stringify(dto),
@@ -637,41 +263,26 @@ export function getTaxonomia() {
   return request<Taxonomia>('/taxonomia');
 }
 
-export function listarOportunidades(params: {
-  visao?: string;
-  busca?: string;
-  categoria?: string;
-  nivel?: string;
-  prioridade?: string;
-  ordenarPor?: string;
-  ordenarDirecao?: 'asc' | 'desc';
-  limit?: number;
-  offset?: number;
-}) {
+export function listarOportunidades(params: NonNullable<apiPaths['/v1/oportunidades']['get']['parameters']['query']>) {
   return request<Pagina<OportunidadeItem>>(`/oportunidades${query(params)}`);
 }
 
-export function criarOportunidade(dto: {
-  titulo: string;
-  empresa: string;
-  descricao: string;
-  fonte?: string;
-}) {
-  return request<OportunidadeItem>('/oportunidades', {
+export function criarOportunidade(dto: apiComponents['schemas']['CriarOportunidadeDto']) {
+  return request<Resposta<'/v1/oportunidades', 'post', 201>>('/oportunidades', {
     method: 'POST',
     body: JSON.stringify(dto),
   });
 }
 
 export function importarOportunidades(itens: ItemImportacao[]) {
-  return request<{ loteId: string; total: number }>('/oportunidades/importar', {
+  return request<Resposta<'/v1/oportunidades/importar', 'post', 201>>('/oportunidades/importar', {
     method: 'POST',
     body: JSON.stringify({ itens }),
   });
 }
 
 export function ativarEntrada(id: string) {
-  return request<OportunidadeItem>(`/oportunidades/entradas/${id}/ativar`, {
+  return request<Resposta<'/v1/oportunidades/entradas/{id}/ativar', 'post', 201>>(`/oportunidades/entradas/${id}/ativar`, {
     method: 'POST',
   });
 }
@@ -682,9 +293,9 @@ export function getWorkspace(id: string) {
 
 export function patchOportunidade(
   id: string,
-  dto: { prioridade?: PrioridadeOportunidade; arquivar?: boolean },
+  dto: apiComponents['schemas']['AtualizarOportunidadeDto'],
 ) {
-  return request<OportunidadeItem>(`/oportunidades/${id}`, {
+  return request<Resposta<'/v1/oportunidades/{id}', 'patch', 200>>(`/oportunidades/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(dto),
   });
@@ -713,13 +324,7 @@ export function listarAcoes(vagaId: string) {
 
 export function criarAcao(
   vagaId: string,
-  dto: {
-    titulo: string;
-    tipo: TipoAcaoOportunidade;
-    principal?: boolean;
-    venceEm?: string;
-    lembrarEm?: string;
-  },
+  dto: apiComponents['schemas']['CriarAcaoDto'],
 ) {
   return request<AcaoOportunidade>(`/oportunidades/${vagaId}/acoes`, {
     method: 'POST',
@@ -729,7 +334,7 @@ export function criarAcao(
 
 export function patchAcao(
   id: string,
-  dto: { venceEm?: string | null; lembrarEm?: string | null; principal?: boolean; titulo?: string },
+  dto: apiComponents['schemas']['AtualizarAcaoDto'],
 ) {
   return request<AcaoOportunidade>(`/acoes/${id}`, {
     method: 'PATCH',
@@ -746,7 +351,7 @@ export function cancelarAcao(id: string) {
 }
 
 export function getTimeline(vagaId: string, cursor?: string) {
-  return request<{ itens: EventoOportunidade[]; proximoCursor: string | null }>(
+  return request<Resposta<'/v1/oportunidades/{id}/timeline', 'get', 200>>(
     `/oportunidades/${vagaId}/timeline${query({ cursor })}`,
   );
 }
@@ -759,22 +364,14 @@ export function postNotaTimeline(vagaId: string, descricao: string) {
 }
 
 export function gerarCvOportunidade(id: string) {
-  return request<{ jobId: string }>(`/oportunidades/${id}/gerar-cv`, {
+  return request<Resposta<'/v1/oportunidades/{id}/gerar-cv', 'post', 202>>(`/oportunidades/${id}/gerar-cv`, {
     method: 'POST',
   });
 }
 
-export interface ContaResposta {
-  email: string;
-  consentimento: { aceitoEm: string | null; provedor: string; regiao: string };
-  exclusaoAgendadaPara: string | null;
-}
+export type ContaResposta = Resposta<'/v1/conta', 'get', 200>;
 
-export interface ExportacaoConta {
-  status: 'PENDENTE' | 'PROCESSANDO' | 'CONCLUIDO' | 'ERRO';
-  url?: string;
-  expiraEm?: string;
-}
+export type ExportacaoConta = Resposta<'/v1/conta/exportacoes/{jobId}', 'get', 200>;
 
 export function getConta() {
   return request<ContaResposta>('/conta');
@@ -789,7 +386,7 @@ export function revogarConsentimento() {
 }
 
 export function iniciarExportacaoConta() {
-  return request<{ jobId: string }>('/conta/exportacoes', { method: 'POST' });
+  return request<Resposta<'/v1/conta/exportacoes', 'post', 202>>('/conta/exportacoes', { method: 'POST' });
 }
 
 export function getExportacaoConta(jobId: string) {
@@ -797,7 +394,7 @@ export function getExportacaoConta(jobId: string) {
 }
 
 export function agendarExclusaoConta(senha: string) {
-  return request<{ exclusaoAgendadaPara: string }>('/conta/exclusao', {
+  return request<Resposta<'/v1/conta/exclusao', 'post', 200>>('/conta/exclusao', {
     method: 'POST', body: JSON.stringify({ senha }),
   });
 }
@@ -810,18 +407,7 @@ export function getGeracao(jobId: string) {
   return request<GeracaoCurriculo>(`/geracoes-curriculo/${jobId}`);
 }
 
-export function listarCurriculosGlobal(params: {
-  vagaId?: string;
-  scoreMinimo?: string;
-  vinculado?: string;
-  categoria?: string;
-  nivel?: string;
-  ordenarPor?: string;
-  de?: string;
-  ate?: string;
-  limit?: number;
-  offset?: number;
-}) {
+export function listarCurriculosGlobal(params: NonNullable<apiPaths['/v1/curriculos']['get']['parameters']['query']>) {
   return request<Pagina<CurriculoGlobal>>(`/curriculos${query(params)}`);
 }
 
@@ -833,59 +419,17 @@ export function getPipelineGrafo(filtros: PipelineFiltros) {
   return request<GrafoResposta>(`/pipeline/grafo${query(filtros)}`);
 }
 
-export type ModoCopiloto = 'assistido' | 'autopiloto';
+export type ModoCopiloto = NonNullable<CopilotoChatBody['modo']>;
 
-export interface ConfirmacaoCopiloto {
-  callId: string;
-  decisao: 'confirmar' | 'recusar';
-  ajustes?: Record<string, unknown>;
-}
+export type ConfirmacaoCopiloto = NonNullable<CopilotoChatBody['confirmacao']>;
 
-export interface CopilotoChatBody {
-  conversaId?: string;
-  modo?: ModoCopiloto;
-  oportunidadeId?: string;
-  mensagem?: string;
-  confirmacao?: ConfirmacaoCopiloto;
-}
+export type CopilotoChatBody = apiComponents['schemas']['ChatDto'];
 
-export interface MensagemCopilotoPersistida {
-  papel: 'user' | 'assistant' | 'tool' | 'evento';
-  conteudo: string;
-  tool?: string | null;
-  dados?: {
-    callId?: string;
-    efeito?: 'leitura' | 'escrita' | 'entrega_externa';
-    args?: Record<string, unknown>;
-    ok?: boolean;
-    resultado?: unknown;
-    erro?: string;
-    entrega?: { tipo: string; titulo: string; texto: string; destino?: string; aviso?: AvisoAcao };
-    evento?: 'erro' | 'cancelado';
-    escopo?: string;
-  };
-}
+export type MensagemCopilotoPersistida = ConversaCopilotoDetalhe['mensagens'][number];
 
-export interface ConversaCopilotoResumo {
-  id: string;
-  modo: ModoCopiloto;
-  oportunidadeId: string | null;
-  titulo: string;
-  ultimaMensagem: string;
-  totalMensagens: number;
-  criadoEm: string;
-  atualizadoEm: string;
-}
+export type ConversaCopilotoResumo = Resposta<'/v1/copiloto/conversas', 'get', 200>[number];
 
-export interface ConversaCopilotoDetalhe {
-  id: string;
-  modo: ModoCopiloto;
-  oportunidadeId: string | null;
-  mensagens: MensagemCopilotoPersistida[];
-  pendencia: unknown | null;
-  criadoEm: string;
-  atualizadoEm: string;
-}
+export type ConversaCopilotoDetalhe = Resposta<'/v1/copiloto/conversas/{id}', 'get', 200>;
 
 export function listarConversasCopiloto(oportunidadeId?: string) {
   return request<ConversaCopilotoResumo[]>(
@@ -897,47 +441,11 @@ export function buscarConversaCopiloto(id: string) {
   return request<ConversaCopilotoDetalhe>(`/copiloto/conversas/${id}`);
 }
 
-export type EfeitoTool = 'leitura' | 'escrita';
+export type EfeitoTool = Extract<CopilotoEvento, { evento: 'tool_call' }>['data']['efeito'];
 
-export interface AvisoAcao {
-  tipo: string;
-  mensagem: string;
-  sugestao: string;
-}
+export type AvisoAcao = NonNullable<Extract<CopilotoEvento, { evento: 'entrega_externa' }>['data']['aviso']>;
 
-export type CopilotoEvento =
-  | { evento: 'token'; data: { delta: string } }
-  | {
-      evento: 'tool_call';
-      data: {
-        callId: string;
-        tool: string;
-        efeito: EfeitoTool;
-        args: Record<string, unknown>;
-        exigeConfirmacao: boolean;
-      };
-    }
-  | {
-      evento: 'confirmacao';
-      data: { callId: string; tool: string; resumo: string; args: Record<string, unknown> };
-    }
-  | {
-      evento: 'tool_resultado';
-      data: {
-        callId: string;
-        tool: string;
-        ok: boolean;
-        resultado: unknown;
-        erro: { mensagem: string; recuperavel: boolean } | null;
-      };
-    }
-  | {
-      evento: 'entrega_externa';
-      data: { tipo: string; titulo: string; texto: string; destino?: string; aviso?: AvisoAcao };
-    }
-  | { evento: 'erro'; data: { escopo: string; mensagem: string; recuperavel: boolean } }
-  | { evento: 'fim_turno'; data: { motivo: string; conversaId: string } }
-  | { evento: 'conversa'; data: { conversaId: string } };
+export type CopilotoEvento = apiComponents['schemas']['CopilotoEvento'];
 
 export async function streamCopiloto(
   body: CopilotoChatBody,

@@ -145,8 +145,8 @@ export function Curriculos({
       categoria: categoria || undefined,
       nivel: nivel || undefined,
       ordenarPor,
-      limit: agrupado ? undefined : LIMITE_LISTA,
-      offset: agrupado ? undefined : offset,
+      limit: agrupado ? undefined : String(LIMITE_LISTA),
+      offset: agrupado ? undefined : String(offset),
     })
       .then((resposta) => {
         if (ativo) setPagina(resposta);

@@ -1,12 +1,12 @@
+import type { apiComponents, apiPaths } from '@prdal/contracts';
+
 const METODOS_SEGUROS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const ROTAS_SEM_RENOVACAO = new Set(['/auth/login', '/auth/register', '/auth/refresh']);
 const ROTAS_SEM_CSRF = ROTAS_SEM_RENOVACAO;
 const TRAVA_REFRESH = 'prdal-refresh';
 
-export interface ErroApi {
-  erro?: { codigo?: string; mensagem?: string; requestId?: string | null };
-  message?: string | string[];
-}
+export type ErroApi = Partial<apiComponents['schemas']['CorpoErro']> & Partial<apiComponents['schemas']['RespostaExcecao']>;
+type SessaoApi = apiPaths['/v1/auth/login']['post']['responses'][201]['content']['application/json'];
 
 export function mensagemDeErro(corpo: unknown, status: number): string {
   const dados = (corpo ?? {}) as ErroApi;
@@ -50,7 +50,7 @@ export function criarCliente(base: string, aoExpirar: () => void) {
   let buscandoCsrf: Promise<void> | null = null;
 
   function lembrarCsrf(corpo: unknown) {
-    const token = (corpo as { csrfToken?: unknown } | null)?.csrfToken;
+    const token = (corpo as Partial<SessaoApi> | null)?.csrfToken;
     if (typeof token === 'string' && token) csrf = token;
   }
 

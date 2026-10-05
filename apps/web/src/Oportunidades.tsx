@@ -134,8 +134,8 @@ export function Oportunidades({
       ordenarPor,
       ordenarDirecao,
       prioridade: prioridade || undefined,
-      limit: LIMITE_LISTA,
-      offset,
+      limit: String(LIMITE_LISTA),
+      offset: String(offset),
     })
       .then(setPagina)
       .catch((err) => setErro((err as Error).message));
@@ -154,8 +154,8 @@ export function Oportunidades({
       ordenarPor,
       ordenarDirecao,
       prioridade: prioridade || undefined,
-      limit: LIMITE_LISTA,
-      offset,
+      limit: String(LIMITE_LISTA),
+      offset: String(offset),
     })
       .then((resposta) => {
         if (ativo) setPagina(resposta);
