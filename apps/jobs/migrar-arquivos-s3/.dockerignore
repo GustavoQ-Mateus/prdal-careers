@@ -17,5 +17,4 @@ __pycache__
 **/__pycache__
 **/bin
 **/obj
-tests
-evals/relatorios
+test
