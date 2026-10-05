@@ -31,7 +31,7 @@ function passoDeStatus(status: StatusGeracaoCurriculo): number {
   return 0;
 }
 
-type Falha = { titulo: string; detalhe?: string };
+type Falha = { titulo: string; detalhe?: string; consentimento?: boolean };
 
 export function GeracaoWizard({
   open,
@@ -129,7 +129,7 @@ export function GeracaoWizard({
       setPasso(0);
     } catch (err) {
       setErro(destinoErroConta(err, 'geracao') === 'consentimento'
-        ? { titulo: 'Aceite o envio de dados na sua conta para gerar currículos.' }
+        ? { titulo: 'Aceite o envio de dados na sua conta para gerar currículos.', consentimento: true }
         : { titulo: 'A geração falhou', detalhe: (err as Error).message });
     }
   }
@@ -205,7 +205,7 @@ export function GeracaoWizard({
               {erro.detalhe && (
                 <p className="mt-0.5 break-words font-mono text-[11px] text-score-bad/70">{erro.detalhe}</p>
               )}
-              {erro.titulo.startsWith('Aceite o envio') && <button type="button" className="mt-2 text-[13px] font-medium text-accent hover:underline" onClick={() => { onOpenChange(false); onAbrirConta(); }}>Ir para Conta</button>}
+              {erro.consentimento && <button type="button" className="mt-2 text-[13px] font-medium text-accent hover:underline" onClick={() => { onOpenChange(false); onAbrirConta(); }}>Ir para Conta</button>}
             </div>
           )}
 
