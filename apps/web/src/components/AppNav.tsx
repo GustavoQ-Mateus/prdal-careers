@@ -21,9 +21,9 @@ const GRUPOS: Grupo[] = [
   {
     titulo: null,
     itens: [
+      { tela: 'copiloto', nome: 'Copiloto', icon: Compass },
       { tela: 'hoje', nome: 'Hoje', icon: CalendarCheck },
       { tela: 'oportunidades', nome: 'Oportunidades', icon: LayoutGrid },
-      { tela: 'copiloto', nome: 'Copiloto', icon: Compass },
       { tela: 'curriculos', nome: 'Currículos', icon: FileText },
     ],
   },

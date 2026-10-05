@@ -7,6 +7,7 @@ export type ModoCurriculos = 'lista' | 'oportunidade';
 
 export type FiltrosHub = {
   visao: VisaoHub;
+  importar?: boolean;
   busca?: string;
   estado?: string;
   categoria?: string;
@@ -52,12 +53,14 @@ export function parseRota(
 ): Rota {
   const path = pathname.replace(/\/$/, '') || '/';
   const q = new URLSearchParams(search);
-  if (path === '/' || path === '/hoje' || path === '/dashboard') return { tela: 'hoje' };
+  if (path === '/hoje') return { tela: 'hoje' };
+  if (path === '/') return { tela: 'copiloto' };
 
-  if (path === '/vagas' || path === '/banco-vagas' || path === '/oportunidades') {
+  if (path === '/banco-vagas' || path === '/oportunidades') {
     return {
       tela: 'oportunidades',
       visao: normalizarVisao(q.get('visao')),
+      importar: q.get('importar') === 'lote',
       busca: q.get('busca') ?? undefined,
       estado: q.get('estado') ?? (path === '/banco-vagas' ? 'entrada' : undefined),
       categoria: q.get('categoria') ?? undefined,
@@ -99,7 +102,7 @@ export function parseRota(
   }
   if (path === '/conhecimento') return { tela: 'conhecimento' };
   if (path === '/perfil') return { tela: 'perfil' };
-  return { tela: 'hoje' };
+  return { tela: 'copiloto' };
 }
 
 export function hrefRota(rota: Rota): string {
@@ -109,6 +112,7 @@ export function hrefRota(rota: Rota): string {
     case 'oportunidades': {
       const q = new URLSearchParams();
       q.set('visao', rota.visao);
+      if (rota.importar) q.set('importar', 'lote');
       if (rota.busca) q.set('busca', rota.busca);
       if (rota.estado) q.set('estado', rota.estado);
       if (rota.categoria) q.set('categoria', rota.categoria);

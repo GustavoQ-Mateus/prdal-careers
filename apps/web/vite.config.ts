@@ -21,6 +21,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
+        navigateFallback: '/index.html',
       },
       manifest: {
         name: 'PRDAL Careers',
@@ -28,7 +29,7 @@ export default defineConfig({
         theme_color: '#0F2440',
         background_color: '#0F2440',
         display: 'standalone',
-        start_url: '/',
+        start_url: '/copiloto',
         icons: [
           { src: '/brand/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/brand/icon-512.png', sizes: '512x512', type: 'image/png' },

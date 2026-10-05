@@ -1,12 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Compass, ExternalLink, History, Plus } from 'lucide-react';
 import {
   buscarConversaCopiloto,
+  getHoje,
+  getPerfil,
   getWorkspace,
   listarConversasCopiloto,
   type ConversaCopilotoResumo,
+  type HojeResposta,
+  type PerfilMestre,
 } from './api';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from './components/ThemeToggle';
+import { InicioCopiloto } from './copiloto/InicioCopiloto';
+import { montarInicioCopiloto } from './copiloto/inicio';
 import { useCopiloto } from './copiloto/useCopiloto';
 import {
   BarraEstado,
@@ -24,27 +31,6 @@ import {
 } from './copiloto/componentes';
 import type { Item } from './copiloto/tipos';
 
-function EstadoVazio({ autopiloto }: { autopiloto: boolean }) {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center py-16 text-center">
-      <span className="flex size-11 items-center justify-center rounded-card border border-line-strong bg-ground text-accent shadow-rest">
-        <Compass className="size-5" />
-      </span>
-      <h2 className="mt-4 text-[18px] font-semibold text-ink">Conduza a candidatura em conversa</h2>
-      <p className="mt-2 max-w-md text-[14px] leading-relaxed text-muted">
-        Cole a descrição de uma vaga, peça o próximo passo ou deixe o copiloto preparar o currículo
-        e o texto para você revisar. Ler e analisar roda sozinho. Gravar sempre pede sua confirmação.
-      </p>
-      {autopiloto && (
-        <p className="mt-3 max-w-md text-[13px] text-muted">
-          O copiloto encadeia o loop e para antes de qualquer ação externa, com o conteúdo
-          pronto a usar.
-        </p>
-      )}
-    </div>
-  );
-}
-
 function AvisoParadoExterno() {
   return (
     <div className="flex items-start gap-2 rounded-card border border-accent/40 bg-accent-soft px-4 py-3 text-[13px] text-accent-ink motion-safe:animate-in motion-safe:fade-in">
@@ -57,12 +43,41 @@ function AvisoParadoExterno() {
   );
 }
 
-export function Copiloto({ oportunidadeId }: { oportunidadeId?: string }) {
+export function Copiloto({ oportunidadeId, acaoInicial, onAbrirHoje, onAbrirWorkspace, onAbrirCurriculo, onAbrirPerfil, onImportarLote, onAcao }: {
+  oportunidadeId?: string;
+  acaoInicial?: { id: string; mensagem: string };
+  onAbrirHoje: () => void;
+  onAbrirWorkspace: (id: string) => void;
+  onAbrirCurriculo: (oportunidadeId: string, curriculoId: string) => void;
+  onAbrirPerfil: () => void;
+  onImportarLote: () => void;
+  onAcao: (oportunidadeId: string, mensagem: string) => void;
+}) {
   const c = useCopiloto(oportunidadeId);
   const bloqueado = c.streaming || c.estado === 'aguardando_confirmacao';
   const [ancora, setAncora] = useState<{ titulo: string; empresa: string } | null>(null);
   const [historicoAberto, setHistoricoAberto] = useState(false);
   const [conversas, setConversas] = useState<ConversaCopilotoResumo[]>([]);
+  const [hoje, setHoje] = useState<HojeResposta | undefined>();
+  const [perfil, setPerfil] = useState<PerfilMestre | null | undefined>();
+  const entradaRef = useRef<HTMLTextAreaElement>(null);
+  const modelo = useMemo(() => montarInicioCopiloto(hoje, conversas, perfil, new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone), [hoje, conversas, perfil]);
+
+  useEffect(() => {
+    if (oportunidadeId) return;
+    let ativo = true;
+    getHoje().then((dados) => { if (ativo) setHoje(dados); }).catch(() => { if (ativo) setHoje(undefined); });
+    getPerfil().then((dados) => { if (ativo) setPerfil(dados); }).catch(() => { if (ativo) setPerfil(undefined); });
+    return () => { ativo = false; };
+  }, [oportunidadeId]);
+
+  useEffect(() => {
+    if (!acaoInicial) return;
+    const chave = `copiloto:acao:${acaoInicial.id}`;
+    if (sessionStorage.getItem(chave)) return;
+    sessionStorage.setItem(chave, '1');
+    c.enviarNovaConversa(acaoInicial.mensagem);
+  }, [acaoInicial?.id]);
 
   useEffect(() => {
     setAncora(null);
@@ -102,10 +117,10 @@ export function Copiloto({ oportunidadeId }: { oportunidadeId?: string }) {
     c.estado !== 'executando_escrita';
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-[840px] flex-col">
-      <div className="sticky top-0 z-10 -mx-2 flex flex-wrap items-center justify-between gap-3 bg-canvas/90 px-2 py-2 backdrop-blur-sm">
+    <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-[760px] flex-col">
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-line bg-canvas py-3">
         <div className="flex items-center gap-2">
-          <ModoToggle modo={c.modo} />
+          <ModoToggle modo={c.modo} onTrocar={c.trocarModo} />
           {ancora && (
             <span className="hidden items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-[12px] text-muted sm:inline-flex">
               <Compass className="size-3.5 text-accent" />
@@ -117,6 +132,7 @@ export function Copiloto({ oportunidadeId }: { oportunidadeId?: string }) {
           )}
         </div>
         <div className="relative flex items-center gap-1.5">
+          <ThemeToggle />
           <Button
             variant="ghost"
             size="sm"
@@ -158,7 +174,22 @@ export function Copiloto({ oportunidadeId }: { oportunidadeId?: string }) {
 
       <div className="flex flex-1 flex-col gap-4 py-6">
         {vazio ? (
-          <EstadoVazio autopiloto={c.modo === 'autopiloto'} />
+          oportunidadeId ? (
+            <div className="flex flex-1 flex-col justify-center py-14">
+              <h1 className="text-page text-ink">Conduza esta oportunidade em conversa</h1>
+              <p className="mt-2 max-w-xl text-muted">Cole a descrição da vaga ou peça o próximo passo.</p>
+            </div>
+          ) : (
+            <InicioCopiloto
+              modelo={modelo}
+              onConversa={(id) => void abrirConversa(id)}
+              onHoje={onAbrirHoje}
+              onWorkspace={onAbrirWorkspace}
+              onCurriculo={onAbrirCurriculo}
+              onPerfil={onAbrirPerfil}
+              onAcao={onAcao}
+            />
+          )
         ) : (
           c.itens.map((item, i) => (
             <ItemRender
@@ -178,8 +209,17 @@ export function Copiloto({ oportunidadeId }: { oportunidadeId?: string }) {
       </div>
 
       <div className="sticky bottom-0 z-10 flex flex-col gap-2 bg-canvas pb-4 pt-2">
+        {vazio && !oportunidadeId && !modelo.semPerfil && (
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="secondary" className="rounded-full" onClick={() => entradaRef.current?.focus()}>Colar uma vaga nova</Button>
+            <Button type="button" size="sm" variant="secondary" className="rounded-full" onClick={() => c.enviar('Qual vaga priorizo hoje?')}>Qual vaga priorizo hoje?</Button>
+            <Button type="button" size="sm" variant="secondary" className="rounded-full" onClick={onImportarLote}>Importar vagas em lote</Button>
+          </div>
+        )}
         <BarraEstado estado={c.estado} streaming={c.streaming} />
         <Composer
+          entradaRef={entradaRef}
+          placeholder={vazio && modelo.semPerfil && !oportunidadeId ? 'Ou me diga em uma frase o que você faz' : undefined}
           onEnviar={c.enviar}
           onParar={c.parar}
           streaming={c.streaming}

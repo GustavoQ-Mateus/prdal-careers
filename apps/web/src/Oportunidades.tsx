@@ -75,6 +75,7 @@ function selecaoDe(item: OportunidadeItem): Selecao {
 
 export function Oportunidades({
   visao,
+  importar = false,
   busca,
   estado,
   categoria,
@@ -86,6 +87,7 @@ export function Oportunidades({
   onAbrir,
 }: {
   visao: VisaoHub;
+  importar?: boolean;
   busca: string;
   estado: string;
   categoria: string;
@@ -101,7 +103,7 @@ export function Oportunidades({
   const [erro, setErro] = useState<string | null>(null);
   const [status, setStatus] = useState('');
   const [selecionada, setSelecionada] = useState<Selecao | null>(null);
-  const [registrarAberto, setRegistrarAberto] = useState(false);
+  const [registrarAberto, setRegistrarAberto] = useState(importar);
   const [editarAberto, setEditarAberto] = useState(false);
   const taxonomia = useTaxonomia();
 
@@ -387,6 +389,7 @@ export function Oportunidades({
 
       <RegistrarDialog
         open={registrarAberto}
+        modoInicial={importar ? 'lote' : 'individual'}
         onOpenChange={setRegistrarAberto}
         onCriada={onAbrir}
         onImportou={() => {

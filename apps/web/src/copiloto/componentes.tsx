@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type Ref } from 'react';
 import {
   ArrowUp,
   Check,
@@ -44,16 +44,20 @@ import { scoresAts, type ScoreAts } from './visualizacao';
 
 export function ModoToggle({
   modo,
+  onTrocar,
 }: {
   modo: ModoCopiloto;
+  onTrocar: (modo: ModoCopiloto) => void;
 }) {
   return (
-    <div
-      aria-label="Modo do copiloto"
-      className="inline-flex items-center gap-2 rounded-control border border-line-strong bg-ground px-3 py-1.5"
-    >
-      <span className="size-1.5 rounded-full bg-accent motion-safe:animate-pulse" aria-hidden />
-      <span className="text-[13px] font-medium text-ink">Copiloto</span>
+    <div aria-label="Modo do copiloto" className="inline-flex rounded-control border border-line-strong bg-ground p-0.5">
+      {(['assistido', 'autopiloto'] as const).map((valor) => <button
+        key={valor}
+        type="button"
+        aria-pressed={modo === valor}
+        onClick={() => onTrocar(valor)}
+        className={cn('rounded-[6px] px-3 py-1.5 text-[13px] font-medium capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent', modo === valor ? 'bg-primary text-primary-fg' : 'text-muted hover:text-ink')}
+      >{valor}</button>)}
     </div>
   );
 }
@@ -630,12 +634,16 @@ export function Composer({
   streaming,
   bloqueado,
   autopiloto,
+  entradaRef,
+  placeholder,
 }: {
   onEnviar: (texto: string) => void;
   onParar: () => void;
   streaming: boolean;
   bloqueado: boolean;
   autopiloto: boolean;
+  entradaRef?: Ref<HTMLTextAreaElement>;
+  placeholder?: string;
 }) {
   const [texto, setTexto] = useState('');
 
@@ -648,6 +656,8 @@ export function Composer({
   return (
     <div className="rounded-card border border-line-strong bg-ground p-2 shadow-rest">
       <Textarea
+        ref={entradaRef}
+        aria-label="Mensagem ao copiloto"
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
         onKeyDown={(e) => {
@@ -661,9 +671,9 @@ export function Composer({
         placeholder={
           bloqueado
             ? 'Responda à confirmação acima para seguir'
-            : autopiloto
+            : placeholder ?? (autopiloto
               ? 'Diga o objetivo e o copiloto encadeia o loop'
-              : 'Cole uma vaga ou peça o próximo passo'
+              : 'Cole uma vaga ou peça o próximo passo')
         }
         className="min-h-[44px] resize-none border-0 bg-transparent px-2 py-2 text-[15px] shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
       />

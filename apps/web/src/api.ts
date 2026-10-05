@@ -1,38 +1,12 @@
 import { lerEventos } from './copiloto/sse';
 import type { EstadoExtracao } from './lib/extracao';
 import { urlBaseApi } from './lib/url-api';
+import { lerCorpoResposta } from './lib/corpo-resposta';
 import { criarCliente, mensagemDeErro } from './sessao';
 
 export interface Keyword {
   termo: string;
   peso: number;
-}
-
-export interface Vaga {
-  id: string;
-  titulo: string;
-  empresa: string;
-  descricao: string;
-  fonte: string | null;
-  keywords: Keyword[];
-  keywordsStatus: 'VALIDAS' | 'PENDENTE';
-  keywordsExtracao?: EstadoExtracao;
-  keywordsErro?: string | null;
-  categoria: string | null;
-  nivel: string | null;
-  criadoEm: string;
-}
-
-export interface BancoVaga {
-  id: string;
-  titulo: string;
-  empresa: string;
-  fonte: string | null;
-  categoria: string | null;
-  nivel: string | null;
-  keywords: Keyword[] | null;
-  status: 'CRUA' | 'ATIVADA';
-  criadoEm: string;
 }
 
 export interface LoteItemStatus {
@@ -232,15 +206,6 @@ export interface CurriculoResumo {
   geradoEm: string;
 }
 
-export interface DashboardItem {
-  vagaId: string;
-  titulo: string;
-  empresa: string;
-  melhorScore: number | null;
-  versoes: number;
-  ultimaGeracao: string | null;
-}
-
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 function sessaoExpirada() {
@@ -264,8 +229,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await cliente.chamar(path, { ...options, headers });
   if (res.status === 401 && !path.startsWith('/auth/')) throw new Error('sessão expirada');
   if (!res.ok) await falha(res);
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
+  return lerCorpoResposta<T>(res);
 }
 
 export function login(email: string, senha: string) {
@@ -306,28 +270,6 @@ export function salvarPerfil(perfil: PerfilMestre) {
   });
 }
 
-export function listarVagas() {
-  return request<Vaga[]>('/vagas');
-}
-
-export function criarVaga(dto: {
-  titulo: string;
-  empresa: string;
-  descricao: string;
-  fonte?: string;
-}) {
-  return request<Vaga>('/vagas', {
-    method: 'POST',
-    body: JSON.stringify(dto),
-  });
-}
-
-export function gerarCv(vagaId: string) {
-  return request<{ jobId: string }>(`/vagas/${vagaId}/gerar-cv`, {
-    method: 'POST',
-  });
-}
-
 export function getCurriculo(id: string) {
   return request<Curriculo>(`/curriculos/${id}`);
 }
@@ -343,38 +285,8 @@ export function listarCurriculos(vagaId: string) {
   return request<CurriculoResumo[]>(`/vagas/${vagaId}/curriculos`);
 }
 
-export function getDashboard() {
-  return request<DashboardItem[]>('/dashboard');
-}
-
-export function importarBancoVagas(itens: ItemImportacao[]) {
-  return request<{ loteId: string; total: number }>('/banco-vagas/import', {
-    method: 'POST',
-    body: JSON.stringify({ itens }),
-  });
-}
-
-export function listarBancoVagas() {
-  return request<BancoVaga[]>('/banco-vagas');
-}
-
-export function ativarBancoVaga(id: string) {
-  return request<Vaga>(`/banco-vagas/${id}/ativar`, { method: 'POST' });
-}
-
 export function getLote(id: string) {
   return request<LoteStatus>(`/lotes/${id}`);
-}
-
-export function criarCandidatura(vagaId: string, curriculoId?: string) {
-  return request<Candidatura>('/candidaturas', {
-    method: 'POST',
-    body: JSON.stringify({ vagaId, curriculoId }),
-  });
-}
-
-export function listarCandidaturas() {
-  return request<Candidatura[]>('/candidaturas');
 }
 
 export function atualizarCandidatura(
@@ -563,6 +475,8 @@ export interface HojeResposta {
   hoje: HojeAcao[];
   proximosDias: HojeAcao[];
   semProximoPasso: { id: string; titulo: string; empresa: string }[];
+  geracoesConcluidas?: { curriculoId: string; oportunidadeId: string; titulo: string; empresa: string; score: number | null; concluidaEm: string }[];
+  entrada?: { id: string; titulo: string; empresa: string; criadoEm: string }[];
   atividadeRecente: {
     id: string;
     vagaId: string;
@@ -890,10 +804,6 @@ export function putPipelineCanvas(dto: {
 
 export function getPipelineGrafo(filtros: PipelineFiltros) {
   return request<GrafoResposta>(`/pipeline/grafo${query(filtros)}`);
-}
-
-export function gerarCvAlias(vagaId: string) {
-  return request<{ jobId: string }>(`/vagas/${vagaId}/gerar-cv`, { method: 'POST' });
 }
 
 export type ModoCopiloto = 'assistido' | 'autopiloto';
