@@ -7,6 +7,7 @@ export type ModoCurriculos = 'lista' | 'oportunidade';
 
 export type FiltrosHub = {
   visao: VisaoHub;
+  importar?: boolean;
   busca?: string;
   estado?: string;
   categoria?: string;
@@ -59,6 +60,7 @@ export function parseRota(
     return {
       tela: 'oportunidades',
       visao: normalizarVisao(q.get('visao')),
+      importar: q.get('importar') === 'lote',
       busca: q.get('busca') ?? undefined,
       estado: q.get('estado') ?? (path === '/banco-vagas' ? 'entrada' : undefined),
       categoria: q.get('categoria') ?? undefined,
@@ -110,6 +112,7 @@ export function hrefRota(rota: Rota): string {
     case 'oportunidades': {
       const q = new URLSearchParams();
       q.set('visao', rota.visao);
+      if (rota.importar) q.set('importar', 'lote');
       if (rota.busca) q.set('busca', rota.busca);
       if (rota.estado) q.set('estado', rota.estado);
       if (rota.categoria) q.set('categoria', rota.categoria);

@@ -29,16 +29,18 @@ const PRIORIDADES: PrioridadeOportunidade[] = ['ALTA', 'MEDIA', 'BAIXA'];
 
 export function RegistrarDialog({
   open,
+  modoInicial = 'individual',
   onOpenChange,
   onCriada,
   onImportou,
 }: {
   open: boolean;
+  modoInicial?: 'individual' | 'lote';
   onOpenChange: (aberto: boolean) => void;
   onCriada: (id: string) => void;
   onImportou: () => void;
 }) {
-  const [modo, setModo] = useState<'individual' | 'lote'>('individual');
+  const [modo, setModo] = useState<'individual' | 'lote'>(modoInicial);
   const [titulo, setTitulo] = useState('');
   const [empresa, setEmpresa] = useState('');
   const [descricao, setDescricao] = useState('');

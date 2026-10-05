@@ -611,8 +611,11 @@ export function useCopiloto(oportunidadeId?: string) {
   refEstado.current = estado;
   const abortRef = useRef<AbortController | null>(null);
   const retomadas = useRef(new Set<string>());
+  const ultimaOportunidade = useRef(oportunidadeId);
 
   useEffect(() => {
+    if (ultimaOportunidade.current === oportunidadeId) return;
+    ultimaOportunidade.current = oportunidadeId;
     dispatch({
       t: 'restaurar',
       payload: { oportunidadeId, ...carregar(oportunidadeId) },
@@ -634,15 +637,16 @@ export function useCopiloto(oportunidadeId?: string) {
     }
   }, [estado.itens, estado.conversaId, estado.modo, estado.estado, oportunidadeId]);
 
-  async function correr(envio: CopilotoChatBody) {
+  async function correr(envio: CopilotoChatBody, nova = false) {
+    if (nova) dispatch({ t: 'nova' });
     dispatch({ t: 'inicioTurno', envio });
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     const corpo: CopilotoChatBody = {
       ...envio,
       modo: refEstado.current.modo,
-      oportunidadeId: refEstado.current.oportunidadeId ?? oportunidadeId,
-      conversaId: refEstado.current.conversaId,
+      oportunidadeId: nova ? oportunidadeId : refEstado.current.oportunidadeId ?? oportunidadeId,
+      conversaId: nova ? undefined : refEstado.current.conversaId,
     };
     try {
       await streamCopiloto(corpo, (ev) => dispatch({ t: 'evento', ev }), ctrl.signal);
@@ -730,6 +734,10 @@ export function useCopiloto(oportunidadeId?: string) {
     enviar: (mensagem: string) => {
       if (!mensagem.trim() || refEstado.current.streaming) return;
       void correr({ mensagem });
+    },
+    enviarNovaConversa: (mensagem: string) => {
+      if (!mensagem.trim() || refEstado.current.streaming) return;
+      void correr({ mensagem }, true);
     },
     confirmar: (callId: string, ajustes?: Record<string, unknown>) => {
       if (refEstado.current.streaming) return;

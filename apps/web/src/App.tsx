@@ -38,6 +38,7 @@ export function App() {
   const [autenticado, setAutenticado] = useState<boolean | null>(null);
   const { rota, ir } = useRota();
   const [mobileAberta, setMobileAberta] = useState(false);
+  const [acaoInicial, setAcaoInicial] = useState<{ id: string; mensagem: string } | null>(null);
   const [navColapsada, setNavColapsada] = useState(() => {
     try {
       return localStorage.getItem('nav-colapsada') === '1';
@@ -55,6 +56,10 @@ export function App() {
       ativo = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (rota.tela !== 'copiloto') setAcaoInicial(null);
+  }, [rota.tela]);
 
   useEffect(() => {
     try {
@@ -123,6 +128,7 @@ export function App() {
   function navegar(tela: Aba) {
     const dest: Rota = tela === 'oportunidades' ? { tela, visao: 'lista' } : { tela };
     ir(dest);
+    setAcaoInicial(null);
     setMobileAberta(false);
   }
 
@@ -135,6 +141,11 @@ export function App() {
   function voltar() {
     if (rota.tela === 'workspace') ir({ tela: 'oportunidades', visao: 'lista' });
     if (rota.tela === 'curriculo') ir({ tela: 'workspace', id: rota.oportunidadeId });
+  }
+
+  function abrirAcaoCopiloto(oportunidadeId: string, mensagem: string) {
+    setAcaoInicial({ id: crypto.randomUUID(), mensagem });
+    ir({ tela: 'copiloto', oportunidadeId });
   }
 
   return (
@@ -176,7 +187,7 @@ export function App() {
           <Marca variante="marca" fundo="escuro" className="hidden h-6 w-auto dark:block" />
         </header>
 
-        <header
+        {rota.tela !== 'copiloto' && <header
           className={cn(
             'flex items-end justify-between gap-4 px-6 nav:px-8',
             workspaceScreen ? 'py-4' : 'pb-5 pt-7',
@@ -201,11 +212,11 @@ export function App() {
           <div className="flex shrink-0 items-center gap-2">
             <ThemeToggle />
           </div>
-        </header>
+        </header>}
 
         <main className="min-h-0 flex-1 bg-canvas">
           <ErrorBoundary resetKey={rota}>
-            <div className="px-6 pb-12 nav:px-8">
+            <div className={cn('pb-12', rota.tela === 'copiloto' ? 'px-4 nav:px-8' : 'px-6 nav:px-8')}>
               {rota.tela === 'hoje' && (
                 <Hoje
                   onAbrir={(id) => ir({ tela: 'workspace', id })}
@@ -215,6 +226,7 @@ export function App() {
               {rota.tela === 'oportunidades' && (
                 <Oportunidades
                   visao={rota.visao}
+                  importar={rota.importar}
                   busca={rota.busca ?? ''}
                   estado={rota.estado ?? 'ativas'}
                   categoria={rota.categoria ?? ''}
@@ -235,7 +247,19 @@ export function App() {
                   onCopiloto={() => ir({ tela: 'copiloto', oportunidadeId: rota.id })}
                 />
               )}
-              {rota.tela === 'copiloto' && <Copiloto oportunidadeId={rota.oportunidadeId} />}
+              {rota.tela === 'copiloto' && (
+                <Copiloto
+                  key={`${rota.oportunidadeId ?? 'inicio'}:${acaoInicial?.id ?? ''}`}
+                  oportunidadeId={rota.oportunidadeId}
+                  acaoInicial={acaoInicial ?? undefined}
+                  onAbrirHoje={() => ir({ tela: 'hoje' })}
+                  onAbrirWorkspace={(id) => ir({ tela: 'workspace', id })}
+                  onAbrirCurriculo={(oportunidadeId, curriculoId) => ir({ tela: 'curriculo', oportunidadeId, curriculoId })}
+                  onAbrirPerfil={() => ir({ tela: 'perfil' })}
+                  onImportarLote={() => ir({ tela: 'oportunidades', visao: 'lista', importar: true })}
+                  onAcao={abrirAcaoCopiloto}
+                />
+              )}
               {rota.tela === 'curriculos' && (
                 <Curriculos
                   modo={rota.modo ?? 'lista'}

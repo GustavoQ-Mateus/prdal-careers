@@ -475,6 +475,8 @@ export interface HojeResposta {
   hoje: HojeAcao[];
   proximosDias: HojeAcao[];
   semProximoPasso: { id: string; titulo: string; empresa: string }[];
+  geracoesConcluidas?: { curriculoId: string; oportunidadeId: string; titulo: string; empresa: string; score: number | null; concluidaEm: string }[];
+  entrada?: { id: string; titulo: string; empresa: string; criadoEm: string }[];
   atividadeRecente: {
     id: string;
     vagaId: string;
