@@ -29,11 +29,12 @@ sealed class LimitesRenderizacao
     public bool MarkdownExcede(string? markdown) =>
         Encoding.UTF8.GetByteCount(markdown ?? string.Empty) > MarkdownMaxBytes;
 
-    public async Task<IResult> Renderizar(Func<byte[]> renderizar, Func<byte[], IResult> resposta)
+    public async Task<IResult> Renderizar<T>(Func<T> renderizar, Func<T, IResult> resposta)
     {
+        var relogio = System.Diagnostics.Stopwatch.StartNew();
         var tarefa = Task.Run(renderizar);
         var concluida = await Task.WhenAny(tarefa, Task.Delay(TempoMaxMs));
-        if (concluida != tarefa)
+        if (concluida != tarefa || relogio.ElapsedMilliseconds >= TempoMaxMs)
         {
             return Results.Json(
                 new { erro = $"renderizacao excedeu o tempo maximo de {TempoMaxMs} ms" },
@@ -45,7 +46,7 @@ sealed class LimitesRenderizacao
 
 static class LimiteDeCorpo
 {
-    public static IApplicationBuilder UseLimiteDeCorpo(this WebApplication app, LimitesRenderizacao limites)
+    public static IApplicationBuilder UseLimiteDeCorpo(this IApplicationBuilder app, LimitesRenderizacao limites)
     {
         return app.Use(async (context, next) =>
         {
