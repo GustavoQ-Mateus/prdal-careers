@@ -118,7 +118,12 @@ export async function versaoPublicada(raiz, anterior) {
   function git(...args) {
     return execFileSync('git', args, { cwd: raiz, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
   }
-  const prefixo = git('rev-parse', '--show-prefix');
+  let prefixo;
+  try {
+    prefixo = git('rev-parse', '--show-prefix');
+  } catch {
+    return null;
+  }
   const tags = git('tag', '--list', 'v*', '--sort=-version:refname').split('\n').filter((tag) => /^v\d+\.\d+\.\d+$/.test(tag));
   for (const tag of tags) {
     let pacote;
