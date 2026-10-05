@@ -28,6 +28,7 @@ Microsserviços poliglota com orquestração única na `api`:
 | `apps/api` | NestJS + TypeScript | Orquestração, auth, regras, dono do PostgreSQL (dados, conversas e vetores) |
 | `apps/ai-service` | Python + FastAPI | Keywords, geração de CV, score ATS, RAG do Obsidian |
 | `apps/doc-service` | C# / .NET 8 | Render `.docx` e `.pdf` |
+| `apps/worker` | Node + TypeScript | Consome a fila de jobs e executa o trabalho assíncrono |
 
 ## Stack
 
@@ -42,7 +43,7 @@ cp .env.example .env      # configure ANTHROPIC_API_KEY e AI_MODEL
 docker compose -f infra/docker-compose.yml up
 ```
 
-Sobe `web`, `api`, `ai-service`, `doc-service` e PostgreSQL com pgvector. Cada serviço expõe `/health`.
+Sobe `web`, `api`, `worker`, `ai-service`, `doc-service`, ElasticMQ e PostgreSQL com pgvector. Cada serviço expõe `/health`.
 
 ### Migrações do banco
 
@@ -89,6 +90,18 @@ docker compose -f infra/docker-compose.yml run --rm migracao
 ```
 
 Na AWS o RDS PostgreSQL já traz o pgvector; a mesma migração cria a extensão.
+
+### Jobs assíncronos
+
+A api nunca executa trabalho longo dentro da requisição nem relança nada no boot. Ela grava uma linha em `jobs` (tipo, status, tentativas, `locked_until`, erro, resultado, usuário, referência ao objeto e o `requestId` do pedido) na mesma transação do pedido e, depois do commit, envia para a fila uma mensagem só com `{ jobId, tipo }`. A linha é a fonte da verdade; a mensagem é só o aviso.
+
+O `worker` (`apps/worker`, aplicação própria com `package.json`, `Dockerfile` e testes) consome a fila. Ele pega o job com um lease no PostgreSQL (`UPDATE ... WHERE id = $1 AND (status = 'PENDENTE' OR locked_until < now()) RETURNING`); sem lease, descarta a mensagem, o que garante que duas réplicas nunca processam o mesmo job. Enquanto trabalha, renova o lease e a visibilidade da mensagem. Cada falha conta uma tentativa e volta para a fila com espera crescente; na terceira o job fica em `ERRO` com a mensagem e a fila move a mensagem para a fila de mensagens mortas (`maxReceiveCount = 3`). Se o envio para a fila falhar, o job fica `PENDENTE` e a varredura periódica do worker reenfileira os pendentes antigos sem lease. No SIGTERM o worker para de receber, espera o job em curso até `DESLIGAMENTO_PRAZO_MS` e, se não der tempo, devolve o lease sem gastar tentativa para outra réplica retomar.
+
+Na AWS a fila é o SQS; no compose é o ElasticMQ (`infra/elasticmq/elasticmq.conf`), com o mesmo adaptador e `SQS_ENDPOINT` apontando para ele. O worker gera o cliente Prisma a partir do schema da api (caminho em `config.schemaPrisma` no `package.json` dele) e nunca roda migração. O `/ready` do worker exige PostgreSQL e fila; o da api mostra a fila como dependência não obrigatória.
+
+```bash
+cd apps/worker && npm ci && npm test   # PRDAL_TESTE_POSTGRES_URL opcional, banco ja migrado pela api
+```
 
 ### Busca no histórico (RAG)
 
