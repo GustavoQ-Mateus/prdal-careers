@@ -50,11 +50,27 @@ O schema do PostgreSQL muda só por migração Prisma versionada em `apps/api/pr
 
 Banco criado antes das migrações (pelo antigo `prisma db push` no boot): marque o baseline como aplicado uma única vez e depois aplique o resto. O baseline descreve exatamente o que o `db push` e o boot antigo criavam; as migrações seguintes criam os índices de chave estrangeira e preenchem a candidatura principal.
 
+Antes do `resolve`, confira se o banco tem tudo o que o baseline descreve. Um banco de versão antiga pode não ter tabelas, colunas ou enums que o baseline cria, e o `resolve` marcaria o baseline como aplicado sem criá-los. A comparação é contra um banco temporário com só o baseline aplicado, e não contra o `schema.prisma`, porque o schema também tem o que as migrações seguintes criam; aplicar essa parte antes faria o `migrate deploy` falhar com objeto já existente.
+
 ```bash
 cd apps/api
-DATABASE_URL=postgresql://... npx prisma migrate resolve --applied 20261005000000_baseline
-DATABASE_URL=postgresql://... npx prisma migrate deploy
-DATABASE_URL=postgresql://... npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code
+export DATABASE_URL=postgresql://prdal:SENHA@localhost:5432/prdal_careers
+export BASELINE_URL=postgresql://prdal:SENHA@localhost:5432/prdal_baseline
+docker compose -f ../../infra/docker-compose.yml exec postgres createdb -U prdal prdal_baseline
+npx prisma db execute --url "$BASELINE_URL" --file prisma/migrations/20261005000000_baseline/migration.sql
+npx prisma migrate diff --from-url "$DATABASE_URL" --to-url "$BASELINE_URL" --script > alinhamento.sql
+grep -inE "DROP|ALTER COLUMN|SET DATA TYPE" alinhamento.sql
+```
+
+Se o `alinhamento.sql` não vier vazio, ele deve ter só adições (`CREATE TYPE`, `CREATE TABLE`, `CREATE INDEX`, `ADD COLUMN`, `ADD CONSTRAINT`), e o `grep` acima não deve mostrar nada. Se mostrar remoção ou troca de tipo, pare e investigue: o banco tem algo que o baseline não descreve. Com só adições, aplique o script e siga:
+
+```bash
+npx prisma db execute --url "$DATABASE_URL" --file alinhamento.sql
+docker compose -f ../../infra/docker-compose.yml exec postgres dropdb -U prdal prdal_baseline
+npx prisma migrate resolve --applied 20261005000000_baseline
+npx prisma migrate deploy
+npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code
+rm alinhamento.sql
 ```
 
 O último comando deve responder `No difference detected`. Sem o `resolve`, o `migrate deploy` recusa o banco existente com o erro `P3005` e não altera nada.
