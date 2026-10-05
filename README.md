@@ -15,23 +15,23 @@ Microsserviços poliglota com orquestração única na `api`:
                                    │  REST/JSON
                     [ api — NestJS + TypeScript (BFF) ]
                    /               │                 \
-   [ ai-service — Python ]   [ doc-service — C# ]   [ PostgreSQL + MongoDB ]
+   [ ai-service — Python ]   [ doc-service — C# ]   [ PostgreSQL + pgvector ]
     keywords, geração,        docx + pdf
     score, RAG Obsidian
            │
-   [ Groq free / Ollama ]  +  [ Chroma (embeddings) ]
+   [ Groq free / Ollama ]  +  [ embeddings e5-small ]
 ```
 
 | Serviço | Stack | Responsabilidade |
 |---|---|---|
 | `apps/web` | React 18 + TS + Vite, PWA | Interface: vagas, perfil, geração, score, Kanban |
-| `apps/api` | NestJS + TypeScript | Orquestração, auth, regras, dono de Postgres + Mongo |
+| `apps/api` | NestJS + TypeScript | Orquestração, auth, regras, dono do PostgreSQL (dados, conversas e vetores) |
 | `apps/ai-service` | Python + FastAPI | Keywords, geração de CV, score ATS, RAG do Obsidian |
 | `apps/doc-service` | C# / .NET 8 | Render `.docx` e `.pdf` |
 
 ## Stack
 
-React · TypeScript · Vite · NestJS · Python · FastAPI · .NET 8 · PostgreSQL · MongoDB · Chroma · Docker · GitHub Actions · Terraform (stub AWS). IA via Claude Sonnet na API da Anthropic; embeddings locais com `sentence-transformers`.
+React · TypeScript · Vite · NestJS · Python · FastAPI · .NET 8 · PostgreSQL · pgvector · Docker · GitHub Actions · Terraform (stub AWS). IA via Claude Sonnet na API da Anthropic; embeddings locais com `sentence-transformers`.
 
 ## Como rodar
 
@@ -42,7 +42,7 @@ cp .env.example .env      # configure ANTHROPIC_API_KEY e AI_MODEL
 docker compose -f infra/docker-compose.yml up
 ```
 
-Sobe `web`, `api`, `ai-service`, `doc-service`, PostgreSQL e MongoDB. Cada serviço expõe `/health`.
+Sobe `web`, `api`, `ai-service`, `doc-service` e PostgreSQL com pgvector. Cada serviço expõe `/health`.
 
 ### Migrações do banco
 
