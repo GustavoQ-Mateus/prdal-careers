@@ -178,7 +178,7 @@ export function Conta({ onExclusaoAlterada }: { onExclusaoAlterada: (data: strin
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Excluir conta</DialogTitle>
-            <DialogDescription>A exclusão será agendada pelo prazo configurado, cujo padrão é 7 dias. A data exata aparecerá na sua conta após confirmar. Até essa data, você poderá cancelar. Seu perfil, currículos, oportunidades e conversas serão apagados.</DialogDescription>
+            <DialogDescription>Sua conta será excluída em 7 dias. Até lá, você pode cancelar na página Conta. Serão apagados seu perfil, currículos, oportunidades, conversas do copiloto e arquivos gerados.</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <Label htmlFor="senha-exclusao">Confirme sua senha</Label>
