@@ -11,11 +11,11 @@ Projeto **spec-driven**: a fonte da verdade é a spec versionada em `docs/specs/
 Microsserviços poliglota com orquestração única na `api`:
 
 ```
-                    [ web — React + TS + Vite (PWA) ]
+                    [ web: React + TS + Vite (PWA) ]
                                    │  REST/JSON
-                    [ api — NestJS + TypeScript (BFF) ]
+                    [ api: NestJS + TypeScript (BFF) ]
                    /               │                 \
-   [ ai-service — Python ]   [ doc-service — C# ]   [ PostgreSQL + pgvector ]
+   [ ai-service: Python ]   [ doc-service: C# ]   [ PostgreSQL + pgvector ]
     keywords, geração,        docx + pdf
     score, RAG Obsidian
            │
