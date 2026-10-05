@@ -8,33 +8,6 @@ export interface Keyword {
   peso: number;
 }
 
-export interface Vaga {
-  id: string;
-  titulo: string;
-  empresa: string;
-  descricao: string;
-  fonte: string | null;
-  keywords: Keyword[];
-  keywordsStatus: 'VALIDAS' | 'PENDENTE';
-  keywordsExtracao?: EstadoExtracao;
-  keywordsErro?: string | null;
-  categoria: string | null;
-  nivel: string | null;
-  criadoEm: string;
-}
-
-export interface BancoVaga {
-  id: string;
-  titulo: string;
-  empresa: string;
-  fonte: string | null;
-  categoria: string | null;
-  nivel: string | null;
-  keywords: Keyword[] | null;
-  status: 'CRUA' | 'ATIVADA';
-  criadoEm: string;
-}
-
 export interface LoteItemStatus {
   id: string;
   bancoVagaId: string;
@@ -232,15 +205,6 @@ export interface CurriculoResumo {
   geradoEm: string;
 }
 
-export interface DashboardItem {
-  vagaId: string;
-  titulo: string;
-  empresa: string;
-  melhorScore: number | null;
-  versoes: number;
-  ultimaGeracao: string | null;
-}
-
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 function sessaoExpirada() {
@@ -306,28 +270,6 @@ export function salvarPerfil(perfil: PerfilMestre) {
   });
 }
 
-export function listarVagas() {
-  return request<Vaga[]>('/vagas');
-}
-
-export function criarVaga(dto: {
-  titulo: string;
-  empresa: string;
-  descricao: string;
-  fonte?: string;
-}) {
-  return request<Vaga>('/vagas', {
-    method: 'POST',
-    body: JSON.stringify(dto),
-  });
-}
-
-export function gerarCv(vagaId: string) {
-  return request<{ jobId: string }>(`/vagas/${vagaId}/gerar-cv`, {
-    method: 'POST',
-  });
-}
-
 export function getCurriculo(id: string) {
   return request<Curriculo>(`/curriculos/${id}`);
 }
@@ -343,38 +285,8 @@ export function listarCurriculos(vagaId: string) {
   return request<CurriculoResumo[]>(`/vagas/${vagaId}/curriculos`);
 }
 
-export function getDashboard() {
-  return request<DashboardItem[]>('/dashboard');
-}
-
-export function importarBancoVagas(itens: ItemImportacao[]) {
-  return request<{ loteId: string; total: number }>('/banco-vagas/import', {
-    method: 'POST',
-    body: JSON.stringify({ itens }),
-  });
-}
-
-export function listarBancoVagas() {
-  return request<BancoVaga[]>('/banco-vagas');
-}
-
-export function ativarBancoVaga(id: string) {
-  return request<Vaga>(`/banco-vagas/${id}/ativar`, { method: 'POST' });
-}
-
 export function getLote(id: string) {
   return request<LoteStatus>(`/lotes/${id}`);
-}
-
-export function criarCandidatura(vagaId: string, curriculoId?: string) {
-  return request<Candidatura>('/candidaturas', {
-    method: 'POST',
-    body: JSON.stringify({ vagaId, curriculoId }),
-  });
-}
-
-export function listarCandidaturas() {
-  return request<Candidatura[]>('/candidaturas');
 }
 
 export function atualizarCandidatura(
@@ -890,10 +802,6 @@ export function putPipelineCanvas(dto: {
 
 export function getPipelineGrafo(filtros: PipelineFiltros) {
   return request<GrafoResposta>(`/pipeline/grafo${query(filtros)}`);
-}
-
-export function gerarCvAlias(vagaId: string) {
-  return request<{ jobId: string }>(`/vagas/${vagaId}/gerar-cv`, { method: 'POST' });
 }
 
 export type ModoCopiloto = 'assistido' | 'autopiloto';
