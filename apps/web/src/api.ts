@@ -1,6 +1,7 @@
 import { lerEventos } from './copiloto/sse';
 import type { EstadoExtracao } from './lib/extracao';
 import { urlBaseApi } from './lib/url-api';
+import { lerCorpoResposta } from './lib/corpo-resposta';
 import { criarCliente, mensagemDeErro } from './sessao';
 
 export interface Keyword {
@@ -228,8 +229,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await cliente.chamar(path, { ...options, headers });
   if (res.status === 401 && !path.startsWith('/auth/')) throw new Error('sessão expirada');
   if (!res.ok) await falha(res);
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
+  return lerCorpoResposta<T>(res);
 }
 
 export function login(email: string, senha: string) {

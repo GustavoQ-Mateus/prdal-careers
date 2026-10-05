@@ -18,6 +18,7 @@ const dados = (campos = {}) => ({
 
 test('primeiro acesso sem perfil substitui o resumo', () => {
   assert.equal(montarInicioCopiloto(dados(), [], null, agora, fuso).semPerfil, true);
+  assert.equal(montarInicioCopiloto(dados(), [], undefined, agora, fuso).semPerfil, false);
   assert.equal(montarInicioCopiloto(dados(), [], { ...perfil, nome: '', resumo: '' }, agora, fuso).semPerfil, true);
   assert.equal(montarInicioCopiloto(dados(), [], { ...perfil, nome: '', resumo: '', endereco: { pais: '', estado: '', cidade: '' } }, agora, fuso).semPerfil, true);
 });
