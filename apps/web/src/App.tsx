@@ -47,10 +47,6 @@ export function App() {
   });
 
   useEffect(() => {
-    if (window.location.pathname === '/') ir({ tela: 'hoje' }, true);
-  }, []);
-
-  useEffect(() => {
     let ativo = true;
     iniciarSessao().then((ok) => {
       if (ativo) setAutenticado(ok);
@@ -84,7 +80,7 @@ export function App() {
             <AuthForm
               onAuth={() => {
                 setAutenticado(true);
-                ir({ tela: 'hoje' }, true);
+                ir({ tela: 'copiloto' }, true);
               }}
             />
           </div>
@@ -119,7 +115,7 @@ export function App() {
   const profunda = rota.tela === 'workspace' || rota.tela === 'curriculo';
   const workspaceScreen = rota.tela === 'workspace';
   const contexto = !profunda
-    ? CONTEXTO[abaAtiva ?? 'hoje']
+    ? CONTEXTO[abaAtiva ?? 'copiloto']
     : rota.tela === 'workspace'
       ? { titulo: 'Workspace', descricao: 'Currículo, candidatura, ações e histórico desta oportunidade' }
       : { titulo: 'Currículo', descricao: 'Análise, edição e arquivos da versão' };
@@ -133,7 +129,7 @@ export function App() {
   async function sair() {
     await logout();
     setAutenticado(false);
-    ir({ tela: 'hoje' }, true);
+    ir({ tela: 'copiloto' }, true);
   }
 
   function voltar() {

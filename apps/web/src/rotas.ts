@@ -52,9 +52,10 @@ export function parseRota(
 ): Rota {
   const path = pathname.replace(/\/$/, '') || '/';
   const q = new URLSearchParams(search);
-  if (path === '/' || path === '/hoje' || path === '/dashboard') return { tela: 'hoje' };
+  if (path === '/hoje') return { tela: 'hoje' };
+  if (path === '/') return { tela: 'copiloto' };
 
-  if (path === '/vagas' || path === '/banco-vagas' || path === '/oportunidades') {
+  if (path === '/banco-vagas' || path === '/oportunidades') {
     return {
       tela: 'oportunidades',
       visao: normalizarVisao(q.get('visao')),
@@ -99,7 +100,7 @@ export function parseRota(
   }
   if (path === '/conhecimento') return { tela: 'conhecimento' };
   if (path === '/perfil') return { tela: 'perfil' };
-  return { tela: 'hoje' };
+  return { tela: 'copiloto' };
 }
 
 export function hrefRota(rota: Rota): string {
