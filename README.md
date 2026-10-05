@@ -75,6 +75,21 @@ rm alinhamento.sql
 
 O último comando deve responder `No difference detected`. Sem o `resolve`, o `migrate deploy` recusa o banco existente com o erro `P3005` e não altera nada.
 
+### PostgreSQL com pgvector
+
+O serviço `postgres` do compose é construído de `infra/postgres/Dockerfile`: a mesma imagem `postgres:16-alpine` de antes com a extensão `vector` (pgvector) compilada por cima, e a migração `20261005000400_extensao_vector` cria a extensão. A base continua alpine de propósito. Trocar para uma imagem Debian sobre o mesmo volume muda a biblioteca C (musl para glibc) e, com ela, a ordenação de texto; os índices de texto gravados com a ordenação antiga podem ficar inconsistentes sem nenhum erro aparente. Com a mesma base e o mesmo PostgreSQL 16, o volume `pgdata` existente é aberto sem conversão.
+
+Para o banco de quem já roda o compose, faça um dump de segurança, troque a imagem e aplique as migrações:
+
+```bash
+docker compose -f infra/docker-compose.yml exec postgres pg_dump -U prdal -Fc prdal_careers > prdal-antes-pgvector.dump
+docker compose -f infra/docker-compose.yml build postgres
+docker compose -f infra/docker-compose.yml up -d postgres
+docker compose -f infra/docker-compose.yml run --rm migracao
+```
+
+Na AWS o RDS PostgreSQL já traz o pgvector; a mesma migração cria a extensão.
+
 ## Documentação
 
 - **Spec atual:** [`docs/specs/spec-v1.7.0.md`](docs/specs/spec-v1.7.0.md)
