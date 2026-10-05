@@ -3,6 +3,18 @@ const ROTAS_SEM_RENOVACAO = new Set(['/auth/login', '/auth/register', '/auth/ref
 const ROTAS_SEM_CSRF = ROTAS_SEM_RENOVACAO;
 const TRAVA_REFRESH = 'prdal-refresh';
 
+export interface ErroApi {
+  erro?: { codigo?: string; mensagem?: string; requestId?: string | null };
+  message?: string | string[];
+}
+
+export function mensagemDeErro(corpo: unknown, status: number): string {
+  const dados = (corpo ?? {}) as ErroApi;
+  const mensagem = dados.erro?.mensagem ?? dados.message;
+  if (Array.isArray(mensagem)) return mensagem.join('; ');
+  return mensagem || `erro ${status}`;
+}
+
 export function lerCookie(nome: string): string | null {
   if (typeof document === 'undefined') return null;
   for (const parte of document.cookie.split(';')) {
@@ -106,7 +118,7 @@ export function criarCliente(base: string, aoExpirar: () => void) {
       body: JSON.stringify({ email, senha }),
     });
     const corpo = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(corpo.message ?? `erro ${res.status}`);
+    if (!res.ok) throw new Error(mensagemDeErro(corpo, res.status));
     lembrarCsrf(corpo);
   }
 
