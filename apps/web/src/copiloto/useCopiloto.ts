@@ -696,7 +696,6 @@ export function useCopiloto(oportunidadeId?: string) {
     try {
       armazenamentoConversa(oportunidadeId, localStorage, sessionStorage).setItem(chave(oportunidadeId), JSON.stringify(payload));
     } catch {
-      /* storage cheio ou indisponivel */
     }
   }, [estado.itens, estado.conversaId, estado.modo, estado.estado, estado.rascunhoPendente, oportunidadeId]);
 
@@ -759,7 +758,6 @@ export function useCopiloto(oportunidadeId?: string) {
               try {
                 curriculo = await getCurriculo(geracao.curriculoId);
               } catch {
-                /* o próximo carregamento da conversa mantém a operação concluída */
               }
             }
             if (!curriculo && !refEstado.current.streaming && !retomadas.current.has(jobId) && refEstado.current.conversaId) {
@@ -770,7 +768,6 @@ export function useCopiloto(oportunidadeId?: string) {
                 );
                 if (temNarracao) conversaReidratada = conversa;
               } catch {
-                /* a persistência assíncrona pode terminar no próximo intervalo */
               }
             }
           }
@@ -783,7 +780,6 @@ export function useCopiloto(oportunidadeId?: string) {
             dispatch({ t: 'abrirHistorico', conversa: conversaReidratada });
           }
         } catch {
-          /* indisponibilidade transitória: tenta novamente no próximo intervalo */
         }
       }
     }
