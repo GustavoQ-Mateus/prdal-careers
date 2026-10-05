@@ -17,18 +17,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { ChartContainer } from '@/components/ui/chart';
+import { ScoreDelta } from '@/components/Score';
+import { faixaScore } from '../ui';
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
   Label,
   type LabelProps,
   PolarRadiusAxis,
   RadialBar,
   RadialBarChart,
-  XAxis,
-  YAxis,
 } from 'recharts';
 import { baixarArquivo, type ModoCopiloto } from '../api';
 import {
@@ -445,28 +442,23 @@ function GraficoScoreAts({ scores }: { scores: ScoreAts[] }) {
       <p className="mb-2 text-label uppercase text-muted">
         {scores.length === 1 ? 'Score ATS · Etapa 1' : 'Comparação de score ATS · Etapas 1 e 3'}
       </p>
-      <ChartContainer
-        className={scores.length === 1 ? 'mx-auto aspect-square h-48 max-h-[250px]' : 'h-40'}
+      {scores.length === 1 && <ChartContainer
+        className="mx-auto aspect-square h-48 max-h-[250px]"
         config={{ score: { label: 'Score ATS', color: 'var(--accent)' } }}
       >
-        {scores.length === 1 ? (
-          <ScoreInicialRadial score={scores[0].score} />
-        ) : (
-          <AreaChart data={scores} margin={{ left: -20, right: 4, top: 4, bottom: 0 }}>
-            <defs>
-              <linearGradient id="score-ats" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-score)" stopOpacity={0.45} />
-                <stop offset="95%" stopColor="var(--color-score)" stopOpacity={0.05} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid vertical={false} stroke="var(--line)" />
-            <XAxis dataKey="etapa" tickLine={false} axisLine={false} tickMargin={8} />
-            <YAxis domain={[0, 100]} tickLine={false} axisLine={false} width={28} />
-            <ChartTooltip />
-            <Area dataKey="score" type="monotone" stroke="var(--color-score)" fill="url(#score-ats)" strokeWidth={2} />
-          </AreaChart>
-        )}
+        <ScoreInicialRadial score={scores[0].score} />
       </ChartContainer>
+      }
+      {scores.length > 1 && <div className="space-y-3" aria-label="Comparação de score ATS de 0 a 100">
+        {scores.map((item) => <div key={item.etapa} className="grid grid-cols-[4.5rem_1fr_2rem] items-center gap-2 text-[12px] text-ink-2">
+          <span>{item.etapa}</span>
+          <div className="h-3 rounded-full bg-line" role="meter" aria-label={`Score ${item.etapa}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={item.score}>
+            <div className={cn('h-3 rounded-full', faixaScore(item.score) === 'good' ? 'bg-score-good' : faixaScore(item.score) === 'mid' ? 'bg-score-warn' : 'bg-score-bad')} style={{ width: `${Math.max(0, Math.min(100, item.score))}%` }} />
+          </div>
+          <span className="text-right font-mono">{item.score}</span>
+        </div>)}
+        <div className="flex items-center justify-end gap-2 text-[12px] text-muted">Diferença <ScoreDelta valor={scores[1].score - scores[0].score} semGanho /></div>
+      </div>}
     </div>
   );
 }

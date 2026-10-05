@@ -25,11 +25,11 @@ export function ScoreNum({ valor, className }: { valor: number | null; className
   );
 }
 
-export function ScoreDelta({ valor }: { valor: number | null }) {
+export function ScoreDelta({ valor, semGanho = false }: { valor: number | null; semGanho?: boolean }) {
   if (valor === null || Number.isNaN(valor)) {
     return <span className="font-mono text-[13px] tabular-nums text-faint">--</span>;
   }
-  if (valor === 0) return <span className="font-mono text-[13px] tabular-nums text-muted">0</span>;
+  if (valor === 0) return <span className="font-mono text-[13px] tabular-nums text-muted">{semGanho ? 'sem ganho' : '0'}</span>;
   const positivo = valor > 0;
   return (
     <span
