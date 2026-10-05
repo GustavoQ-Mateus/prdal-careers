@@ -10,6 +10,7 @@ import {
   type DestinoTransicao,
   type WorkspaceOportunidade,
 } from './api';
+import { extracaoEmAndamento, INTERVALO_EXTRACAO_MS, textoExtracao } from './lib/extracao';
 import { ROTULO_ACAO, ROTULO_ETAPA, ROTULO_PRIORIDADE, ROTULO_STATUS } from './rotulos';
 import { fmtData } from './ui';
 import { Compass } from 'lucide-react';
@@ -84,6 +85,12 @@ export function Workspace({
   }
 
   useEffect(carregar, [id]);
+
+  useEffect(() => {
+    if (!ws || !extracaoEmAndamento(ws.oportunidade)) return;
+    const relogio = window.setTimeout(carregar, INTERVALO_EXTRACAO_MS);
+    return () => window.clearTimeout(relogio);
+  }, [ws]);
 
   if (erro && !ws) {
     return (
@@ -215,9 +222,9 @@ export function Workspace({
         <div className="flex flex-col gap-8">
           <Regiao id="descricao" titulo="Resumo e descrição">
             <Markdown source={o.descricao ?? ''} className="text-[14px]" />
-            {o.keywordsStatus === 'PENDENTE' && (
+            {textoExtracao(o) && (
               <p className="mt-4 text-[13px] text-muted">
-                Keywords da vaga pendentes de extração. Tente novamente antes de gerar ou pontuar o currículo.
+                {textoExtracao(o)}. Gerar ou pontuar o currículo fica disponível quando as keywords estiverem prontas.
               </p>
             )}
             {o.keywords.length > 0 && (

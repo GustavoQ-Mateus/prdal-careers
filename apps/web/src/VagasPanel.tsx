@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { criarCandidatura, criarVaga, gerarCv, listarVagas, type Vaga } from './api';
+import { extracaoEmAndamento, INTERVALO_EXTRACAO_MS, textoExtracao } from './lib/extracao';
 
 export function VagasPanel({ onCurriculo }: { onCurriculo: (id: string) => void }) {
   const [vagas, setVagas] = useState<Vaga[]>([]);
@@ -18,6 +19,12 @@ export function VagasPanel({ onCurriculo }: { onCurriculo: (id: string) => void 
   }
 
   useEffect(carregar, []);
+
+  useEffect(() => {
+    if (!vagas.some(extracaoEmAndamento)) return;
+    const relogio = window.setTimeout(carregar, INTERVALO_EXTRACAO_MS);
+    return () => window.clearTimeout(relogio);
+  }, [vagas]);
 
   async function criar(e: React.FormEvent) {
     e.preventDefault();
@@ -133,8 +140,8 @@ export function VagasPanel({ onCurriculo }: { onCurriculo: (id: string) => void 
                     </td>
                     <td>
                       <div className="chip-set">
-                        {vaga.keywordsStatus === 'PENDENTE' && (
-                          <span className="text-[12px] text-muted">Extração pendente</span>
+                        {textoExtracao(vaga) && (
+                          <span className="text-[12px] text-muted">{textoExtracao(vaga)}</span>
                         )}
                         {vaga.keywords.slice(0, 8).map((k) => (
                           <span key={k.termo} className="chip">{k.termo}</span>

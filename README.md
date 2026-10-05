@@ -97,6 +97,18 @@ A api nunca executa trabalho longo dentro da requisição nem relança nada no b
 
 O `worker` (`apps/worker`, aplicação própria com `package.json`, `Dockerfile` e testes) consome a fila. Ele pega o job com um lease no PostgreSQL (`UPDATE ... WHERE id = $1 AND (status = 'PENDENTE' OR locked_until < now()) RETURNING`); sem lease, descarta a mensagem, o que garante que duas réplicas nunca processam o mesmo job. Enquanto trabalha, renova o lease e a visibilidade da mensagem. Cada falha conta uma tentativa e volta para a fila com espera crescente; na terceira o job fica em `ERRO` com a mensagem e a fila move a mensagem para a fila de mensagens mortas (`maxReceiveCount = 3`). Se o envio para a fila falhar, o job fica `PENDENTE` e a varredura periódica do worker reenfileira os pendentes antigos sem lease. No SIGTERM o worker para de receber, espera o job em curso até `DESLIGAMENTO_PRAZO_MS` e, se não der tempo, devolve o lease sem gastar tentativa para outra réplica retomar.
 
+Tipos de job que o worker executa:
+
+| Tipo | Disparo | Referência | O que faz |
+|---|---|---|---|
+| `gerar_curriculo` | gerar currículo pela tela ou pelo copiloto | geração | pipeline inteiro: contexto do RAG, reescrita, render, corte de página, PDF, DOCX e ZIP no S3, pipeline ATS e narração na conversa |
+| `extrair_keywords` | criar ou editar a descrição de uma oportunidade, ativar entrada sem keywords | oportunidade | extrai as keywords com o Claude; a oportunidade mostra `keywordsExtracao` (`PENDENTE`, `EXTRAINDO`, `PRONTAS`, `ERRO`) e `keywordsErro` |
+| `importar_lote` | importação do banco de vagas | item do lote | keywords e classificação de uma postagem; cada item falha sozinho |
+| `reindexar_contexto` | reindexar contexto ou subir notas | item do lote | gera os vetores de um documento do RAG |
+| `empacotar_curriculo` | editar o currículo ou gerar os arquivos de novo | currículo | monta o ZIP de novo a partir do S3 |
+
+A geração guarda no job o perfil e a vaga já normalizados no momento do pedido; o worker não relê o perfil. Uma geração em andamento da mesma vaga é reaproveitada; uma concluída ou com erro nunca bloqueia outra. `Lote` continua como agrupador para a interface, que acompanha o status de cada item. O `POST /oportunidades/reprocessar-keywords` ainda roda dentro da requisição.
+
 Na AWS a fila é o SQS; no compose é o ElasticMQ (`infra/elasticmq/elasticmq.conf`), com o mesmo adaptador e `SQS_ENDPOINT` apontando para ele. O worker gera o cliente Prisma a partir do schema da api (caminho em `config.schemaPrisma` no `package.json` dele) e nunca roda migração. O `/ready` do worker exige PostgreSQL e fila; o da api mostra a fila como dependência não obrigatória.
 
 ```bash

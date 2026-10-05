@@ -1,4 +1,5 @@
 import { lerEventos } from './copiloto/sse';
+import type { EstadoExtracao } from './lib/extracao';
 import { urlBaseApi } from './lib/url-api';
 import { criarCliente, mensagemDeErro } from './sessao';
 
@@ -15,6 +16,8 @@ export interface Vaga {
   fonte: string | null;
   keywords: Keyword[];
   keywordsStatus: 'VALIDAS' | 'PENDENTE';
+  keywordsExtracao?: EstadoExtracao;
+  keywordsErro?: string | null;
   categoria: string | null;
   nivel: string | null;
   criadoEm: string;
@@ -489,6 +492,8 @@ export interface OportunidadeItem {
   origem: string;
   keywords: Keyword[];
   keywordsStatus: 'VALIDAS' | 'PENDENTE';
+  keywordsExtracao?: EstadoExtracao;
+  keywordsErro?: string | null;
   descricao?: string;
   fonte?: string | null;
   statusCandidatura?: StatusCandidatura | null;
@@ -599,6 +604,8 @@ export interface PipelineItem {
   ultimaAtividade: string;
   keywords: Keyword[];
   keywordsStatus: 'VALIDAS' | 'PENDENTE';
+  keywordsExtracao?: EstadoExtracao;
+  keywordsErro?: string | null;
 }
 
 export interface PipelineFiltros {
