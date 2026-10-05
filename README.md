@@ -44,6 +44,21 @@ docker compose -f infra/docker-compose.yml up
 
 Sobe `web`, `api`, `ai-service`, `doc-service`, PostgreSQL e MongoDB. Cada serviço expõe `/health`.
 
+### Migrações do banco
+
+O schema do PostgreSQL muda só por migração Prisma versionada em `apps/api/prisma/migrations`. O boot da api não aplica schema: no compose, o serviço `migracao` roda `prisma migrate deploy` uma vez e a api só sobe depois que ele termina com sucesso.
+
+Banco criado antes das migrações (pelo antigo `prisma db push` no boot): marque o baseline como aplicado uma única vez e depois aplique o resto. O baseline descreve exatamente o que o `db push` e o boot antigo criavam; as migrações seguintes criam os índices de chave estrangeira e preenchem a candidatura principal.
+
+```bash
+cd apps/api
+DATABASE_URL=postgresql://... npx prisma migrate resolve --applied 20261005000000_baseline
+DATABASE_URL=postgresql://... npx prisma migrate deploy
+DATABASE_URL=postgresql://... npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code
+```
+
+O último comando deve responder `No difference detected`. Sem o `resolve`, o `migrate deploy` recusa o banco existente com o erro `P3005` e não altera nada.
+
 ## Documentação
 
 - **Spec atual:** [`docs/specs/spec-v1.7.0.md`](docs/specs/spec-v1.7.0.md)
