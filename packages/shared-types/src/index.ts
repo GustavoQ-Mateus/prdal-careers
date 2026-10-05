@@ -5,17 +5,6 @@ export interface HealthResponse {
   status: 'ok';
 }
 
-export interface HelloHop {
-  service: ServiceName;
-  message: string;
-}
-
-export interface HelloResponse {
-  service: ServiceName;
-  message: string;
-  chain: HelloHop[];
-}
-
 export type PrioridadeOportunidade = 'BAIXA' | 'MEDIA' | 'ALTA';
 export type OrigemOportunidade = 'MANUAL' | 'IMPORTACAO';
 export type ApresentacaoOportunidade = 'ENTRADA' | 'ATIVA' | 'ENCERRADA';
