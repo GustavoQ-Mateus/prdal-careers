@@ -59,6 +59,7 @@ test('reunir gera tipos e conferir detecta Prisma e tipos desatualizados', async
   await writeFile(path.join(apps, 'api/prisma/schema.prisma'), 'schema atual');
   await reunir(pacote, apps);
   await reunir(pacote, apps, true);
+  await reunir(pacote, undefined, true);
   assert.ok((await readFile(path.join(pacote, 'src/api.ts'), 'utf8')).includes('export interface paths'));
   assert.ok((await readFile(path.join(pacote, 'src/index.ts'), 'utf8')).includes('docServicePaths'));
   await writeFile(path.join(pacote, 'prisma/schema.prisma'), 'schema antigo');

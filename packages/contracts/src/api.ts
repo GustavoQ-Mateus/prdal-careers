@@ -854,6 +854,15 @@ export interface components {
         AgendarExclusaoDto: {
             senha: string;
         };
+        AtsAnalysis: {
+            breakdown: components["schemas"]["ScoreBreakdown"];
+            keywordsCriticasAusentes: string[];
+            keywordsEncontradas: string[];
+            pontosEliminatorios: string[];
+            score: number;
+            scoreVersao?: number;
+            veredicto: string;
+        };
         AtualizarAcaoDto: {
             lembrarEm?: string | null;
             principal?: boolean;
@@ -873,6 +882,11 @@ export interface components {
             fonte?: string;
             prioridade?: "BAIXA" | "MEDIA" | "ALTA";
             titulo?: string;
+        };
+        AvisoAcao: {
+            mensagem: string;
+            sugestao: string;
+            tipo: string;
         };
         CadastroDto: {
             email: string;
@@ -897,6 +911,10 @@ export interface components {
             };
             callId: string;
             decisao: "confirmar" | "recusar";
+        };
+        CopilotoEvento: components["schemas"]["RespostaObjeto108Dto"] | components["schemas"]["RespostaObjeto110Dto"] | components["schemas"]["RespostaObjeto112Dto"] | components["schemas"]["RespostaObjeto114Dto"] | components["schemas"]["RespostaObjeto117Dto"] | components["schemas"]["RespostaObjeto118Dto"] | components["schemas"]["RespostaObjeto120Dto"] | components["schemas"]["RespostaObjeto122Dto"];
+        CorpoErro: {
+            erro: components["schemas"]["RespostaObjeto125Dto"];
         };
         CriarAcaoDto: {
             candidaturaId?: string;
@@ -977,6 +995,10 @@ export interface components {
             fonte?: string;
             titulo: string;
         };
+        Keyword: {
+            peso: number;
+            termo: string;
+        };
         LinkPerfilDto: {
             id: string;
             tipo: "linkedin" | "github" | "facebook" | "instagram" | "site";
@@ -1021,24 +1043,139 @@ export interface components {
             skills: string[];
             telefones: components["schemas"]["TelefonePerfilDto"][];
         };
+        RespostaExcecao: {
+            message: string | string[];
+        };
         RespostaObjeto100Dto: {
+            edges: components["schemas"]["RespostaObjeto102Dto"][];
+            facets: components["schemas"]["RespostaObjeto103Dto"];
+            nodes: components["schemas"]["RespostaObjeto101Dto"][];
+            schemaVersion: string;
+        };
+        RespostaObjeto101Dto: {
+            id: string;
+            rotulo: string;
+            tipo: string;
+        };
+        RespostaObjeto102Dto: {
+            destino: string;
+            id: string;
+            origem: string;
+            tipo: string;
+        };
+        RespostaObjeto103Dto: {
+            categorias: string[];
+            empresas: string[];
+            niveis: string[];
+            skills: string[];
+        };
+        RespostaObjeto105Dto: {
+            dependencias: components["schemas"]["RespostaObjeto106Dto"][];
+            servico: "api";
+            status: "pronto" | "indisponivel";
+        };
+        RespostaObjeto106Dto: {
             estado: "ok" | "indisponivel" | "desconhecido";
             nome: string;
             obrigatoria: false | true;
         };
-        RespostaObjeto101Dto: {
+        RespostaObjeto107Dto: {
             categorias: string[];
             niveis: string[];
+        };
+        RespostaObjeto108Dto: {
+            data: components["schemas"]["RespostaObjeto109Dto"];
+            evento: "token";
+        };
+        RespostaObjeto109Dto: {
+            delta: string;
         };
         RespostaObjeto10Dto: {
             id: string;
             rotulo: string;
             score: number | null;
         };
+        RespostaObjeto110Dto: {
+            data: components["schemas"]["RespostaObjeto111Dto"];
+            evento: "tool_call";
+        };
+        RespostaObjeto111Dto: {
+            args: {
+                [key: string]: unknown;
+            };
+            callId: string;
+            efeito: "leitura" | "escrita";
+            exigeConfirmacao: false | true;
+            tool: string;
+        };
+        RespostaObjeto112Dto: {
+            data: components["schemas"]["RespostaObjeto113Dto"];
+            evento: "confirmacao";
+        };
+        RespostaObjeto113Dto: {
+            args: {
+                [key: string]: unknown;
+            };
+            callId: string;
+            resumo: string;
+            tool: string;
+        };
+        RespostaObjeto114Dto: {
+            data: components["schemas"]["RespostaObjeto115Dto"];
+            evento: "tool_resultado";
+        };
+        RespostaObjeto115Dto: {
+            callId: string;
+            erro: components["schemas"]["RespostaObjeto116Dto"] | null;
+            ok: false | true;
+            resultado: unknown;
+            tool: string;
+        };
+        RespostaObjeto116Dto: {
+            mensagem: string;
+            recuperavel: false | true;
+        };
+        RespostaObjeto117Dto: {
+            data: components["schemas"]["RespostaObjeto31Dto"];
+            evento: "entrega_externa";
+        };
+        RespostaObjeto118Dto: {
+            data: components["schemas"]["RespostaObjeto119Dto"];
+            evento: "erro";
+        };
+        RespostaObjeto119Dto: {
+            escopo: string;
+            mensagem: string;
+            recuperavel: false | true;
+            retryAfter?: number;
+        };
         RespostaObjeto11Dto: {
             id: string;
             titulo: string;
             venceEm: string | null;
+        };
+        RespostaObjeto120Dto: {
+            data: components["schemas"]["RespostaObjeto121Dto"];
+            evento: "fim_turno";
+        };
+        RespostaObjeto121Dto: {
+            conversaId: string;
+            motivo: string;
+        };
+        RespostaObjeto122Dto: {
+            data: components["schemas"]["RespostaObjeto123Dto"];
+            evento: "conversa";
+        };
+        RespostaObjeto123Dto: {
+            conversaId: string;
+        };
+        RespostaObjeto125Dto: {
+            codigo: string;
+            detalhes?: {
+                [key: string]: unknown;
+            };
+            mensagem: string;
+            requestId: string | null;
         };
         RespostaObjeto12Dto: {
             consentimento: components["schemas"]["RespostaObjeto13Dto"];
@@ -1054,9 +1191,7 @@ export interface components {
             jobId: string;
         };
         RespostaObjeto15Dto: {
-            expiraEm?: Record<string, never>;
             status: "PENDENTE" | "PROCESSANDO" | "ERRO";
-            url?: Record<string, never>;
         };
         RespostaObjeto16Dto: {
             expiraEm: string;
@@ -1118,7 +1253,7 @@ export interface components {
             mensagens: components["schemas"]["RespostaObjeto24Dto"][];
             modo: "assistido" | "autopiloto";
             oportunidadeId: string | null;
-            pendencia: components["schemas"]["RespostaObjeto33Dto"] | null;
+            pendencia: components["schemas"]["RespostaObjeto34Dto"] | null;
         };
         RespostaObjeto24Dto: {
             blocos?: (components["schemas"]["RespostaObjeto25Dto"] | components["schemas"]["RespostaObjeto26Dto"] | components["schemas"]["RespostaObjeto27Dto"] | components["schemas"]["RespostaObjeto28Dto"] | components["schemas"]["RespostaObjeto29Dto"])[];
@@ -1169,18 +1304,19 @@ export interface components {
             etapa?: 1 | 3;
             evento?: "erro" | "cancelado";
             jobId?: string;
-            narracao?: components["schemas"]["RespostaObjeto32Dto"];
+            narracao?: components["schemas"]["RespostaObjeto33Dto"];
             ok?: false | true;
             origem?: "geracao_assincrona";
             resultado?: unknown;
         };
         RespostaObjeto31Dto: {
+            aviso?: components["schemas"]["AvisoAcao"];
             destino?: string;
             texto: string;
             tipo: string;
             titulo: string;
         };
-        RespostaObjeto32Dto: {
+        RespostaObjeto33Dto: {
             degradacao: string | null;
             keywordsAusentes: string[];
             keywordsAusentesIniciais: string[];
@@ -1191,7 +1327,7 @@ export interface components {
             scoreInicial: number;
             veredicto: string;
         };
-        RespostaObjeto33Dto: {
+        RespostaObjeto34Dto: {
             args: {
                 [key: string]: unknown;
             };
@@ -1201,32 +1337,32 @@ export interface components {
             resumo?: string;
             tool: string;
         };
-        RespostaObjeto34Dto: {
+        RespostaObjeto35Dto: {
             destino: string;
             texto: string;
             tipo: "mensagem_recrutador";
             titulo: string;
         };
-        RespostaObjeto35Dto: {
-            respostas: components["schemas"]["RespostaObjeto36Dto"][];
+        RespostaObjeto36Dto: {
+            respostas: components["schemas"]["RespostaObjeto37Dto"][];
             texto: string;
             tipo: "resposta_formulario";
             titulo: string;
         };
-        RespostaObjeto36Dto: {
+        RespostaObjeto37Dto: {
             campo: string;
             texto: string;
         };
-        RespostaObjeto37Dto: {
-            itens: components["schemas"]["RespostaObjeto38Dto"][];
+        RespostaObjeto38Dto: {
+            itens: components["schemas"]["RespostaObjeto39Dto"][];
             limit: number | null;
             offset: number;
             total: number;
         };
-        RespostaObjeto38Dto: {
-            analiseFinal: unknown;
-            analiseInicial: unknown;
-            breakdown: unknown;
+        RespostaObjeto39Dto: {
+            analiseFinal: components["schemas"]["AtsAnalysis"] | null;
+            analiseInicial: components["schemas"]["AtsAnalysis"] | null;
+            breakdown: components["schemas"]["ScoreBreakdown"] | null;
             categoria: string | null;
             degradacao: string | null;
             downloadDocxUrl: string | null;
@@ -1234,104 +1370,129 @@ export interface components {
             geradoEm: string;
             id: string;
             nivel: string | null;
-            oportunidade: components["schemas"]["RespostaObjeto39Dto"];
+            oportunidade: components["schemas"]["RespostaObjeto42Dto"];
             rotulo: string;
             score: number | null;
             vagaId: string;
-            vinculo: components["schemas"]["RespostaObjeto40Dto"] | null;
-        };
-        RespostaObjeto39Dto: {
-            empresa: string;
-            id: string;
-            titulo: string;
+            vinculo: components["schemas"]["RespostaObjeto43Dto"] | null;
         };
         RespostaObjeto3Dto: {
             csrfToken: string;
             usuario: components["schemas"]["RespostaObjeto4Dto"];
         };
-        RespostaObjeto40Dto: {
+        RespostaObjeto42Dto: {
+            empresa: string;
+            id: string;
+            titulo: string;
+        };
+        RespostaObjeto43Dto: {
             candidaturaId: string;
             principal: false | true;
             status: "RASCUNHO" | "INSCRITA" | "EM_PROCESSO" | "ENTREVISTA" | "OFERTA" | "REJEITADA" | "DESISTIU";
         };
-        RespostaObjeto41Dto: {
+        RespostaObjeto44Dto: {
             curriculoId: string | null;
             erro: string | null;
-            etapas: components["schemas"]["RespostaObjeto42Dto"];
+            etapas: components["schemas"]["RespostaObjeto45Dto"];
             id: string;
             status: "PENDENTE" | "ERRO" | "ANALISANDO" | "GERANDO" | "VALIDANDO" | "CONCLUIDA";
             vagaId: string;
         };
-        RespostaObjeto42Dto: {
-            analiseFinal: unknown;
-            analiseInicial: unknown;
+        RespostaObjeto45Dto: {
+            analiseFinal: components["schemas"]["AtsAnalysis"] | null;
+            analiseInicial: components["schemas"]["AtsAnalysis"] | null;
             degradacao: string | null;
             reescrita: false | true;
         };
-        RespostaObjeto43Dto: {
-            analiseFinal: unknown;
-            analiseInicial: unknown;
-            breakdown: unknown;
+        RespostaObjeto46Dto: {
+            analiseFinal: components["schemas"]["AtsAnalysis"] | null;
+            analiseInicial: components["schemas"]["AtsAnalysis"] | null;
+            breakdown: components["schemas"]["ScoreBreakdown"] | null;
             degradacao: string | null;
             downloadDocxUrl: string | null;
             downloadPdfUrl: string | null;
             geradoEm: string;
             id: string;
             markdown: string;
-            oportunidade: components["schemas"]["RespostaObjeto44Dto"];
+            oportunidade: components["schemas"]["RespostaObjeto47Dto"];
             rotulo: string;
             score: number | null;
             vagaId: string;
-            vinculo: components["schemas"]["RespostaObjeto45Dto"];
+            vinculo: components["schemas"]["RespostaObjeto48Dto"];
         };
-        RespostaObjeto44Dto: Record<string, never>;
-        RespostaObjeto45Dto: Record<string, never>;
-        RespostaObjeto46Dto: {
+        RespostaObjeto47Dto: Record<string, never>;
+        RespostaObjeto48Dto: Record<string, never>;
+        RespostaObjeto49Dto: {
             expiraEm: string;
             url: string;
-        };
-        RespostaObjeto47Dto: {
-            atividadeRecente: unknown[];
-            atrasadas: unknown[];
-            entrada: components["schemas"]["RespostaObjeto53Dto"][];
-            fimDia: string;
-            fusoHorario: string;
-            geracoesConcluidas: components["schemas"]["RespostaObjeto52Dto"][];
-            hoje: unknown[];
-            inicioDia: string;
-            proximosDias: unknown[];
-            resumoAts: components["schemas"]["RespostaObjeto49Dto"];
-            semProximoPasso: components["schemas"]["RespostaObjeto48Dto"][];
-            serieTemporal: components["schemas"]["RespostaObjeto50Dto"];
-        };
-        RespostaObjeto48Dto: {
-            empresa: string;
-            id: string;
-            titulo: string;
-        };
-        RespostaObjeto49Dto: {
-            comScore: number;
-            curriculos: number;
-            media: number | null;
         };
         RespostaObjeto4Dto: {
             email: string;
             id: string;
         };
         RespostaObjeto50Dto: {
+            atividadeRecente: components["schemas"]["RespostaObjeto54Dto"][];
+            atrasadas: components["schemas"]["RespostaObjeto51Dto"][];
+            entrada: components["schemas"]["RespostaObjeto59Dto"][];
+            fimDia: string;
+            fusoHorario: string;
+            geracoesConcluidas: components["schemas"]["RespostaObjeto58Dto"][];
+            hoje: components["schemas"]["RespostaObjeto51Dto"][];
+            inicioDia: string;
+            proximosDias: components["schemas"]["RespostaObjeto51Dto"][];
+            resumoAts: components["schemas"]["RespostaObjeto55Dto"];
+            semProximoPasso: components["schemas"]["RespostaObjeto53Dto"][];
+            serieTemporal: components["schemas"]["RespostaObjeto56Dto"];
+        };
+        RespostaObjeto51Dto: {
+            id: string;
+            lembrarEm: string | null;
+            oportunidade: components["schemas"]["RespostaObjeto52Dto"];
+            principal: false | true;
+            quando: string;
+            tipo: string;
+            titulo: string;
+            vagaId: string;
+            venceEm: string | null;
+        };
+        RespostaObjeto52Dto: {
+            empresa: string;
+            id: string;
+            titulo: string;
+        };
+        RespostaObjeto53Dto: {
+            empresa: string;
+            id: string;
+            titulo: string;
+        };
+        RespostaObjeto54Dto: {
+            descricao: string;
+            empresa: string;
+            id: string;
+            ocorridoEm: string;
+            tipo: string;
+            titulo: string;
+            vagaId: string;
+        };
+        RespostaObjeto55Dto: {
+            comScore: number;
+            curriculos: number;
+            media: number | null;
+        };
+        RespostaObjeto56Dto: {
             fim: string;
             inicio: string;
             periodoDias: 7 | 30 | 90;
-            pontos: components["schemas"]["RespostaObjeto51Dto"][];
+            pontos: components["schemas"]["RespostaObjeto57Dto"][];
         };
-        RespostaObjeto51Dto: {
+        RespostaObjeto57Dto: {
             acoesConcluidas: number;
             curriculosGerados: number;
             data: string;
             oportunidadesCriadas: number;
             scoreMedio: number | null;
         };
-        RespostaObjeto52Dto: {
+        RespostaObjeto58Dto: {
             concluidaEm: string;
             curriculoId: string;
             empresa: string;
@@ -1339,92 +1500,92 @@ export interface components {
             score: number | null;
             titulo: string;
         };
-        RespostaObjeto53Dto: {
+        RespostaObjeto59Dto: {
             criadoEm: string;
             empresa: string;
             id: string;
             titulo: string;
         };
-        RespostaObjeto54Dto: {
+        RespostaObjeto5Dto: {
+            csrfToken: string;
+        };
+        RespostaObjeto60Dto: {
             atualizadoEm: string;
             fusoHorario: string;
             usuarioId: string;
         };
-        RespostaObjeto55Dto: {
+        RespostaObjeto61Dto: {
             id: string;
-            itens: components["schemas"]["RespostaObjeto56Dto"][];
+            itens: components["schemas"]["RespostaObjeto62Dto"][];
             processados: number;
             status: "PENDENTE" | "PROCESSANDO" | "CONCLUIDO";
             tipo: string;
             total: number;
         };
-        RespostaObjeto56Dto: {
+        RespostaObjeto62Dto: {
             bancoVagaId: string | null;
             erro: string | null;
             id: string;
             status: "PENDENTE" | "PROCESSANDO" | "CONCLUIDO" | "ERRO";
         };
-        RespostaObjeto57Dto: {
-            itens: components["schemas"]["RespostaObjeto58Dto"][];
+        RespostaObjeto63Dto: {
+            itens: components["schemas"]["RespostaObjeto64Dto"][];
             limit: number | null;
             offset: number;
             total: number;
         };
-        RespostaObjeto58Dto: {
+        RespostaObjeto64Dto: {
             apresentacao: "ENTRADA";
             categoria: string | null;
-            curriculoVinculado: Record<string, never> | null;
+            curriculoVinculado: null;
             empresa: string;
-            etapa: Record<string, never> | null;
+            etapa: null;
             id: string;
-            keywords: unknown;
+            keywords: components["schemas"]["Keyword"][] | null;
             keywordsStatus: "PENDENTE" | "VALIDAS";
             nivel: string | null;
             origem: "IMPORTACAO";
-            prioridade: Record<string, never> | null;
-            proximoPasso: Record<string, never> | null;
-            score: Record<string, never> | null;
+            prioridade: null;
+            proximoPasso: null;
+            score: null;
             tipo: "ENTRADA";
             titulo: string;
             ultimaAtividade: string;
         };
-        RespostaObjeto59Dto: {
-            itens: components["schemas"]["RespostaObjeto60Dto"][];
+        RespostaObjeto66Dto: {
+            itens: components["schemas"]["RespostaObjeto67Dto"][];
             limit: number;
             offset: number;
             total: number;
         };
-        RespostaObjeto5Dto: {
-            csrfToken: string;
-        };
-        RespostaObjeto60Dto: {
+        RespostaObjeto67Dto: {
             apresentacao: "ENTRADA" | "ATIVA" | "ENCERRADA";
             arquivadaEm: string | null;
             categoria: string | null;
-            curriculoVinculado: components["schemas"]["RespostaObjeto61Dto"] | null;
+            curriculoVinculado: components["schemas"]["RespostaObjeto68Dto"] | null;
             empresa: string;
             etapa: "INSCRITA" | "EM_PROCESSO" | "ENTREVISTA" | "OFERTA" | "PREPARACAO" | "ENCERRADAS";
             id: string;
-            keywords: unknown;
+            keywords: components["schemas"]["Keyword"][] | null;
             keywordsErro: string | null;
             keywordsExtracao: "PENDENTE" | "ERRO" | "EXTRAINDO" | "PRONTAS";
             keywordsStatus: "PENDENTE" | "VALIDAS";
             nivel: string | null;
             origem: "MANUAL" | "IMPORTACAO";
             prioridade: "BAIXA" | "MEDIA" | "ALTA";
-            proximoPasso: components["schemas"]["RespostaObjeto62Dto"] | null;
+            proximoPasso: components["schemas"]["RespostaObjeto69Dto"] | null;
             score: number | null;
             statusCandidatura: "RASCUNHO" | "INSCRITA" | "EM_PROCESSO" | "ENTREVISTA" | "OFERTA" | "REJEITADA" | "DESISTIU";
             tipo: "OPORTUNIDADE";
             titulo: string;
             ultimaAtividade: string;
         };
-        RespostaObjeto61Dto: {
+        RespostaObjeto68Dto: {
             id: string;
             rotulo: string;
             score: number | null;
         };
-        RespostaObjeto62Dto: {
+        RespostaObjeto69Dto: {
             canceladaEm: string | null;
             concluidaEm: string | null;
             id: string;
@@ -1434,13 +1595,17 @@ export interface components {
             titulo: string;
             venceEm: string | null;
         };
-        RespostaObjeto63Dto: {
-            itens: components["schemas"]["RespostaObjeto60Dto"][];
-            limit: Record<string, never> | null;
+        RespostaObjeto6Dto: {
+            csrfToken: string;
+            usuario: components["schemas"]["RespostaObjeto7Dto"];
+        };
+        RespostaObjeto70Dto: {
+            itens: components["schemas"]["RespostaObjeto67Dto"][];
+            limit: null;
             offset: number;
             total: number;
         };
-        RespostaObjeto64Dto: {
+        RespostaObjeto71Dto: {
             arquivadaEm: string | null;
             atualizadoEm: string;
             categoria: string | null;
@@ -1450,7 +1615,7 @@ export interface components {
             estagio: "ENTRADA" | "ATIVA";
             fonte: string | null;
             id: string;
-            keywords: unknown;
+            keywords: components["schemas"]["Keyword"][] | null;
             keywordsErro: string | null;
             keywordsExtracao: "PENDENTE" | "ERRO" | "EXTRAINDO" | "PRONTAS";
             keywordsStatus: "PENDENTE" | "VALIDAS";
@@ -1461,45 +1626,45 @@ export interface components {
             titulo: string;
             usuarioId: string;
         };
-        RespostaObjeto65Dto: {
+        RespostaObjeto72Dto: {
             loteId: string;
             total: number;
         };
-        RespostaObjeto66Dto: {
+        RespostaObjeto73Dto: {
             acaoPrincipal: components["schemas"]["RespostaObjeto1Dto"] | null;
             acoes: components["schemas"]["RespostaObjeto1Dto"][];
-            candidatura: components["schemas"]["RespostaObjeto68Dto"] | null;
-            curriculos: components["schemas"]["RespostaObjeto72Dto"][];
-            oportunidade: components["schemas"]["RespostaObjeto67Dto"];
-            timeline: components["schemas"]["RespostaObjeto73Dto"][];
+            candidatura: components["schemas"]["RespostaObjeto75Dto"] | null;
+            curriculos: components["schemas"]["RespostaObjeto79Dto"][];
+            oportunidade: components["schemas"]["RespostaObjeto74Dto"];
+            timeline: components["schemas"]["RespostaObjeto80Dto"][];
         };
-        RespostaObjeto67Dto: {
+        RespostaObjeto74Dto: {
             apresentacao: "ENTRADA" | "ATIVA" | "ENCERRADA";
             arquivadaEm: string | null;
             atualizadoEm: string;
             categoria: string | null;
             criadoEm: string;
-            curriculoVinculado: components["schemas"]["RespostaObjeto61Dto"] | null;
+            curriculoVinculado: components["schemas"]["RespostaObjeto68Dto"] | null;
             descricao: string;
             empresa: string;
             etapa: "INSCRITA" | "EM_PROCESSO" | "ENTREVISTA" | "OFERTA" | "PREPARACAO" | "ENCERRADAS";
             fonte: string | null;
             id: string;
-            keywords: unknown;
+            keywords: components["schemas"]["Keyword"][] | null;
             keywordsErro: string | null;
             keywordsExtracao: "PENDENTE" | "ERRO" | "EXTRAINDO" | "PRONTAS";
             keywordsStatus: "PENDENTE" | "VALIDAS";
             nivel: string | null;
             origem: "MANUAL" | "IMPORTACAO";
             prioridade: "BAIXA" | "MEDIA" | "ALTA";
-            proximoPasso: components["schemas"]["RespostaObjeto62Dto"] | null;
+            proximoPasso: components["schemas"]["RespostaObjeto69Dto"] | null;
             score: number | null;
             statusCandidatura: "RASCUNHO" | "INSCRITA" | "EM_PROCESSO" | "ENTREVISTA" | "OFERTA" | "REJEITADA" | "DESISTIU";
             tipo: "OPORTUNIDADE";
             titulo: string;
             ultimaAtividade: string;
         };
-        RespostaObjeto68Dto: {
+        RespostaObjeto75Dto: {
             curriculoId: string | null;
             encerradaEm: string | null;
             enviadaEm: string | null;
@@ -1508,37 +1673,33 @@ export interface components {
             notas: string;
             principal: false | true;
             status: "RASCUNHO" | "INSCRITA" | "EM_PROCESSO" | "ENTREVISTA" | "OFERTA" | "REJEITADA" | "DESISTIU";
-            vinculo: components["schemas"]["RespostaObjeto69Dto"] | components["schemas"]["RespostaObjeto70Dto"] | components["schemas"]["RespostaObjeto71Dto"];
+            vinculo: components["schemas"]["RespostaObjeto76Dto"] | components["schemas"]["RespostaObjeto77Dto"] | components["schemas"]["RespostaObjeto78Dto"];
         };
-        RespostaObjeto69Dto: {
+        RespostaObjeto76Dto: {
             curriculoId: string;
             rotulo: string;
             score: number | null;
             situacao: string;
         };
-        RespostaObjeto6Dto: {
-            csrfToken: string;
-            usuario: components["schemas"]["RespostaObjeto7Dto"];
-        };
-        RespostaObjeto70Dto: {
+        RespostaObjeto77Dto: {
             curriculoId: string;
-            rotulo?: Record<string, never>;
-            score?: Record<string, never>;
             situacao: string;
         };
-        RespostaObjeto71Dto: {
-            curriculoId: Record<string, never> | null;
-            rotulo?: Record<string, never>;
-            score?: Record<string, never>;
+        RespostaObjeto78Dto: {
+            curriculoId: null;
             situacao: string;
         };
-        RespostaObjeto72Dto: {
+        RespostaObjeto79Dto: {
             geradoEm: string;
             id: string;
             rotulo: string;
             score: number | null;
         };
-        RespostaObjeto73Dto: {
+        RespostaObjeto7Dto: {
+            email: string;
+            id: string;
+        };
+        RespostaObjeto80Dto: {
             candidaturaId: string | null;
             curriculoId: string | null;
             dados: unknown;
@@ -1551,16 +1712,16 @@ export interface components {
             usuarioId: string;
             vagaId: string;
         };
-        RespostaObjeto74Dto: {
-            itens: components["schemas"]["RespostaObjeto73Dto"][];
+        RespostaObjeto81Dto: {
+            itens: components["schemas"]["RespostaObjeto80Dto"][];
             proximoCursor: string | null;
         };
-        RespostaObjeto75Dto: {
+        RespostaObjeto82Dto: {
             candidatura: components["schemas"]["RespostaObjeto8Dto"];
-            evento: components["schemas"]["RespostaObjeto73Dto"] | null;
-            oportunidade: components["schemas"]["RespostaObjeto76Dto"];
+            evento: components["schemas"]["RespostaObjeto80Dto"] | null;
+            oportunidade: components["schemas"]["RespostaObjeto83Dto"];
         };
-        RespostaObjeto76Dto: {
+        RespostaObjeto83Dto: {
             arquivadaEm: string | null;
             atualizadoEm: string;
             categoria: string | null;
@@ -1570,7 +1731,7 @@ export interface components {
             estagio: "ENTRADA" | "ATIVA";
             fonte: string | null;
             id: string;
-            keywords: unknown;
+            keywords: components["schemas"]["Keyword"][] | null;
             keywordsErro: string | null;
             keywordsExtracao: "PENDENTE" | "ERRO" | "EXTRAINDO" | "PRONTAS";
             keywordsStatus: "PENDENTE" | "VALIDAS";
@@ -1581,18 +1742,16 @@ export interface components {
             titulo: string;
             usuarioId: string;
         };
-        RespostaObjeto77Dto: {
+        RespostaObjeto84Dto: {
             curriculoId: string | null;
             jobId: string;
             status: "PENDENTE" | "ERRO" | "ANALISANDO" | "GERANDO" | "VALIDANDO" | "CONCLUIDA";
         };
-        RespostaObjeto78Dto: {
-            curriculoId?: Record<string, never>;
+        RespostaObjeto85Dto: {
             jobId: string;
-            status?: Record<string, never>;
         };
-        RespostaObjeto79Dto: {
-            breakdown: components["schemas"]["RespostaObjeto80Dto"];
+        RespostaObjeto86Dto: {
+            breakdown: components["schemas"]["ScoreBreakdown"];
             degradacao?: string;
             keywordsCriticasAusentes: string[];
             keywordsEncontradas: string[];
@@ -1601,44 +1760,34 @@ export interface components {
             scoreVersao?: number;
             veredicto: string;
         };
-        RespostaObjeto7Dto: {
-            email: string;
-            id: string;
-        };
-        RespostaObjeto80Dto: {
-            densidade: number;
-            faltando: string[];
-            keywordMatch: number;
-            secoes: number;
-        };
-        RespostaObjeto81Dto: {
-            analiseFinal: unknown;
-            analiseInicial: unknown;
-            breakdown: unknown;
+        RespostaObjeto87Dto: {
+            analiseFinal: components["schemas"]["AtsAnalysis"] | null;
+            analiseInicial: components["schemas"]["AtsAnalysis"] | null;
+            breakdown: components["schemas"]["ScoreBreakdown"] | null;
             degradacao: string | null;
             geradoEm: string;
             id: string;
             rotulo: string;
             score: number | null;
         };
-        RespostaObjeto82Dto: {
+        RespostaObjeto88Dto: {
             atualizadoEm: string;
-            certificacoes: components["schemas"]["RespostaObjeto86Dto"][];
-            emails: components["schemas"]["RespostaObjeto87Dto"][];
-            endereco: components["schemas"]["RespostaObjeto90Dto"] | null;
-            experiencias: components["schemas"]["RespostaObjeto83Dto"][];
-            formacao: components["schemas"]["RespostaObjeto85Dto"][];
+            certificacoes: components["schemas"]["RespostaObjeto92Dto"][];
+            emails: components["schemas"]["RespostaObjeto93Dto"][];
+            endereco: components["schemas"]["RespostaObjeto96Dto"] | null;
+            experiencias: components["schemas"]["RespostaObjeto89Dto"][];
+            formacao: components["schemas"]["RespostaObjeto91Dto"][];
             id: string;
             idiomas: string[];
-            links: components["schemas"]["RespostaObjeto89Dto"][];
+            links: components["schemas"]["RespostaObjeto95Dto"][];
             nome: string;
-            outrosContatos: components["schemas"]["RespostaObjeto91Dto"][];
+            outrosContatos: components["schemas"]["RespostaObjeto97Dto"][];
             resumo: string;
             skills: string[];
-            telefones: components["schemas"]["RespostaObjeto88Dto"][];
+            telefones: components["schemas"]["RespostaObjeto94Dto"][];
             usuarioId: string;
         };
-        RespostaObjeto83Dto: {
+        RespostaObjeto89Dto: {
             atual: false | true;
             cargo: string;
             dataFimAno: number | null;
@@ -1648,51 +1797,10 @@ export interface components {
             descricao: string;
             empresa: string;
             id: string;
-            local: components["schemas"]["RespostaObjeto84Dto"] | null;
+            local: components["schemas"]["RespostaObjeto90Dto"] | null;
             localLegado?: string;
             periodoLegado?: string;
             revisao?: ("formato_antigo" | "periodo_texto" | "local_texto" | "tecnologias_na_descricao" | "ddi_ausente" | "localizacao_texto" | "contato_sem_tipo" | "email_invalido")[];
-        };
-        RespostaObjeto84Dto: {
-            cidade: string;
-            estado: string;
-            pais: string;
-        };
-        RespostaObjeto85Dto: {
-            curso: string;
-            fimAno: number | null;
-            fimMes: number | null;
-            grau: string;
-            id: string;
-            inicioAno: number | null;
-            inicioMes: number | null;
-            instituicao: string;
-            revisao?: ("formato_antigo" | "periodo_texto" | "local_texto" | "tecnologias_na_descricao" | "ddi_ausente" | "localizacao_texto" | "contato_sem_tipo" | "email_invalido")[];
-            status: "" | "concluido" | "em_andamento" | "trancado";
-        };
-        RespostaObjeto86Dto: {
-            descricao: string;
-            id: string;
-            revisao?: ("formato_antigo" | "periodo_texto" | "local_texto" | "tecnologias_na_descricao" | "ddi_ausente" | "localizacao_texto" | "contato_sem_tipo" | "email_invalido")[];
-            titulo: string;
-        };
-        RespostaObjeto87Dto: {
-            id: string;
-            principal: false | true;
-            revisao?: ("formato_antigo" | "periodo_texto" | "local_texto" | "tecnologias_na_descricao" | "ddi_ausente" | "localizacao_texto" | "contato_sem_tipo" | "email_invalido")[];
-            valor: string;
-        };
-        RespostaObjeto88Dto: {
-            ddi: string;
-            id: string;
-            numero: string;
-            principal: false | true;
-            revisao?: ("formato_antigo" | "periodo_texto" | "local_texto" | "tecnologias_na_descricao" | "ddi_ausente" | "localizacao_texto" | "contato_sem_tipo" | "email_invalido")[];
-        };
-        RespostaObjeto89Dto: {
-            id: string;
-            tipo: "linkedin" | "github" | "facebook" | "instagram" | "site";
-            url: string;
         };
         RespostaObjeto8Dto: {
             atualizadoEm: string;
@@ -1708,6 +1816,47 @@ export interface components {
             vagaId: string;
         };
         RespostaObjeto90Dto: {
+            cidade: string;
+            estado: string;
+            pais: string;
+        };
+        RespostaObjeto91Dto: {
+            curso: string;
+            fimAno: number | null;
+            fimMes: number | null;
+            grau: string;
+            id: string;
+            inicioAno: number | null;
+            inicioMes: number | null;
+            instituicao: string;
+            revisao?: ("formato_antigo" | "periodo_texto" | "local_texto" | "tecnologias_na_descricao" | "ddi_ausente" | "localizacao_texto" | "contato_sem_tipo" | "email_invalido")[];
+            status: "" | "concluido" | "em_andamento" | "trancado";
+        };
+        RespostaObjeto92Dto: {
+            descricao: string;
+            id: string;
+            revisao?: ("formato_antigo" | "periodo_texto" | "local_texto" | "tecnologias_na_descricao" | "ddi_ausente" | "localizacao_texto" | "contato_sem_tipo" | "email_invalido")[];
+            titulo: string;
+        };
+        RespostaObjeto93Dto: {
+            id: string;
+            principal: false | true;
+            revisao?: ("formato_antigo" | "periodo_texto" | "local_texto" | "tecnologias_na_descricao" | "ddi_ausente" | "localizacao_texto" | "contato_sem_tipo" | "email_invalido")[];
+            valor: string;
+        };
+        RespostaObjeto94Dto: {
+            ddi: string;
+            id: string;
+            numero: string;
+            principal: false | true;
+            revisao?: ("formato_antigo" | "periodo_texto" | "local_texto" | "tecnologias_na_descricao" | "ddi_ausente" | "localizacao_texto" | "contato_sem_tipo" | "email_invalido")[];
+        };
+        RespostaObjeto95Dto: {
+            id: string;
+            tipo: "linkedin" | "github" | "facebook" | "instagram" | "site";
+            url: string;
+        };
+        RespostaObjeto96Dto: {
             bairro?: string;
             cidade: string;
             complemento?: string;
@@ -1717,21 +1866,21 @@ export interface components {
             pais: string;
             revisao?: ("formato_antigo" | "periodo_texto" | "local_texto" | "tecnologias_na_descricao" | "ddi_ausente" | "localizacao_texto" | "contato_sem_tipo" | "email_invalido")[];
         };
-        RespostaObjeto91Dto: {
+        RespostaObjeto97Dto: {
             id: string;
             revisao?: ("formato_antigo" | "periodo_texto" | "local_texto" | "tecnologias_na_descricao" | "ddi_ausente" | "localizacao_texto" | "contato_sem_tipo" | "email_invalido")[];
             rotulo: string;
             valor: string;
         };
-        RespostaObjeto92Dto: {
+        RespostaObjeto98Dto: {
             apresentacao: "ENTRADA" | "ATIVA" | "ENCERRADA";
             arquivadaEm: string | null;
             categoria: string | null;
-            curriculo: components["schemas"]["RespostaObjeto93Dto"] | null;
+            curriculo: components["schemas"]["RespostaObjeto99Dto"] | null;
             empresa: string;
             etapa: "INSCRITA" | "EM_PROCESSO" | "ENTREVISTA" | "OFERTA" | "PREPARACAO" | "ENCERRADAS";
             id: string;
-            keywords: unknown;
+            keywords: components["schemas"]["Keyword"][] | null;
             nivel: string | null;
             prioridade: "BAIXA" | "MEDIA" | "ALTA";
             proximoPasso: components["schemas"]["RespostaObjeto1Dto"];
@@ -1740,38 +1889,10 @@ export interface components {
             titulo: string;
             ultimaAtividade: string;
         };
-        RespostaObjeto93Dto: {
+        RespostaObjeto99Dto: {
             id: string;
             rotulo: string;
             score: number | null;
-        };
-        RespostaObjeto94Dto: {
-            edges: components["schemas"]["RespostaObjeto96Dto"][];
-            facets: components["schemas"]["RespostaObjeto97Dto"];
-            nodes: components["schemas"]["RespostaObjeto95Dto"][];
-            schemaVersion: string;
-        };
-        RespostaObjeto95Dto: {
-            id: string;
-            rotulo: string;
-            tipo: string;
-        };
-        RespostaObjeto96Dto: {
-            destino: string;
-            id: string;
-            origem: string;
-            tipo: string;
-        };
-        RespostaObjeto97Dto: {
-            categorias: string[];
-            empresas: string[];
-            niveis: string[];
-            skills: string[];
-        };
-        RespostaObjeto99Dto: {
-            dependencias: components["schemas"]["RespostaObjeto100Dto"][];
-            servico: "api";
-            status: "pronto" | "indisponivel";
         };
         RespostaObjeto9Dto: {
             atualizadoEm: string;
@@ -1789,6 +1910,12 @@ export interface components {
         RespostasFormularioDto: {
             campos: string[];
             oportunidadeId: string;
+        };
+        ScoreBreakdown: {
+            densidade: number;
+            faltando: string[];
+            keywordMatch: number;
+            secoes: number;
         };
         TelefonePerfilDto: {
             ddi: string;
@@ -1859,7 +1986,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto99Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto105Dto"];
                 };
             };
             default: {
@@ -2521,7 +2648,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto34Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto35Dto"];
                 };
             };
             default: {
@@ -2550,7 +2677,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto35Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto36Dto"];
                 };
             };
             default: {
@@ -2586,7 +2713,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto37Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto38Dto"];
                 };
             };
             default: {
@@ -2613,7 +2740,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto43Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto46Dto"];
                 };
             };
             default: {
@@ -2644,7 +2771,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto43Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto46Dto"];
                 };
             };
             default: {
@@ -2671,7 +2798,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto43Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto46Dto"];
                 };
             };
             default: {
@@ -2698,7 +2825,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto46Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto49Dto"];
                 };
             };
             default: {
@@ -2727,7 +2854,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto46Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto49Dto"];
                 };
             };
             default: {
@@ -2756,7 +2883,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto46Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto49Dto"];
                 };
             };
             default: {
@@ -2785,7 +2912,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto41Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto44Dto"];
                 };
             };
             default: {
@@ -2816,7 +2943,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto47Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto50Dto"];
                 };
             };
             default: {
@@ -2845,7 +2972,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto55Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto61Dto"];
                 };
             };
             default: {
@@ -2880,7 +3007,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto57Dto"] | components["schemas"]["RespostaObjeto59Dto"] | components["schemas"]["RespostaObjeto63Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto63Dto"] | components["schemas"]["RespostaObjeto66Dto"] | components["schemas"]["RespostaObjeto70Dto"];
                 };
             };
             default: {
@@ -2911,7 +3038,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto64Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto71Dto"];
                 };
             };
             default: {
@@ -2938,7 +3065,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto64Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto71Dto"];
                 };
             };
             default: {
@@ -2967,7 +3094,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto65Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto72Dto"];
                 };
             };
             default: {
@@ -2994,7 +3121,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto67Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto74Dto"];
                 };
             };
             default: {
@@ -3025,7 +3152,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto64Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto71Dto"];
                 };
             };
             default: {
@@ -3110,7 +3237,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto79Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto86Dto"];
                 };
             };
             default: {
@@ -3166,7 +3293,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto81Dto"][];
+                    "application/json": components["schemas"]["RespostaObjeto87Dto"][];
                 };
             };
             default: {
@@ -3193,7 +3320,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto77Dto"] | components["schemas"]["RespostaObjeto78Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto84Dto"] | components["schemas"]["RespostaObjeto85Dto"];
                 };
             };
             default: {
@@ -3225,7 +3352,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto74Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto81Dto"];
                 };
             };
             default: {
@@ -3256,7 +3383,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto73Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto80Dto"];
                 };
             };
             default: {
@@ -3287,7 +3414,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto75Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto82Dto"];
                 };
             };
             default: {
@@ -3314,7 +3441,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto66Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto73Dto"];
                 };
             };
             default: {
@@ -3339,7 +3466,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto82Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto88Dto"];
                 };
             };
             default: {
@@ -3370,7 +3497,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto82Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto88Dto"];
                 };
             };
             default: {
@@ -3411,7 +3538,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto92Dto"][];
+                    "application/json": components["schemas"]["RespostaObjeto98Dto"][];
                 };
             };
             default: {
@@ -3450,7 +3577,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto94Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto100Dto"];
                 };
             };
             default: {
@@ -3477,7 +3604,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto54Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto60Dto"];
                 };
             };
             default: {
@@ -3506,7 +3633,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto54Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto60Dto"];
                 };
             };
             default: {
@@ -3531,7 +3658,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaObjeto101Dto"];
+                    "application/json": components["schemas"]["RespostaObjeto107Dto"];
                 };
             };
             default: {

@@ -6,10 +6,6 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig({
   resolve: {
     alias: {
-      '@prdal/contracts': path.resolve(
-        __dirname,
-        '../../packages/contracts/dist',
-      ),
       '@': path.resolve(__dirname, 'src'),
     },
   },

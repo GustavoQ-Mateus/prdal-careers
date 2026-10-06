@@ -229,9 +229,9 @@ export function Workspace({
                 {textoExtracao(o)}. Gerar ou pontuar o currículo fica disponível quando as keywords estiverem prontas.
               </p>
             )}
-            {o.keywords.length > 0 && (
+            {(o.keywords ?? []).length > 0 && (
               <div className="mt-4 flex flex-wrap gap-1.5">
-                {o.keywords.map((k) => (
+                {(o.keywords ?? []).map((k) => (
                   <Badge key={k.termo} variant="neutral">
                     {k.termo}
                   </Badge>
@@ -285,7 +285,7 @@ export function Workspace({
               <div className="flex flex-col gap-4">
                 <p className="text-[14px] text-ink-2">
                   Status {ROTULO_STATUS[cand.status]}
-                  {cand.vinculo.situacao === 'VINCULADO' && cand.vinculo.rotulo
+                  {cand.vinculo.situacao === 'VINCULADO' && 'rotulo' in cand.vinculo && cand.vinculo.rotulo
                     ? ` · vínculo ${cand.vinculo.rotulo} (${cand.vinculo.score ?? '--'})`
                     : ' · currículo não registrado'}
                 </p>
@@ -472,7 +472,7 @@ export function Workspace({
         oportunidadeId={id}
         titulo={o.titulo}
         empresa={o.empresa}
-        keywords={o.keywords}
+        keywords={o.keywords ?? []}
         onConcluida={() => {
           setStatus('Currículo gerado');
           carregar();

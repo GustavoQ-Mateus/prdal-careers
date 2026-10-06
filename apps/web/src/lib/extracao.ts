@@ -1,12 +1,11 @@
-export type EstadoExtracao = 'PENDENTE' | 'EXTRAINDO' | 'PRONTAS' | 'ERRO';
+import type { WorkspaceOportunidade } from '../api';
+
+type Oportunidade = WorkspaceOportunidade['oportunidade'];
+export type EstadoExtracao = Oportunidade['keywordsExtracao'];
 
 export const INTERVALO_EXTRACAO_MS = 3000;
 
-export interface ComExtracao {
-  keywordsStatus: 'VALIDAS' | 'PENDENTE';
-  keywordsExtracao?: EstadoExtracao;
-  keywordsErro?: string | null;
-}
+export type ComExtracao = Pick<Oportunidade, 'keywordsStatus'> & Partial<Pick<Oportunidade, 'keywordsExtracao' | 'keywordsErro'>>;
 
 export function extracaoEmAndamento(item: ComExtracao): boolean {
   return item.keywordsExtracao === 'PENDENTE' || item.keywordsExtracao === 'EXTRAINDO';

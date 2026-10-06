@@ -1,9 +1,8 @@
 FROM node:22-slim AS build
 WORKDIR /app
-COPY apps/lambdas/enviar-lembrete/package.json apps/lambdas/enviar-lembrete/package-lock.json ./
+COPY package*.json ./
 RUN npm ci
-COPY apps/lambdas/enviar-lembrete/tsconfig.json ./
-COPY apps/lambdas/enviar-lembrete/src ./src
+COPY . .
 RUN npm run build
 
 FROM node:22-slim AS local
