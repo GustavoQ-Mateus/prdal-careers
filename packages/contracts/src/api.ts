@@ -847,6 +847,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/telemetria/eventos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TelemetriaController_registrar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3662,6 +3678,35 @@ export interface operations {
                 };
             };
             default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TelemetriaController_registrar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    acao?: "preparar_envio" | "redigir_mensagem" | "redigir_resposta" | "preparar_entrevista" | "preparar_curriculo" | "definir_proximo_passo" | "abrir_oportunidade" | "analisar_vaga" | "montar_perfil" | "retomar_conversa" | "ver_agenda" | "abrir_curriculo";
+                    evento: "copiloto_primeira_mensagem";
+                    sessaoId: string;
+                } | {
+                    acao: "preparar_envio" | "redigir_mensagem" | "redigir_resposta" | "preparar_entrevista" | "preparar_curriculo" | "definir_proximo_passo" | "abrir_oportunidade" | "analisar_vaga" | "montar_perfil" | "retomar_conversa" | "ver_agenda" | "abrir_curriculo";
+                    evento: "copiloto_acao_rapida";
+                    sessaoId: string;
+                };
+            };
+        };
+        responses: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
