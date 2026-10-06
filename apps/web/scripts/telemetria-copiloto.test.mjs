@@ -38,7 +38,7 @@ test('conta uma vez por conversa, aba e recarga, sem duplicar ao receber convers
 
 const require = createRequire(import.meta.url);
 const pluginApi = { name: 'api-falsa', setup(plugin) {
-  plugin.onResolve({ filter: /^\.\.\/api$/ }, () => ({ path: 'api-falsa', external: true }));
+  plugin.onResolve({ filter: /^\.\.?\/api$/ }, () => ({ path: 'api-falsa', external: true }));
 } };
 const hookBundle = await build({ entryPoints: ['src/copiloto/useCopiloto.ts'], bundle: true, platform: 'node', format: 'cjs', write: false, external: ['react'], plugins: [pluginApi] });
 const inicioBundle = await build({ entryPoints: ['src/copiloto/InicioCopiloto.tsx'], bundle: true, platform: 'node', format: 'cjs', write: false, external: ['react', 'react/jsx-runtime', 'lucide-react'], plugins: [pluginApi, {
@@ -47,9 +47,15 @@ const inicioBundle = await build({ entryPoints: ['src/copiloto/InicioCopiloto.ts
   },
 }] });
 
-function carregar(bundle, api, react) {
+const copilotoBundle = await build({ entryPoints: ['src/Copiloto.tsx'], bundle: true, platform: 'node', format: 'cjs', write: false, external: ['react', 'react/jsx-runtime', 'lucide-react'], plugins: [pluginApi, {
+  name: 'hook-falso', setup(plugin) {
+    plugin.onResolve({ filter: /^\.\/copiloto\/useCopiloto$/ }, () => ({ path: 'hook-falso', external: true }));
+  },
+}] });
+
+function carregar(bundle, api, react, hook) {
   const modulo = { exports: {} };
-  const importar = (nome) => nome === 'api-falsa' ? api : nome === 'react' && react ? react : nome === 'botao-falso' ? { Button: 'button' } : require(nome);
+  const importar = (nome) => nome === 'api-falsa' ? api : nome === 'react' && react ? react : nome === 'hook-falso' ? { useCopiloto: hook } : nome === 'botao-falso' ? { Button: 'button' } : require(nome);
   new Function('require', 'module', 'exports', bundle.outputFiles[0].text)(importar, modulo, modulo.exports);
   return modulo.exports;
 }
@@ -170,6 +176,49 @@ test('cliques em todos os botoes do inicio registram a acao correspondente e exe
   assert.equal(destinos.at(-1)[0], 'onPerfil');
   assert.ok(eventos.every((evento) => evento.evento === 'copiloto_acao_rapida' && /^[A-Za-z0-9_-]{1,64}$/.test(evento.sessaoId)));
   assert.ok(eventos.every((evento) => Object.keys(evento).sort().join(',') === 'acao,evento,sessaoId'));
+});
+
+test('tres atalhos do rodape registram acoes, preservam destinos e toleram falha de telemetria', async () => {
+  for (const falha of [false, true]) {
+    const eventos = [];
+    const destinos = [];
+    const sessao = armazenamento();
+    const telemetria = criarTelemetriaCopiloto(async (evento) => {
+      eventos.push(evento);
+      if (falha) throw new Error('rede indisponivel');
+    }, () => sessao);
+    const react = {
+      ...require('react'),
+      useEffect: () => {},
+      useMemo: (calcular) => calcular(),
+      useState: (valor) => [valor, () => {}],
+      useRef: () => ({ current: { focus: () => destinos.push('foco') } }),
+    };
+    const hook = () => ({ itens: [], estado: 'ocioso', modo: 'assistido', streaming: false,
+      enviar: (mensagem) => {
+        destinos.push(mensagem);
+        telemetria.primeiraMensagem();
+      },
+    });
+    const { Copiloto } = carregar(copilotoBundle, { telemetriaCopiloto: telemetria }, react, hook);
+    const arvore = Copiloto({ onImportarLote: () => destinos.push('lote') });
+    assert.equal(eventos.length, 0);
+    const rotulos = ['Colar uma vaga nova', 'Qual vaga priorizo hoje?', 'Importar vagas em lote'];
+    const atalhos = rotulos.map((rotulo) => botoes(arvore).find((botao) => botao.props.children === rotulo));
+    assert.ok(atalhos.every(Boolean));
+    for (const botao of atalhos) assert.doesNotThrow(() => botao.props.onClick());
+    assert.deepEqual(destinos, ['foco', 'Qual vaga priorizo hoje?', 'lote']);
+    const acoes = eventos.filter((evento) => evento.evento === 'copiloto_acao_rapida');
+    assert.deepEqual(acoes.map((evento) => evento.acao), ['colar_vaga_nova', 'priorizar_vagas', 'importar_vagas_lote']);
+    const mensagens = eventos.filter((evento) => evento.evento === 'copiloto_primeira_mensagem');
+    assert.equal(mensagens.length, 1);
+    assert.ok(eventos.every((evento) => evento.sessaoId === mensagens[0].sessaoId && /^[A-Za-z0-9_-]{1,64}$/.test(evento.sessaoId)));
+    assert.ok(acoes.every((evento) => Object.keys(evento).sort().join(',') === 'acao,evento,sessaoId'));
+    assert.doesNotMatch(JSON.stringify(eventos), /Qual vaga priorizo hoje/);
+    atalhos[0].props.onClick();
+    assert.equal(eventos.filter((evento) => evento.acao === 'colar_vaga_nova').length, 2);
+    await new Promise((resolver) => setImmediate(resolver));
+  }
 });
 
 test('falha sincrona, rejeicao e armazenamento negado nao impedem envio ou clique', async (t) => {

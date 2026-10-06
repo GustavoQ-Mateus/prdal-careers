@@ -6,6 +6,7 @@ import {
   getPerfil,
   getWorkspace,
   listarConversasCopiloto,
+  telemetriaCopiloto,
   type ConversaCopilotoResumo,
   type HojeResposta,
   type PerfilMestre,
@@ -212,9 +213,18 @@ export function Copiloto({ oportunidadeId, acaoInicial, onAbrirHoje, onAbrirWork
       <div className="sticky bottom-0 z-10 flex flex-col gap-2 bg-canvas pb-4 pt-2">
         {vazio && !oportunidadeId && !modelo.semPerfil && (
           <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" variant="secondary" className="rounded-full" onClick={() => entradaRef.current?.focus()}>Colar uma vaga nova</Button>
-            <Button type="button" size="sm" variant="secondary" className="rounded-full" onClick={() => c.enviar('Qual vaga priorizo hoje?')}>Qual vaga priorizo hoje?</Button>
-            <Button type="button" size="sm" variant="secondary" className="rounded-full" onClick={onImportarLote}>Importar vagas em lote</Button>
+            <Button type="button" size="sm" variant="secondary" className="rounded-full" onClick={() => {
+              telemetriaCopiloto.acaoRapida('colar_vaga_nova', c.conversaId);
+              entradaRef.current?.focus();
+            }}>Colar uma vaga nova</Button>
+            <Button type="button" size="sm" variant="secondary" className="rounded-full" onClick={() => {
+              telemetriaCopiloto.acaoRapida('priorizar_vagas', c.conversaId);
+              c.enviar('Qual vaga priorizo hoje?');
+            }}>Qual vaga priorizo hoje?</Button>
+            <Button type="button" size="sm" variant="secondary" className="rounded-full" onClick={() => {
+              telemetriaCopiloto.acaoRapida('importar_vagas_lote', c.conversaId);
+              onImportarLote();
+            }}>Importar vagas em lote</Button>
           </div>
         )}
         <BarraEstado estado={c.estado} streaming={c.streaming} />
