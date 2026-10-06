@@ -1,4 +1,4 @@
-import type { ConversaCopilotoResumo, HojeAcao, HojeResposta, PerfilMestre } from '../api';
+import type { AcaoRapidaCopiloto, ConversaCopilotoResumo, HojeAcao, HojeResposta, PerfilMestre } from '../api';
 
 export type PassoInicio = {
   id: string;
@@ -8,6 +8,7 @@ export type PassoInicio = {
   quando: string;
   atrasado: boolean;
   botao: string;
+  acao: AcaoRapidaCopiloto;
   mensagem?: string;
 };
 
@@ -63,8 +64,17 @@ function acaoDoTipo(item: HojeAcao) {
     GERAR_CURRICULO: 'Preparar currículo',
   };
   const botao = /responder|resposta|recrutad/i.test(item.titulo) ? 'Redigir resposta' : botoes[item.tipo] ?? 'Abrir';
+  const acoes: Record<string, AcaoRapidaCopiloto> = {
+    'Preparar envio': 'preparar_envio',
+    'Redigir mensagem': 'redigir_mensagem',
+    'Redigir resposta': 'redigir_resposta',
+    'Preparar entrevista': 'preparar_entrevista',
+    'Preparar currículo': 'preparar_curriculo',
+    Abrir: 'abrir_oportunidade',
+  };
   return {
     botao,
+    acao: acoes[botao],
     mensagem: botao === 'Abrir' ? undefined : `${botao} para ${item.oportunidade.titulo} na ${item.oportunidade.empresa}. Próximo passo: ${item.titulo}.`,
   };
 }
@@ -113,6 +123,7 @@ export function montarInicioCopiloto(
       quando: 'sem passo',
       atrasado: false,
       botao: 'Definir próximo passo',
+      acao: 'definir_proximo_passo',
       mensagem: `Definir próximo passo para ${item.titulo} na ${item.empresa}.`,
     }))) : undefined;
   return {

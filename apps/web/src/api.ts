@@ -11,6 +11,7 @@ import { lerEventos } from './copiloto/sse';
 import { urlBaseApi } from './lib/url-api';
 import { lerCorpoResposta } from './lib/corpo-resposta';
 import { criarCliente, ErroRespostaApi } from './sessao';
+import { criarTelemetriaCopiloto } from './copiloto/telemetria';
 
 export type Keyword = apiComponents['schemas']['Keyword'];
 
@@ -77,6 +78,15 @@ function sessaoExpirada() {
 
 const cliente = criarCliente(urlBaseApi(API_URL, import.meta.env.VITE_API_VERSAO), sessaoExpirada);
 
+export type TelemetriaEvento = apiPaths['/v1/telemetria/eventos']['post']['requestBody']['content']['application/json'];
+export type AcaoRapidaCopiloto = Extract<TelemetriaEvento, { evento: 'copiloto_acao_rapida' }>['acao'];
+
+export const telemetriaCopiloto = criarTelemetriaCopiloto((evento) => cliente.chamar('/telemetria/eventos', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(evento),
+}, { expirar: false }));
+
 async function falha(res: Response): Promise<never> {
   const body = await res.json().catch(() => ({}));
   throw new ErroRespostaApi(body, res.status);
@@ -107,6 +117,7 @@ export async function registrar(email: string, senha: string) {
 }
 
 export function logout() {
+  telemetriaCopiloto.limpar();
   return cliente.sair();
 }
 
