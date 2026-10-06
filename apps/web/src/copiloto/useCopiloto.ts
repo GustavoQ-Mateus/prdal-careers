@@ -4,6 +4,7 @@ import {
   getGeracao,
   buscarConversaCopiloto,
   streamCopiloto,
+  telemetriaCopiloto,
   type CopilotoChatBody,
   type CopilotoEvento,
   type ConversaCopilotoDetalhe,
@@ -700,7 +701,10 @@ export function useCopiloto(oportunidadeId?: string) {
   }, [estado.itens, estado.conversaId, estado.modo, estado.estado, estado.rascunhoPendente, oportunidadeId]);
 
   async function correr(envio: CopilotoChatBody, nova = false) {
-    if (nova) dispatch({ t: 'nova' });
+    if (nova) {
+      telemetriaCopiloto.novaSessao();
+      dispatch({ t: 'nova' });
+    }
     dispatch({ t: 'inicioTurno', envio });
     const ctrl = new AbortController();
     abortRef.current = ctrl;
@@ -710,8 +714,12 @@ export function useCopiloto(oportunidadeId?: string) {
       oportunidadeId: nova ? oportunidadeId : refEstado.current.oportunidadeId ?? oportunidadeId,
       conversaId: nova ? undefined : refEstado.current.conversaId,
     };
+    const sessaoTelemetria = corpo.mensagem?.trim() ? telemetriaCopiloto.primeiraMensagem(corpo.conversaId) : undefined;
     try {
-      await streamCopiloto(corpo, (ev) => dispatch({ t: 'evento', ev }), ctrl.signal);
+      await streamCopiloto(corpo, (ev) => {
+        if (ev.evento === 'conversa') telemetriaCopiloto.vincularConversa(ev.data.conversaId, sessaoTelemetria);
+        dispatch({ t: 'evento', ev });
+      }, ctrl.signal);
     } catch (err) {
       if (!ctrl.signal.aborted && destinoErroConta(err, 'copiloto') === 'consentimento') {
         dispatch({ t: 'consentimentoPendente', mensagem: envio.mensagem });
@@ -824,6 +832,7 @@ export function useCopiloto(oportunidadeId?: string) {
     },
     novaConversa: () => {
       abortRef.current?.abort();
+      telemetriaCopiloto.novaSessao();
       dispatch({ t: 'nova' });
     },
   };

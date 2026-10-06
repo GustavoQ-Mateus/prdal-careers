@@ -2,6 +2,7 @@ import { Info, MessageSquare, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScoreNum } from '../components/Score';
 import type { ModeloInicio, PassoInicio } from './inicio';
+import { telemetriaCopiloto, type AcaoRapidaCopiloto } from '../api';
 
 function Contagem({ valor }: { valor: number }) {
   return <span className="ml-1 font-mono text-[12px] tabular-nums text-faint">{valor}</span>;
@@ -28,6 +29,11 @@ export function InicioCopiloto({
   onPerfil: () => void;
   onAcao: (oportunidadeId: string, mensagem: string) => void;
 }) {
+  function usarAcao(acao: AcaoRapidaCopiloto, executar: () => void) {
+    telemetriaCopiloto.acaoRapida(acao);
+    executar();
+  }
+
   if (modelo.semPerfil) {
     return (
       <div className="flex-1 py-8 sm:py-10">
@@ -37,7 +43,7 @@ export function InicioCopiloto({
           Todo currículo que eu preparar sai do seu perfil, e só dele. Sem perfil não dá para gerar nada honesto.
           Leva uns 10 minutos.
         </p>
-        <button type="button" onClick={onPerfil} className="mt-7 flex min-h-44 w-full max-w-[420px] flex-col items-start gap-2.5 rounded-card border border-line-strong bg-ground p-5 text-left shadow-rest transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+        <button type="button" onClick={() => usarAcao('montar_perfil', onPerfil)} className="mt-7 flex min-h-44 w-full max-w-[420px] flex-col items-start gap-2.5 rounded-card border border-line-strong bg-ground p-5 text-left shadow-rest transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
           <span className="flex size-9 items-center justify-center rounded-control bg-primary text-primary-fg"><Pencil className="size-[18px]" /></span>
           <span className="text-[15px] font-semibold text-ink">Montar meu perfil</span>
           <span className="text-[13px] leading-relaxed text-muted">Cadastre suas experiências, formação e contato, seção por seção.</span>
@@ -64,7 +70,7 @@ export function InicioCopiloto({
       </p>
 
       {modelo.conversa && (
-        <button type="button" onClick={() => onConversa(modelo.conversa!.id)} className="mt-5 flex w-full items-center gap-3.5 rounded-card border border-line bg-ground px-4 py-3.5 text-left shadow-rest transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+        <button type="button" onClick={() => usarAcao('retomar_conversa', () => onConversa(modelo.conversa!.id))} className="mt-5 flex w-full items-center gap-3.5 rounded-card border border-line bg-ground px-4 py-3.5 text-left shadow-rest transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent-ink"><MessageSquare className="size-[18px]" /></span>
           <span className="min-w-0 flex-1">
             <span className="block truncate font-semibold text-ink">Continuar: {modelo.conversa.titulo}</span>
@@ -78,7 +84,7 @@ export function InicioCopiloto({
         <section className="mt-8" aria-labelledby="inicio-passos">
           <div className="flex items-baseline justify-between gap-4 pb-2">
             <h2 id="inicio-passos" className="text-label uppercase text-muted">Próximos passos <Contagem valor={modelo.totalPassos} /></h2>
-            <button type="button" onClick={onHoje} className="text-[13px] font-medium text-accent-ink hover:underline focus-visible:outline-none focus-visible:underline">Ver agenda</button>
+            <button type="button" onClick={() => usarAcao('ver_agenda', onHoje)} className="text-[13px] font-medium text-accent-ink hover:underline focus-visible:outline-none focus-visible:underline">Ver agenda</button>
           </div>
           {modelo.passos.length ? (
             <div className="divide-y divide-line overflow-hidden rounded-card border border-line bg-ground">
@@ -86,7 +92,7 @@ export function InicioCopiloto({
                 <div key={passo.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
                   <span className={`w-20 shrink-0 font-mono text-[12px] ${passo.atrasado ? 'text-score-warn' : 'text-ink-2'}`}>{passo.quando}</span>
                   <span className="min-w-[160px] flex-1 text-[14px]"><span className="font-medium text-ink">{passo.titulo}</span><span className="text-muted"> · {passo.empresa}</span></span>
-                  <Button type="button" size="sm" variant={passo.mensagem ? 'secondary' : 'ghost'} onClick={() => passo.mensagem ? onAcao(passo.oportunidadeId, passo.mensagem) : onWorkspace(passo.oportunidadeId)}>{passo.botao}</Button>
+                  <Button type="button" size="sm" variant={passo.mensagem ? 'secondary' : 'ghost'} onClick={() => usarAcao(passo.acao, () => passo.mensagem ? onAcao(passo.oportunidadeId, passo.mensagem) : onWorkspace(passo.oportunidadeId))}>{passo.botao}</Button>
                 </div>
               ))}
             </div>
@@ -99,7 +105,7 @@ export function InicioCopiloto({
           {modelo.geracoes && <section aria-labelledby="inicio-geracoes">
             <h2 id="inicio-geracoes" className="pb-2 text-label uppercase text-muted">Gerações concluídas <Contagem valor={modelo.geracoes.length} /></h2>
             <div className="divide-y divide-line overflow-hidden rounded-card border border-line bg-ground">
-              {modelo.geracoes.map((item) => <button key={item.curriculoId} type="button" onClick={() => onCurriculo(item.oportunidadeId, item.curriculoId)} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent">
+              {modelo.geracoes.map((item) => <button key={item.curriculoId} type="button" onClick={() => usarAcao('abrir_curriculo', () => onCurriculo(item.oportunidadeId, item.curriculoId))} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent">
                 <span className="min-w-0 flex-1"><span className="block truncate font-medium text-ink">{item.titulo} · {item.empresa}</span><span className="text-[12px] text-faint">{momento(item.concluidaEm)}</span></span>
                 <ScoreNum valor={item.score} />
               </button>)}
@@ -110,7 +116,7 @@ export function InicioCopiloto({
             <div className="divide-y divide-line overflow-hidden rounded-card border border-line bg-ground">
               {modelo.entrada.map((item) => <div key={item.id} className="flex items-center gap-3 px-4 py-3">
                 <span className="min-w-0 flex-1"><span className="block truncate font-medium text-ink">{item.titulo} · {item.empresa}</span><span className="text-[12px] text-faint">{momento(item.criadoEm)}</span></span>
-                <Button type="button" size="sm" variant="secondary" onClick={() => onAcao(item.id, `Analisar a vaga ${item.titulo} na ${item.empresa}.`)}>Analisar</Button>
+                <Button type="button" size="sm" variant="secondary" onClick={() => usarAcao('analisar_vaga', () => onAcao(item.id, `Analisar a vaga ${item.titulo} na ${item.empresa}.`))}>Analisar</Button>
               </div>)}
             </div>
           </section>}
