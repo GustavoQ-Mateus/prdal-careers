@@ -73,14 +73,19 @@ run "rede_sem_nat" {
 run "banco_privado" {
   command = plan
   module { source = "../../modules/rds" }
+  override_resource {
+    target          = random_password.postgres
+    values          = { result = "senha-sintetica-do-postgres-com-40-bytes-12" }
+    override_during = plan
+  }
   variables {
     nome             = "teste"
     vpc_id           = "vpc-0123456789abcdef0"
     subnets_privadas = ["subnet-0123456789abcdef0", "subnet-1123456789abcdef0"]
   }
   assert {
-    condition     = aws_db_instance.postgres.publicly_accessible == false && aws_db_instance.postgres.storage_encrypted && aws_db_instance.postgres.manage_master_user_password
-    error_message = "O banco deve ser privado, criptografado e ter senha gerenciada."
+    condition     = aws_db_instance.postgres.publicly_accessible == false && aws_db_instance.postgres.storage_encrypted && aws_db_instance.postgres.password == random_password.postgres.result && !coalesce(aws_db_instance.postgres.manage_master_user_password, false)
+    error_message = "O banco deve ser privado, criptografado e usar somente a senha gerada pelo Terraform."
   }
 }
 
@@ -101,22 +106,44 @@ run "oidc_batch_restrito" {
     repositorios = {
       batch-migrar-arquivos-s3 = {
         github          = "prdal-careers-batch-migrar-arquivos-s3"
+        github_id       = "1406303660"
         ecr_arn         = "arn:aws:ecr:us-east-1:765656213653:repository/prdal-demo/batch-migrar-arquivos-s3"
         publicar_imagem = true
       }
       web = {
         github          = "prdal-careers-web"
+        github_id       = "1406302914"
         ecr_arn         = null
         publicar_imagem = false
       }
     }
   }
   assert {
-    condition     = jsondecode(aws_iam_role.publicar["batch-migrar-arquivos-s3"].assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"] == "repo:GustavoQ-Mateus/prdal-careers-batch-migrar-arquivos-s3:ref:refs/heads/main"
-    error_message = "O papel Batch deve confiar somente na main do espelho correspondente."
+    condition     = jsondecode(aws_iam_role.publicar["batch-migrar-arquivos-s3"].assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"] == "repo:GustavoQ-Mateus@199433320/prdal-careers-batch-migrar-arquivos-s3@1406303660:ref:refs/heads/main"
+    error_message = "O papel Batch deve confiar somente na main e nos IDs imutaveis do espelho correspondente."
+  }
+  assert {
+    condition     = jsondecode(aws_iam_role.publicar["web"].assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"] == "repo:GustavoQ-Mateus@199433320/prdal-careers-web@1406302914:ref:refs/heads/main" && alltrue([for papel in aws_iam_role.publicar : jsondecode(papel.assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:aud"] == "sts.amazonaws.com"])
+    error_message = "Cada papel precisa restringir o proprio espelho e a audiencia do STS."
   }
   assert {
     condition     = length(aws_iam_role_policy.publicar) == 1 && jsondecode(aws_iam_role_policy.publicar["batch-migrar-arquivos-s3"].policy).Statement[1].Resource == var.repositorios["batch-migrar-arquivos-s3"].ecr_arn
     error_message = "A publicação deve alcançar somente o ECR próprio; web ainda não recebe acesso."
   }
+}
+
+run "oidc_sem_id_rejeitado" {
+  command = plan
+  module { source = "../../modules/github-oidc" }
+  variables {
+    repositorios = {
+      web = {
+        github          = "prdal-careers-web"
+        github_id       = ""
+        ecr_arn         = null
+        publicar_imagem = false
+      }
+    }
+  }
+  expect_failures = [var.repositorios]
 }
