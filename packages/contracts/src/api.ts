@@ -3695,11 +3695,11 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    acao?: "preparar_envio" | "redigir_mensagem" | "redigir_resposta" | "preparar_entrevista" | "preparar_curriculo" | "definir_proximo_passo" | "abrir_oportunidade" | "analisar_vaga" | "montar_perfil" | "retomar_conversa" | "ver_agenda" | "abrir_curriculo";
+                    acao?: "preparar_envio" | "redigir_mensagem" | "redigir_resposta" | "preparar_entrevista" | "preparar_curriculo" | "definir_proximo_passo" | "abrir_oportunidade" | "analisar_vaga" | "montar_perfil" | "retomar_conversa" | "ver_agenda" | "abrir_curriculo" | "colar_vaga_nova" | "priorizar_vagas" | "importar_vagas_lote";
                     evento: "copiloto_primeira_mensagem";
                     sessaoId: string;
                 } | {
-                    acao: "preparar_envio" | "redigir_mensagem" | "redigir_resposta" | "preparar_entrevista" | "preparar_curriculo" | "definir_proximo_passo" | "abrir_oportunidade" | "analisar_vaga" | "montar_perfil" | "retomar_conversa" | "ver_agenda" | "abrir_curriculo";
+                    acao: "preparar_envio" | "redigir_mensagem" | "redigir_resposta" | "preparar_entrevista" | "preparar_curriculo" | "definir_proximo_passo" | "abrir_oportunidade" | "analisar_vaga" | "montar_perfil" | "retomar_conversa" | "ver_agenda" | "abrir_curriculo" | "colar_vaga_nova" | "priorizar_vagas" | "importar_vagas_lote";
                     evento: "copiloto_acao_rapida";
                     sessaoId: string;
                 };

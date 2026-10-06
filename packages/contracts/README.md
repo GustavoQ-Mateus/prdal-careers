@@ -23,4 +23,4 @@ O mantenedor pode importar fontes explicitamente com `npm run reunir -- --apps <
 
 `npm run conferir -- --anterior <diretorio-da-versao-publicada>` verifica compatibilidade. Quando há tags Git locais, a conferência também verifica a versão publicada anterior.
 
-A versão `1.2.0` acrescenta o pedido tipado de telemetria do início do copiloto, com eventos e ações de lista fechada e ação obrigatória em `copiloto_acao_rapida`. Preserva os contratos existentes da versão `1.1.0`. Os consumidores passam para a tag `v1.2.0` depois que o mantenedor publicar essa tag, com referências e lockfiles próprios.
+A versão `1.3.0` amplia a lista de ações aceitas no pedido de telemetria com `colar_vaga_nova`, `priorizar_vagas` e `importar_vagas_lote`. Preserva os contratos existentes da versão `1.2.0`, com ação obrigatória em `copiloto_acao_rapida`. Os consumidores passam para a tag `v1.3.0` depois que o mantenedor publicar essa tag, com referências e lockfiles próprios.
