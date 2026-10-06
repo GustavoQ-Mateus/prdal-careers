@@ -102,11 +102,11 @@ export function criarCliente(base: string, aoExpirar: () => void) {
     return buscandoCsrf;
   }
 
-  async function chamar(path: string, init: RequestInit = {}, opcoes: { expirar?: boolean } = {}): Promise<Response> {
+  async function chamar(path: string, init: RequestInit = {}, opcoes: { expirar?: boolean; renovar?: boolean } = {}): Promise<Response> {
     const metodo = (init.method ?? 'GET').toUpperCase();
     if (!METODOS_SEGUROS.has(metodo) && !ROTAS_SEM_CSRF.has(path) && !tokenCsrf()) await garantirCsrf();
     const res = await bruto(path, init);
-    if (res.status !== 401 || ROTAS_SEM_RENOVACAO.has(path)) return res;
+    if (res.status !== 401 || ROTAS_SEM_RENOVACAO.has(path) || opcoes.renovar === false) return res;
     if (await renovar()) {
       const repetida = await bruto(path, init);
       if (repetida.status !== 401) return repetida;

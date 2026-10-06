@@ -171,3 +171,88 @@ test('cliques em todos os botoes do inicio registram a acao correspondente e exe
   assert.ok(eventos.every((evento) => evento.evento === 'copiloto_acao_rapida' && /^[A-Za-z0-9_-]{1,64}$/.test(evento.sessaoId)));
   assert.ok(eventos.every((evento) => Object.keys(evento).sort().join(',') === 'acao,evento,sessaoId'));
 });
+
+test('falha sincrona, rejeicao e armazenamento negado nao impedem envio ou clique', async (t) => {
+  semSnapshot(t);
+  for (const enviar of [
+    () => { throw new Error('falha sincrona'); },
+    async () => { throw new Error('rede indisponivel'); },
+    () => new Promise(() => {}),
+  ]) {
+    const armazenamentoNegado = () => { throw new Error('armazenamento negado'); };
+    const telemetria = criarTelemetriaCopiloto(enviar, armazenamentoNegado);
+    let chamadas = 0;
+    const hook = montarHook({ telemetriaCopiloto: telemetria, streamCopiloto: async () => { chamadas++; } });
+    assert.doesNotThrow(() => hook().enviar('mensagem enviada'));
+    assert.equal(chamadas, 1);
+    assert.equal(hook().itens.some((item) => item.tipo === 'erro'), false);
+    const { InicioCopiloto } = carregar(inicioBundle, { telemetriaCopiloto: telemetria });
+    let navegou = false;
+    const perfil = InicioCopiloto({ modelo: { ...modelo(), semPerfil: true }, onPerfil: () => { navegou = true; } });
+    assert.doesNotThrow(() => botoes(perfil)[0].props.onClick());
+    assert.equal(navegou, true);
+  }
+  await new Promise((resolver) => setImmediate(resolver));
+});
+
+test('sem armazenamento, memoria impede repeticao e limpeza permite outra sessao', () => {
+  const eventos = [];
+  const telemetria = criarTelemetriaCopiloto(async (evento) => { eventos.push(evento); }, () => { throw new Error('negado'); });
+  const id = telemetria.primeiraMensagem();
+  assert.equal(telemetria.primeiraMensagem(), id);
+  telemetria.vincularConversa('conversa-1', id);
+  telemetria.primeiraMensagem('conversa-1');
+  assert.equal(eventos.length, 1);
+  telemetria.limpar();
+  assert.notEqual(telemetria.primeiraMensagem(), id);
+  assert.equal(eventos.length, 2);
+});
+
+const apiBundle = await build({ entryPoints: ['src/api.ts'], bundle: true, platform: 'node', format: 'cjs', write: false, define: { 'import.meta.env': '{"VITE_API_URL":"http://api.teste"}' } });
+
+test('transporte envia contrato autenticado com csrf, sem refresh, redirecionamento ou rejeicao', async (t) => {
+  semSnapshot(t);
+  const fetchAnterior = globalThis.fetch;
+  const documentAnterior = globalThis.document;
+  const windowAnterior = globalThis.window;
+  t.after(() => {
+    globalThis.fetch = fetchAnterior;
+    if (documentAnterior === undefined) delete globalThis.document;
+    else globalThis.document = documentAnterior;
+    if (windowAnterior === undefined) delete globalThis.window;
+    else globalThis.window = windowAnterior;
+  });
+  globalThis.document = { cookie: 'prdal_csrf=csrf-teste' };
+  let redirecionamentos = 0;
+  globalThis.window = { location: { assign: () => { redirecionamentos++; } } };
+  const chamadas = [];
+  const resultados = [204, 401, 429, 500, new Error('rede indisponivel'), new DOMException('prazo excedido', 'TimeoutError')];
+  globalThis.fetch = async (url, init) => {
+    chamadas.push({ url, ...init });
+    const resultado = resultados.shift();
+    if (resultado instanceof Error) throw resultado;
+    return new Response(null, { status: resultado });
+  };
+  const { telemetriaCopiloto } = carregar(apiBundle, {});
+  for (let i = 0; i < 6; i++) {
+    assert.doesNotThrow(() => telemetriaCopiloto.acaoRapida('analisar_vaga'));
+    await new Promise((resolver) => setImmediate(resolver));
+  }
+  assert.equal(chamadas.length, 6);
+  for (const chamada of chamadas) {
+    assert.equal(chamada.url, 'http://api.teste/v1/telemetria/eventos');
+    assert.equal(chamada.method, 'POST');
+    assert.equal(chamada.credentials, 'include');
+    assert.equal(chamada.headers.get('X-CSRF-Token'), 'csrf-teste');
+    assert.equal(chamada.headers.get('Content-Type'), 'application/json');
+    assert.equal(chamada.headers.get('Authorization'), null);
+    assert.ok(chamada.signal instanceof AbortSignal);
+    const corpo = JSON.parse(chamada.body);
+    assert.equal(corpo.evento, 'copiloto_acao_rapida');
+    assert.equal(corpo.acao, 'analisar_vaga');
+    assert.match(corpo.sessaoId, /^[A-Za-z0-9_-]{1,64}$/);
+    assert.deepEqual(Object.keys(corpo).sort(), ['acao', 'evento', 'sessaoId']);
+  }
+  assert.equal(redirecionamentos, 0);
+  assert.equal(globalThis.sessionStorage.getItem('prdal-sessao-expirada'), null);
+});

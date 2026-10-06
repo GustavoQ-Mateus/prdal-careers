@@ -85,7 +85,8 @@ export const telemetriaCopiloto = criarTelemetriaCopiloto((evento) => cliente.ch
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(evento),
-}, { expirar: false }));
+  signal: AbortSignal.timeout(5_000),
+}, { expirar: false, renovar: false }));
 
 async function falha(res: Response): Promise<never> {
   const body = await res.json().catch(() => ({}));
