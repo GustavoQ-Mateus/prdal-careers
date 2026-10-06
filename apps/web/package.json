@@ -29,7 +29,7 @@
     "recharts": "^3.10.1",
     "sigma": "^3.0.3",
     "tailwind-merge": "^3.7.0",
-    "@prdal/contracts": "github:GustavoQ-Mateus/prdal-careers-contracts#v1.0.0"
+    "@prdal/contracts": "github:GustavoQ-Mateus/prdal-careers-contracts#v1.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
