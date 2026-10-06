@@ -30,6 +30,6 @@ Use `.env.example` como referência, sem versionar segredos. As variáveis opcio
 
 `PRDAL_API_ORIGIN`, `PRDAL_HSTS`, `VITE_API_URL`, `VITE_API_VERSAO`.
 
-## Contratos pendentes de publicação
+## Contratos
 
-A dependência permanece em `github:GustavoQ-Mateus/prdal-careers-contracts#v1.0.0`. Os tipos de eventos SSE, arrays de Hoje e análises ATS foram completados no pacote `1.1.0`. O typecheck completo exige essa versão após a publicação da tag pelo orquestrador; atualize a referência git e gere o lockfile quando ela existir. Até lá, para validar a mudança localmente, instale o tarball produzido por `npm pack` no repositório de contratos sem alterar o manifesto ou o lockfile do web. Não publique uma tag a partir desta unidade.
+A dependência usa `github:GustavoQ-Mateus/prdal-careers-contracts#v1.1.0`, com os tipos de eventos SSE, arrays de Hoje e análises ATS. O typecheck usa os contratos instalados por `npm ci`.

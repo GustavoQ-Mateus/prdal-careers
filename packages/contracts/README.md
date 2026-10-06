@@ -23,4 +23,4 @@ O mantenedor pode importar fontes explicitamente com `npm run reunir -- --apps <
 
 `npm run conferir -- --anterior <diretorio-da-versao-publicada>` verifica compatibilidade. Quando há tags Git locais, a conferência também verifica a versão publicada anterior.
 
-A versão `1.1.0` completa os eventos SSE e as respostas tipadas de Hoje e ATS. Os consumidores ficam na tag `v1.0.0` até o orquestrador publicar a nova versão e atualizar suas referências e lockfiles.
+A versão `1.1.0` completa os eventos SSE e as respostas tipadas de Hoje e ATS. Os consumidores usam a tag `v1.1.0` com referências e lockfiles próprios.
